@@ -220,7 +220,7 @@ def analyze(paths, off, K, seed=7, blocks_sample=6000):
                     idx = tr.query_ball_point(src[:, [0, 2]].astype(float), r=W + 0.5, p=np.inf)
                     for i, ii in enumerate(idx):
                         if not ii: continue
-                        q = db[ii] - src[i]
+                        q = db[ii] - src[i][:3]
                         m = (np.abs(q[:, 0]) <= W) & (np.abs(q[:, 2]) <= W) & (q[:, 1] >= -140) & (q[:, 1] <= -20)
                         q = q[m]
                         if len(q): np.add.at(H, (q[:, 0] + W, q[:, 2] + W), 1)

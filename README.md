@@ -7,7 +7,7 @@
 Overworld · Nether · End &nbsp;|&nbsp; 26.1 · 26.2 · 26.3 (+ 26.4-snapshot-2) &nbsp;|&nbsp; CUDA · OpenMP · Java-эталон
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1%20%E2%80%93%2026.3-62b47a?style=flat-square&logo=minecraft&logoColor=white)](docs/04-version-diff-26.md)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.1%20%E2%80%93%2026.3-62b47a?style=flat-square)](docs/04-version-diff-26.md)
 [![CUDA](https://img.shields.io/badge/CUDA-12%20%C2%B7%20sm__89-76b900?style=flat-square&logo=nvidia&logoColor=white)](docs/13-gpu-strategy.md)
 [![C11](https://img.shields.io/badge/C11%20%2F%20C%2B%2B17-engine-00599c?style=flat-square&logo=c&logoColor=white)](engine)
 [![Verified against Mojang code](https://img.shields.io/badge/verified-against%20real%20game%20code-blue?style=flat-square)](docs/oracle.md)
