@@ -6,18 +6,18 @@
 
 Overworld · Nether · End &nbsp;|&nbsp; 26.1 · 26.2 · 26.3 (+ 26.4-snapshot-2) &nbsp;|&nbsp; CUDA · OpenMP · Java-эталон
 
-<a href="LICENSE"><img src="docs/badges/license.svg" alt="license: MIT"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license: MIT"></a>
 <a href="docs/04-version-diff-26.md"><img src="docs/badges/minecraft.svg" alt="Minecraft 26.1 – 26.3"></a>
-<a href="docs/13-gpu-strategy.md"><img src="docs/badges/cuda.svg" alt="CUDA 12 · sm_89"></a>
-<a href="engine"><img src="docs/badges/engine.svg" alt="engine: C11 · C++17"></a>
-<a href="docs/oracle.md"><img src="docs/badges/verified.svg" alt="verified against real game code"></a>
-<a href="docs/00-worldgen-guide.md"><img src="docs/badges/docs.svg" alt="docs: по-русски"></a>
+<a href="docs/13-gpu-strategy.md"><img src="https://img.shields.io/badge/CUDA-12%20%C2%B7%20sm__89-76b900?style=flat-square&logo=nvidia&logoColor=white" alt="CUDA 12 · sm_89"></a>
+<a href="engine"><img src="https://img.shields.io/badge/C11%20%2F%20C%2B%2B17-engine-00599c?style=flat-square&logo=c&logoColor=white" alt="engine: C11 / C++17"></a>
+<a href="docs/oracle.md"><img src="https://img.shields.io/badge/verified-against%20real%20game%20code-blue?style=flat-square" alt="verified against real game code"></a>
+<a href="docs/00-worldgen-guide.md"><img src="https://img.shields.io/badge/docs-%D0%BF%D0%BE--%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8-orange?style=flat-square" alt="docs: по-русски"></a>
 <br>
 <img src="docs/badges/dimensions.svg" alt="Overworld · Nether · End">
 <a href="docs/23-crack-nether-bedrock.md"><img src="docs/badges/bedrock.svg" alt="bedrock: 2^48 in 0.16 s"></a>
 <img src="docs/badges/results.svg" alt="verification results, cycling">
 
-<sub>↑ все бейджи нарисованы <a href="https://github.com/AlexMelanFromRingo/blazon">blazon</a> — самодостаточным генератором с честными метриками шрифта (последний — анимированный SVG)</sub>
+<sub>↑ бейдж Minecraft и нижний ряд (включая анимированный) нарисованы <a href="https://github.com/AlexMelanFromRingo/blazon">blazon</a> — самодостаточным генератором с честными метриками шрифта; остальные — <a href="https://shields.io">shields.io</a></sub>
 
 [Путеводитель по генерации](docs/00-worldgen-guide.md) ·
 [Как восстановить seed](docs/13-gpu-strategy.md) ·
@@ -182,7 +182,7 @@ docs/      документация (по-русски)
 
 ## 🙏 Благодарности
 
-[cubiomes](https://github.com/Cubitect/cubiomes) · [SeedcrackerX](https://github.com/19MisterX98/SeedcrackerX) · [SeedCracker](https://github.com/KaptainWutax/SeedCracker) · [Nether Bedrock Cracker](https://github.com/19MisterX98/Nether_Bedrock_Cracker) · [seedfinding](https://github.com/SeedFinding) · [chunkbase](https://www.chunkbase.com) (сравнительные скриншоты в `docs/img/` — для проверки совпадения карт) · [Vineflower](https://github.com/Vineflower/vineflower) · [blazon](https://github.com/AlexMelanFromRingo/blazon) (все бейджи этого README).
+[cubiomes](https://github.com/Cubitect/cubiomes) · [SeedcrackerX](https://github.com/19MisterX98/SeedcrackerX) · [SeedCracker](https://github.com/KaptainWutax/SeedCracker) · [Nether Bedrock Cracker](https://github.com/19MisterX98/Nether_Bedrock_Cracker) · [seedfinding](https://github.com/SeedFinding) · [chunkbase](https://www.chunkbase.com) (сравнительные скриншоты в `docs/img/` — для проверки совпадения карт) · [Vineflower](https://github.com/Vineflower/vineflower) · [blazon](https://github.com/AlexMelanFromRingo/blazon) и [shields.io](https://shields.io) (бейджи).
 
 Minecraft — торговая марка Mojang Studios / Microsoft. Проект не связан с Mojang и не одобрен ими.
 
