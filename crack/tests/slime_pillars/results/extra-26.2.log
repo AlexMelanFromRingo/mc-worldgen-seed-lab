@@ -1,0 +1,26 @@
+PASS slime: seed 12345 и -6067193122998177735 (разные старшие 16 бит) дают одинаковую карту 128x128
+PASS pillars: seed 12345 и -6067193122998177735 дают одинаковые башни
+PASS slime: seed -8788534344520786540 и 3298282630411492756 (разные старшие 16 бит) дают одинаковую карту 128x128
+PASS pillars: seed -8788534344520786540 и 3298282630411492756 дают одинаковые башни
+PASS slime: seed 765906787396911863 и -6815058760351186185 (разные старшие 16 бит) дают одинаковую карту 128x128
+PASS pillars: seed 765906787396911863 и -6815058760351186185 дают одинаковые башни
+PASS slime: карта 512x512 (262144 чанков, 26137 слайм) seed 2026 == oracle
+PASS slime: карта 512x512 (262144 чанков, 26473 слайм) seed -777777777777 == oracle
+PASS pillars: 60 случайных seed: ключ и высоты == oracle — расхождений 0
+PASS expand-random: 64-бит seed -3958345455253442331 (автосид: nextLong от 13201533844629) восстановлен из карты слайм-чанков 48x48
+PASS expand-random: 64-бит seed -7694482276758605908 (автосид: nextLong от 124805513344894) восстановлен из карты слайм-чанков 48x48
+PASS expand-random: 64-бит seed -6988937408630412204 (автосид: nextLong от 279829751077095) восстановлен из карты слайм-чанков 48x48
+PASS pillars+slime: ключ башен + 30 слайм-чанков -> 30 кандидат(ов), истинный среди них
+PASS версия 26.2: набор abandoned_camp отсутствует (rc=2)
+PASS алиасы имён (desert_pyramid, village, minecraft:end_city) разбираются — PASS struct 11 -25 | FAIL struct 0 0 | FAIL struct 3 4 | 
+PASS slime + 3 структуры (--with-structs): 21012 -> 3 кандидатов, истинный среди них, подмножество
+PASS slime GPU == CPU (OpenMP): 40+/200−, --max-errors 1: 3122 == 3122 кандидатов
+PASS pillars --obs (x z высота, центры ±2): ключ ['33950']
+PASS pillars --candidates: из 3 кандидатов подходит только истинный
+PASS End: 10 башен + 8 End City (triangular): 1 кандидат(ов), истинный среди них
+PASS pred_check (79 наблюдений reducers/triangular из oracle): истинный seed 777 — все PASS; чужой — FAIL 68/79
+PASS pred_check (76 наблюдений reducers/triangular из oracle): истинный seed -31415926535 — все PASS; чужой — FAIL 64/76
+PASS slime: brute == analytic(GPU) == analytic(CPU) на данных oracle (24+/400−): [4, 4, 4] кандидатов
+PASS mineshaft GPU и CPU (OpenMP) на диапазоне 2^30: {'crack-mineshaft': 1, 'crack-mineshaft-cpu': 1}
+
+== extra V=26.2: 24 проверок, провалено 0 ==

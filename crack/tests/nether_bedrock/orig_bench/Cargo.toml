@@ -1,0 +1,19 @@
+# Обёртка для замеров ОРИГИНАЛА (Nether_Bedrock_Cracker, Rust) на тех же входных файлах, что и crack-nether-bedrock.
+# Библиотека bedrock_cracker берётся из refs/ без изменений. Сборка: cargo build --release
+[package]
+name = "orig_bench"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bedrock_cracker = { path = "../../../../refs/Nether_Bedrock_Cracker/bedrock_cracker" }
+
+[workspace]
+
+# как release-opt в refs/Nether_Bedrock_Cracker/Cargo.toml (сборка релизов автором)
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true
+debug = false
+overflow-checks = false

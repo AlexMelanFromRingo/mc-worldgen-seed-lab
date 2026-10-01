@@ -1,0 +1,19 @@
+4 liftable (desert_pyramids+igloos+villages+shipwrecks)                gpu_lift    поиск мин 0.0033 с (ядро мин 0.0001) кандидатов [2, 1, 2] nx=2 hit=True
+4 liftable (desert_pyramids+igloos+villages+shipwrecks)                gpu_nolift  поиск мин 0.0389 с (ядро мин 0.0354) кандидатов [1, 2, 1] nx=65536 hit=True
+4 liftable (desert_pyramids+igloos+villages+shipwrecks)                cpu_lift    поиск мин 0.0012 с (ядро мин 0.0000) кандидатов [2, 1, 3] nx=1 hit=True
+4 liftable (desert_pyramids+igloos+villages+shipwrecks)                cpu_nolift  поиск мин 2.4447 с (ядро мин 0.0000) кандидатов [2, 2, 2] nx=65536 hit=True
+6 liftable (+trial_chambers+jungle_temples)                            gpu_lift    поиск мин 0.0034 с (ядро мин 0.0001) кандидатов [1, 1, 1] nx=1 hit=True
+6 liftable (+trial_chambers+jungle_temples)                            gpu_nolift  поиск мин 0.0401 с (ядро мин 0.0363) кандидатов [1, 1, 1] nx=65536 hit=True
+6 liftable (+trial_chambers+jungle_temples)                            cpu_lift    поиск мин 0.0011 с (ядро мин 0.0000) кандидатов [1, 1, 1] nx=1 hit=True
+4 без lifting (ocean_monuments+woodland_mansions+ancient_cities+ruined_portals) gpu_lift    поиск мин 0.0490 с (ядро мин 0.0455) кандидатов [1, 1, 1] nx=65536 hit=True
+4 без lifting (ocean_monuments+woodland_mansions+ancient_cities+ruined_portals) gpu_nolift  поиск мин 0.0494 с (ядро мин 0.0459) кандидатов [1, 1, 1] nx=65536 hit=True
+4 без lifting (ocean_monuments+woodland_mansions+ancient_cities+ruined_portals) cpu_lift    поиск мин 3.5053 с (ядро мин 0.0000) кандидатов [1, 1, 1] nx=65536 hit=True
+4 без lifting (ocean_monuments+woodland_mansions+ancient_cities+ruined_portals) cpu_nolift  поиск мин 3.4757 с (ядро мин 0.0000) кандидатов [1, 1, 1] nx=65536 hit=True
+3 liftable + 10 слайм-чанков                                           gpu_lift    поиск мин 0.0033 с (ядро мин 0.0001) кандидатов [4, 4, 3] nx=2 hit=True
+3 liftable + 10 слайм-чанков                                           gpu_nolift  поиск мин 0.0387 с (ядро мин 0.0354) кандидатов [3, 1, 3] nx=65536 hit=True
+3 liftable + 10 слайм-чанков                                           cpu_lift    поиск мин 0.0012 с (ядро мин 0.0000) кандидатов [4, 2, 1] nx=1 hit=True
+3 liftable + 10 слайм-чанков                                           cpu_nolift  поиск мин 2.4631 с (ядро мин 0.0000) кандидатов [9, 2, 2] nx=65536 hit=True
+только 2 liftable (desert_pyramids+villages) — мало информации         gpu_lift    поиск мин 0.0038 с (ядро мин 0.0004) кандидатов [18357, 16361, 21263] nx=430 hit=True
+только 2 liftable (desert_pyramids+villages) — мало информации         gpu_nolift  поиск мин 0.0393 с (ядро мин 0.0357) кандидатов [15497, 35977, 10200] nx=65536 hit=True
+только 2 liftable (desert_pyramids+villages) — мало информации         cpu_lift    поиск мин 0.0105 с (ядро мин 0.0000) кандидатов [10417, 18078, 6296] nx=239 hit=True
+только 2 liftable (desert_pyramids+villages) — мало информации         cpu_nolift  поиск мин 2.4603 с (ядро мин 0.0000) кандидатов [9329, 13586, 5209] nx=65536 hit=True

@@ -1,0 +1,215 @@
+# oracle: {'ok': True, 'cmd': 'info', 'version': '26.1', 'family': '26.1/26.2', 'world_version': 4786, 'java': '25.0.4.1'}
+PASS slime-map V=26.1 S=0 (128x128 = 16384 чанков, 1668 слайм) == oracle
+PASS slime-map V=26.1 S=12345 (128x128 = 16384 чанков, 1645 слайм) == oracle
+PASS slime-map V=26.1 S=-1 (128x128 = 16384 чанков, 1690 слайм) == oracle
+PASS slime-map V=26.1 S=123456789012345678 (128x128 = 16384 чанков, 1664 слайм) == oracle
+PASS slime-map V=26.1 S=-8788534344520786540 (128x128 = 16384 чанков, 1640 слайм) == oracle
+PASS slime-map V=26.1 S=765906787396911863 (128x128 = 16384 чанков, 1618 слайм) == oracle
+PASS slime-map V=26.1 S=9223372036854775807 (128x128 = 16384 чанков, 1690 слайм) == oracle
+PASS slime-map V=26.1 S=-9223372036854775808 (128x128 = 16384 чанков, 1668 слайм) == oracle
+PASS slime-map V=26.1 S=-125337975428188722 (128x128 = 16384 чанков, 1618 слайм) == oracle
+PASS slime-map V=26.1 S=7931739755984492638 (128x128 = 16384 чанков, 1667 слайм) == oracle
+PASS slime-map V=26.1 S=6672720972031070962 (128x128 = 16384 чанков, 1624 слайм) == oracle
+PASS slime-map V=26.1 S=-3690147944351019698 (128x128 = 16384 чанков, 1598 слайм) == oracle
+PASS slime-recover V=26.1 S=0 40 положительных: среди 158 кандидатов истинный 48-бит seed — 0.73s
+PASS slime-recover V=26.1 S=0 40+ / 1000- : 14 кандидатов — 0.72s
+PASS slime-recover V=26.1 S=0 полная карта 64x64 (428 слайм): 9 кандидатов — 0.59s
+PASS slime-errors V=26.1 S=0 --max-errors 2: истинный seed среди 26 — 0.67s
+PASS slime-errors V=26.1 S=0 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-recover V=26.1 S=12345 40 положительных: среди 99 кандидатов истинный 48-бит seed — 0.69s
+PASS slime-recover V=26.1 S=12345 40+ / 1000- : 19 кандидатов — 0.50s
+PASS slime-recover V=26.1 S=12345 полная карта 64x64 (395 слайм): 3 кандидатов — 0.53s
+PASS slime-errors V=26.1 S=12345 --max-errors 2: истинный seed среди 27 — 0.79s
+PASS slime-errors V=26.1 S=12345 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-recover V=26.1 S=-1 40 положительных: среди 615 кандидатов истинный 48-бит seed — 0.97s
+PASS slime-recover V=26.1 S=-1 40+ / 1000- : 7 кандидатов — 1.10s
+PASS slime-recover V=26.1 S=-1 полная карта 64x64 (450 слайм): 1 кандидатов — 0.79s
+PASS slime-errors V=26.1 S=-1 --max-errors 2: истинный seed среди 48 — 0.76s
+PASS slime-errors V=26.1 S=-1 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-recover V=26.1 S=123456789012345678 40 положительных: среди 80 кандидатов истинный 48-бит seed — 0.68s
+PASS slime-recover V=26.1 S=123456789012345678 40+ / 1000- : 12 кандидатов — 0.62s
+PASS slime-recover V=26.1 S=123456789012345678 полная карта 64x64 (453 слайм): 8 кандидатов — 0.94s
+PASS slime-errors V=26.1 S=123456789012345678 --max-errors 2: истинный seed среди 41 — 0.82s
+PASS slime-errors V=26.1 S=123456789012345678 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-recover V=26.1 S=-8788534344520786540 40 положительных: среди 39 кандидатов истинный 48-бит seed — 0.99s
+PASS slime-recover V=26.1 S=-8788534344520786540 40+ / 1000- : 1 кандидатов — 0.67s
+PASS slime-recover V=26.1 S=-8788534344520786540 полная карта 64x64 (402 слайм): 1 кандидатов — 0.71s
+PASS slime-errors V=26.1 S=-8788534344520786540 --max-errors 2: истинный seed среди 2 — 0.72s
+PASS slime-errors V=26.1 S=-8788534344520786540 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-recover V=26.1 S=765906787396911863 40 положительных: среди 155 кандидатов истинный 48-бит seed — 0.63s
+PASS slime-recover V=26.1 S=765906787396911863 40+ / 1000- : 40 кандидатов — 0.99s
+PASS slime-recover V=26.1 S=765906787396911863 полная карта 64x64 (437 слайм): 3 кандидатов — 0.84s
+PASS slime-errors V=26.1 S=765906787396911863 --max-errors 2: истинный seed среди 66 — 0.82s
+PASS slime-errors V=26.1 S=765906787396911863 без допуска ошибок: истинного seed нет (ожидаемо)
+PASS slime-cpu V=26.1 S=12345 OpenMP-вариант: 283 кандидатов — 0.16s
+PASS pillars-layout V=26.1 S=0: key=20792, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=0: по 10 высотам найден key (кандидатов ключей: 1) — 0.020s
+PASS pillars-key V=26.1 S=0: только радиусы -> 5 ключей, среди них истинный
+PASS pillars-key V=26.1 S=0: только клетки -> 1453 ключей, среди них истинный
+PASS pillars-key V=26.1 S=0: 6 из 10 высот -> 1 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=12345: key=45873, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=12345: по 10 высотам найден key (кандидатов ключей: 1) — 0.009s
+PASS pillars-key V=26.1 S=12345: только радиусы -> 8 ключей, среди них истинный
+PASS pillars-key V=26.1 S=12345: только клетки -> 1442 ключей, среди них истинный
+PASS pillars-key V=26.1 S=12345: 6 из 10 высот -> 1 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=-1: key=8899, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=-1: по 10 высотам найден key (кандидатов ключей: 1) — 0.016s
+PASS pillars-key V=26.1 S=-1: только радиусы -> 3 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-1: только клетки -> 1484 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-1: 6 из 10 высот -> 2 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=123456789012345678: key=18533, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=123456789012345678: по 10 высотам найден key (кандидатов ключей: 1) — 0.036s
+PASS pillars-key V=26.1 S=123456789012345678: только радиусы -> 8 ключей, среди них истинный
+PASS pillars-key V=26.1 S=123456789012345678: только клетки -> 1469 ключей, среди них истинный
+PASS pillars-key V=26.1 S=123456789012345678: 6 из 10 высот -> 2 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=-8788534344520786540: key=39232, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=-8788534344520786540: по 10 высотам найден key (кандидатов ключей: 1) — 0.033s
+PASS pillars-key V=26.1 S=-8788534344520786540: только радиусы -> 4 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-8788534344520786540: только клетки -> 1442 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-8788534344520786540: 6 из 10 высот -> 1 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=765906787396911863: key=47915, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=765906787396911863: по 10 высотам найден key (кандидатов ключей: 1) — 0.046s
+PASS pillars-key V=26.1 S=765906787396911863: только радиусы -> 6 ключей, среди них истинный
+PASS pillars-key V=26.1 S=765906787396911863: только клетки -> 1464 ключей, среди них истинный
+PASS pillars-key V=26.1 S=765906787396911863: 6 из 10 высот -> 2 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=9223372036854775807: key=8899, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=9223372036854775807: по 10 высотам найден key (кандидатов ключей: 1) — 0.023s
+PASS pillars-key V=26.1 S=9223372036854775807: только радиусы -> 3 ключей, среди них истинный
+PASS pillars-key V=26.1 S=9223372036854775807: только клетки -> 1484 ключей, среди них истинный
+PASS pillars-key V=26.1 S=9223372036854775807: 6 из 10 высот -> 2 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=-9223372036854775808: key=20792, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=-9223372036854775808: по 10 высотам найден key (кандидатов ключей: 1) — 0.024s
+PASS pillars-key V=26.1 S=-9223372036854775808: только радиусы -> 5 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-9223372036854775808: только клетки -> 1453 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-9223372036854775808: 6 из 10 высот -> 1 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=-125337975428188722: key=51998, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=-125337975428188722: по 10 высотам найден key (кандидатов ключей: 1) — 0.018s
+PASS pillars-key V=26.1 S=-125337975428188722: только радиусы -> 1 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-125337975428188722: только клетки -> 1451 ключей, среди них истинный
+PASS pillars-key V=26.1 S=-125337975428188722: 6 из 10 высот -> 2 ключей, среди них истинный
+PASS pillars-layout V=26.1 S=7931739755984492638: key=14863, центры/высоты/радиусы/клетки == oracle
+PASS pillars-key V=26.1 S=7931739755984492638: по 10 высотам найден key (кандидатов ключей: 1) — 0.017s
+PASS pillars-key V=26.1 S=7931739755984492638: только радиусы -> 4 ключей, среди них истинный
+PASS pillars-key V=26.1 S=7931739755984492638: только клетки -> 1464 ключей, среди них истинный
+PASS pillars-key V=26.1 S=7931739755984492638: 6 из 10 высот -> 1 ключей, среди них истинный
+PASS placement V=26.1 S=0 desert_pyramids: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=0 igloos: потенциальные чанки == oracle structs — 12 чанков
+PASS placement V=26.1 S=0 jungle_temples: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=0 swamp_huts: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=0 shipwrecks: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=0 villages: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=0 trial_chambers: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=0 ruined_portals: потенциальные чанки == oracle structs — 5 чанков
+PASS placement V=26.1 S=0 ocean_ruins: потенциальные чанки == oracle structs — 26 чанков
+PASS placement V=26.1 S=0 ancient_cities: потенциальные чанки == oracle structs — 17 чанков
+PASS placement V=26.1 S=0 ocean_monuments: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=0 woodland_mansions: потенциальные чанки == oracle structs — 15 чанков
+PASS placement V=26.1 S=0 buried_treasures: потенциальные чанки == oracle structs — 29 чанков
+PASS placement V=26.1 S=0 mineshafts: потенциальные чанки == oracle structs — 12 чанков
+PASS placement V=26.1 S=0 pillager_outposts: потенциальные чанки == oracle structs — oracle 12 ⊆ мои 18; 6 лишних — все в радиусе 10 чанков от потенциальной деревни (exclusion_zone)
+PASS placement V=26.1 S=0 trail_ruins: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=12345 desert_pyramids: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=12345 igloos: потенциальные чанки == oracle structs — 13 чанков
+PASS placement V=26.1 S=12345 jungle_temples: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=12345 swamp_huts: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=12345 shipwrecks: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=12345 villages: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=12345 trial_chambers: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=12345 ruined_portals: потенциальные чанки == oracle structs — 6 чанков
+PASS placement V=26.1 S=12345 ocean_ruins: потенциальные чанки == oracle structs — 25 чанков
+PASS placement V=26.1 S=12345 ancient_cities: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=12345 ocean_monuments: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=12345 woodland_mansions: потенциальные чанки == oracle structs — 15 чанков
+PASS placement V=26.1 S=12345 buried_treasures: потенциальные чанки == oracle structs — 46 чанков
+PASS placement V=26.1 S=12345 mineshafts: потенциальные чанки == oracle structs — 18 чанков
+PASS placement V=26.1 S=12345 pillager_outposts: потенциальные чанки == oracle structs — oracle 11 ⊆ мои 18; 7 лишних — все в радиусе 10 чанков от потенциальной деревни (exclusion_zone)
+PASS placement V=26.1 S=12345 trail_ruins: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=-1 desert_pyramids: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=-1 igloos: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=-1 jungle_temples: потенциальные чанки == oracle structs — 12 чанков
+PASS placement V=26.1 S=-1 swamp_huts: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=-1 shipwrecks: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=-1 villages: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=-1 trial_chambers: потенциальные чанки == oracle structs — 7 чанков
+PASS placement V=26.1 S=-1 ruined_portals: потенциальные чанки == oracle structs — 4 чанков
+PASS placement V=26.1 S=-1 ocean_ruins: потенциальные чанки == oracle structs — 25 чанков
+PASS placement V=26.1 S=-1 ancient_cities: потенциальные чанки == oracle structs — 17 чанков
+PASS placement V=26.1 S=-1 ocean_monuments: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=-1 woodland_mansions: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=-1 buried_treasures: потенциальные чанки == oracle structs — 29 чанков
+PASS placement V=26.1 S=-1 mineshafts: потенциальные чанки == oracle structs — 17 чанков
+PASS placement V=26.1 S=-1 pillager_outposts: потенциальные чанки == oracle structs — oracle 9 ⊆ мои 12; 3 лишних — все в радиусе 10 чанков от потенциальной деревни (exclusion_zone)
+PASS placement V=26.1 S=-1 trail_ruins: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=123456789012345678 desert_pyramids: потенциальные чанки == oracle structs — 15 чанков
+PASS placement V=26.1 S=123456789012345678 igloos: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=123456789012345678 jungle_temples: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=123456789012345678 swamp_huts: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=123456789012345678 shipwrecks: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=123456789012345678 villages: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=123456789012345678 trial_chambers: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=123456789012345678 ruined_portals: потенциальные чанки == oracle structs — 5 чанков
+PASS placement V=26.1 S=123456789012345678 ocean_ruins: потенциальные чанки == oracle structs — 27 чанков
+PASS placement V=26.1 S=123456789012345678 ancient_cities: потенциальные чанки == oracle structs — 17 чанков
+PASS placement V=26.1 S=123456789012345678 ocean_monuments: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=123456789012345678 woodland_mansions: потенциальные чанки == oracle structs — 15 чанков
+PASS placement V=26.1 S=123456789012345678 buried_treasures: потенциальные чанки == oracle structs — 36 чанков
+PASS placement V=26.1 S=123456789012345678 mineshafts: потенциальные чанки == oracle structs — 19 чанков
+PASS placement V=26.1 S=123456789012345678 pillager_outposts: потенциальные чанки == oracle structs — oracle 15 ⊆ мои 22; 7 лишних — все в радиусе 10 чанков от потенциальной деревни (exclusion_zone)
+PASS placement V=26.1 S=123456789012345678 trail_ruins: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=-8788534344520786540 desert_pyramids: потенциальные чанки == oracle structs — 8 чанков
+PASS placement V=26.1 S=-8788534344520786540 igloos: потенциальные чанки == oracle structs — 7 чанков
+PASS placement V=26.1 S=-8788534344520786540 jungle_temples: потенциальные чанки == oracle structs — 10 чанков
+PASS placement V=26.1 S=-8788534344520786540 swamp_huts: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=-8788534344520786540 shipwrecks: потенциальные чанки == oracle structs — 16 чанков
+PASS placement V=26.1 S=-8788534344520786540 villages: потенциальные чанки == oracle structs — 9 чанков
+PASS placement V=26.1 S=-8788534344520786540 trial_chambers: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=-8788534344520786540 ruined_portals: потенциальные чанки == oracle structs — 7 чанков
+PASS placement V=26.1 S=-8788534344520786540 ocean_ruins: потенциальные чанки == oracle structs — 25 чанков
+PASS placement V=26.1 S=-8788534344520786540 ancient_cities: потенциальные чанки == oracle structs — 17 чанков
+PASS placement V=26.1 S=-8788534344520786540 ocean_monuments: потенциальные чанки == oracle structs — 12 чанков
+PASS placement V=26.1 S=-8788534344520786540 woodland_mansions: потенциальные чанки == oracle structs — 15 чанков
+PASS placement V=26.1 S=-8788534344520786540 buried_treasures: потенциальные чанки == oracle structs — 41 чанков
+PASS placement V=26.1 S=-8788534344520786540 mineshafts: потенциальные чанки == oracle structs — 13 чанков
+PASS placement V=26.1 S=-8788534344520786540 pillager_outposts: потенциальные чанки == oracle structs — oracle 7 ⊆ мои 15; 8 лишних — все в радиусе 10 чанков от потенциальной деревни (exclusion_zone)
+PASS placement V=26.1 S=-8788534344520786540 trail_ruins: потенциальные чанки == oracle structs — 11 чанков
+PASS placement V=26.1 S=0 end/end_cities: == oracle — 100 чанков
+PASS placement V=26.1 S=0 nether/nether_complexes: == oracle — 20 чанков
+PASS placement V=26.1 S=0 nether/ruined_portals: == oracle — 5 чанков
+PASS placement V=26.1 S=12345 end/end_cities: == oracle — 100 чанков
+PASS placement V=26.1 S=12345 nether/nether_complexes: == oracle — 19 чанков
+PASS placement V=26.1 S=12345 nether/ruined_portals: == oracle — 8 чанков
+PASS placement V=26.1 S=-1 end/end_cities: == oracle — 100 чанков
+PASS placement V=26.1 S=-1 nether/nether_complexes: == oracle — 19 чанков
+PASS placement V=26.1 S=-1 nether/ruined_portals: == oracle — 7 чанков
+PASS pillars-step2 V=26.1 S=0: 5 структур -> 1 кандидатов, истинный среди них — 0.94s
+PASS pillars-step2 V=26.1 S=0: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.74s
+PASS pillars-step2-cpu V=26.1 S=0 OpenMP == GPU — 0.07s
+PASS pillars-step2 V=26.1 S=12345: 5 структур -> 1 кандидатов, истинный среди них — 0.80s
+PASS pillars-step2 V=26.1 S=12345: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.79s
+PASS pillars-step2-cpu V=26.1 S=12345 OpenMP == GPU — -1.90s
+PASS pillars-step2 V=26.1 S=-1: 5 структур -> 1 кандидатов, истинный среди них — 0.96s
+PASS pillars-step2 V=26.1 S=-1: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.66s
+PASS pillars-step2-cpu V=26.1 S=-1 OpenMP == GPU — 0.06s
+PASS pillars-step2 V=26.1 S=123456789012345678: 5 структур -> 1 кандидатов, истинный среди них — 0.60s
+PASS pillars-step2 V=26.1 S=123456789012345678: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.81s
+PASS pillars-step2-cpu V=26.1 S=123456789012345678 OpenMP == GPU — 0.06s
+PASS pillars-step2 V=26.1 S=-8788534344520786540: 5 структур -> 1 кандидатов, истинный среди них — 0.67s
+PASS pillars-step2 V=26.1 S=-8788534344520786540: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.74s
+PASS pillars-step2-cpu V=26.1 S=-8788534344520786540 OpenMP == GPU — 0.07s
+PASS pillars-step2 V=26.1 S=765906787396911863: 5 структур -> 1 кандидатов, истинный среди них — 0.58s
+PASS pillars-step2 V=26.1 S=765906787396911863: 10 структур -> ровно 1 кандидат == seed mod 2^48 — 0.67s
+PASS pillars-step2-cpu V=26.1 S=765906787396911863 OpenMP == GPU — 0.06s
+PASS mineshaft V=26.1 S=0: oracle нашёл 32 стартовых чанков в окне 100x100
+PASS mineshaft-range V=26.1 S=0: 8 стартов, перебор 2^36 вокруг seed -> 1 кандидат(ов), истинный среди них — 1.17s
+PASS mineshaft-full V=26.1 S=0: 8 шахт + 4 структур, полный 2^48 с lifting -> 1 кандидат(ов) — 0.69s
+PASS mineshaft V=26.1 S=12345: oracle нашёл 33 стартовых чанков в окне 100x100
+PASS mineshaft-range V=26.1 S=12345: 8 стартов, перебор 2^36 вокруг seed -> 1 кандидат(ов), истинный среди них — 0.97s
+PASS mineshaft-full V=26.1 S=12345: 8 шахт + 4 структур, полный 2^48 с lifting -> 1 кандидат(ов) — 0.64s
+PASS mineshaft V=26.1 S=-1: oracle нашёл 47 стартовых чанков в окне 100x100
+PASS mineshaft-range V=26.1 S=-1: 8 стартов, перебор 2^36 вокруг seed -> 1 кандидат(ов), истинный среди них — 1.11s
+PASS mineshaft-full V=26.1 S=-1: 8 шахт + 4 структур, полный 2^48 с lifting -> 1 кандидат(ов) — 0.71s
+PASS mineshaft V=26.1 S=123456789012345678: oracle нашёл 38 стартовых чанков в окне 100x100
+PASS mineshaft-range V=26.1 S=123456789012345678: 8 стартов, перебор 2^36 вокруг seed -> 1 кандидат(ов), истинный среди них — 1.18s
+PASS mineshaft-full V=26.1 S=123456789012345678: 8 шахт + 4 структур, полный 2^48 с lifting -> 1 кандидат(ов) — 0.72s
+
+== V=26.1: 212 проверок, провалено 0 ==

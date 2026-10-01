@@ -1,0 +1,2122 @@
+{
+ "version": "26.2",
+ "structure_sets": {
+  "ancient_cities": {
+   "id": "minecraft:ancient_cities",
+   "placement": {
+    "type": "random_spread",
+    "salt": 20083232,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 24,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 16
+   },
+   "structures": [
+    {
+     "id": "minecraft:ancient_city",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "underground_decoration",
+     "biomes_spec": "#minecraft:has_structure/ancient_city",
+     "biomes": [
+      "minecraft:deep_dark"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_box",
+     "start_height": {
+      "absolute": -27
+     },
+     "size": 7,
+     "max_distance_from_center": 116,
+     "start_pool": "minecraft:ancient_city/city_center",
+     "use_expansion_hack": false
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "buried_treasures": {
+   "id": "minecraft:buried_treasures",
+   "placement": {
+    "type": "random_spread",
+    "salt": 0,
+    "locate_offset": [
+     9,
+     0,
+     9
+    ],
+    "frequency": 0.01,
+    "frequency_reduction_method": "legacy_type_2",
+    "exclusion_zone": null,
+    "spacing": 1,
+    "separation": 0,
+    "spread_type": "linear",
+    "limit": 1
+   },
+   "structures": [
+    {
+     "id": "minecraft:buried_treasure",
+     "weight": 1,
+     "type": "buried_treasure",
+     "step": "underground_structures",
+     "biomes_spec": "#minecraft:has_structure/buried_treasure",
+     "biomes": [
+      "minecraft:beach",
+      "minecraft:snowy_beach"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "desert_pyramids": {
+   "id": "minecraft:desert_pyramids",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357617,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 32,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 24
+   },
+   "structures": [
+    {
+     "id": "minecraft:desert_pyramid",
+     "weight": 1,
+     "type": "desert_pyramid",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/desert_pyramid",
+     "biomes": [
+      "minecraft:desert"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "end_cities": {
+   "id": "minecraft:end_cities",
+   "placement": {
+    "type": "random_spread",
+    "salt": 10387313,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 20,
+    "separation": 11,
+    "spread_type": "triangular",
+    "limit": 9
+   },
+   "structures": [
+    {
+     "id": "minecraft:end_city",
+     "weight": 1,
+     "type": "end_city",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/end_city",
+     "biomes": [
+      "minecraft:end_highlands",
+      "minecraft:end_midlands"
+     ],
+     "dimensions": [
+      "the_end"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "the_end"
+   ]
+  },
+  "igloos": {
+   "id": "minecraft:igloos",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357618,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 32,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 24
+   },
+   "structures": [
+    {
+     "id": "minecraft:igloo",
+     "weight": 1,
+     "type": "igloo",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/igloo",
+     "biomes": [
+      "minecraft:snowy_taiga",
+      "minecraft:snowy_plains",
+      "minecraft:snowy_slopes"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "jungle_temples": {
+   "id": "minecraft:jungle_temples",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357619,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 32,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 24
+   },
+   "structures": [
+    {
+     "id": "minecraft:jungle_pyramid",
+     "weight": 1,
+     "type": "jungle_temple",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/jungle_temple",
+     "biomes": [
+      "minecraft:bamboo_jungle",
+      "minecraft:jungle"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "mineshafts": {
+   "id": "minecraft:mineshafts",
+   "placement": {
+    "type": "random_spread",
+    "salt": 0,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 0.004,
+    "frequency_reduction_method": "legacy_type_3",
+    "exclusion_zone": null,
+    "spacing": 1,
+    "separation": 0,
+    "spread_type": "linear",
+    "limit": 1
+   },
+   "structures": [
+    {
+     "id": "minecraft:mineshaft",
+     "weight": 1,
+     "type": "mineshaft",
+     "step": "underground_structures",
+     "biomes_spec": "#minecraft:has_structure/mineshaft",
+     "biomes": [
+      "minecraft:deep_frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:deep_lukewarm_ocean",
+      "minecraft:frozen_ocean",
+      "minecraft:ocean",
+      "minecraft:cold_ocean",
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean",
+      "minecraft:river",
+      "minecraft:frozen_river",
+      "minecraft:beach",
+      "minecraft:snowy_beach",
+      "minecraft:meadow",
+      "minecraft:frozen_peaks",
+      "minecraft:jagged_peaks",
+      "minecraft:stony_peaks",
+      "minecraft:snowy_slopes",
+      "minecraft:cherry_grove",
+      "minecraft:windswept_hills",
+      "minecraft:windswept_forest",
+      "minecraft:windswept_gravelly_hills",
+      "minecraft:taiga",
+      "minecraft:snowy_taiga",
+      "minecraft:old_growth_pine_taiga",
+      "minecraft:old_growth_spruce_taiga",
+      "minecraft:bamboo_jungle",
+      "minecraft:jungle",
+      "minecraft:sparse_jungle",
+      "minecraft:forest",
+      "minecraft:flower_forest",
+      "minecraft:birch_forest",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:dark_forest",
+      "minecraft:pale_garden",
+      "minecraft:grove",
+      "minecraft:stony_shore",
+      "minecraft:mushroom_fields",
+      "minecraft:ice_spikes",
+      "minecraft:windswept_savanna",
+      "minecraft:desert",
+      "minecraft:savanna",
+      "minecraft:snowy_plains",
+      "minecraft:plains",
+      "minecraft:sunflower_plains",
+      "minecraft:swamp",
+      "minecraft:mangrove_swamp",
+      "minecraft:savanna_plateau",
+      "minecraft:dripstone_caves",
+      "minecraft:lush_caves",
+      "minecraft:sulfur_caves"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:mineshaft_mesa",
+     "weight": 1,
+     "type": "mineshaft",
+     "step": "underground_structures",
+     "biomes_spec": "#minecraft:has_structure/mineshaft_mesa",
+     "biomes": [
+      "minecraft:badlands",
+      "minecraft:eroded_badlands",
+      "minecraft:wooded_badlands"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "nether_complexes": {
+   "id": "minecraft:nether_complexes",
+   "placement": {
+    "type": "random_spread",
+    "salt": 30084232,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 27,
+    "separation": 4,
+    "spread_type": "linear",
+    "limit": 23
+   },
+   "structures": [
+    {
+     "id": "minecraft:fortress",
+     "weight": 2,
+     "type": "fortress",
+     "step": "underground_decoration",
+     "biomes_spec": "#minecraft:has_structure/nether_fortress",
+     "biomes": [
+      "minecraft:nether_wastes",
+      "minecraft:soul_sand_valley",
+      "minecraft:crimson_forest",
+      "minecraft:warped_forest",
+      "minecraft:basalt_deltas"
+     ],
+     "dimensions": [
+      "the_nether"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:bastion_remnant",
+     "weight": 3,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/bastion_remnant",
+     "biomes": [
+      "minecraft:crimson_forest",
+      "minecraft:nether_wastes",
+      "minecraft:soul_sand_valley",
+      "minecraft:warped_forest"
+     ],
+     "dimensions": [
+      "the_nether"
+     ],
+     "terrain_adaptation": "none",
+     "start_height": {
+      "absolute": 33
+     },
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:bastion/starts",
+     "use_expansion_hack": false
+    }
+   ],
+   "dimensions": [
+    "the_nether"
+   ]
+  },
+  "nether_fossils": {
+   "id": "minecraft:nether_fossils",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357921,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 2,
+    "separation": 1,
+    "spread_type": "linear",
+    "limit": 1
+   },
+   "structures": [
+    {
+     "id": "minecraft:nether_fossil",
+     "weight": 1,
+     "type": "nether_fossil",
+     "step": "underground_decoration",
+     "biomes_spec": "#minecraft:has_structure/nether_fossil",
+     "biomes": [
+      "minecraft:soul_sand_valley"
+     ],
+     "dimensions": [
+      "the_nether"
+     ],
+     "terrain_adaptation": "beard_thin"
+    }
+   ],
+   "dimensions": [
+    "the_nether"
+   ]
+  },
+  "ocean_monuments": {
+   "id": "minecraft:ocean_monuments",
+   "placement": {
+    "type": "random_spread",
+    "salt": 10387313,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 32,
+    "separation": 5,
+    "spread_type": "triangular",
+    "limit": 27
+   },
+   "structures": [
+    {
+     "id": "minecraft:monument",
+     "weight": 1,
+     "type": "ocean_monument",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ocean_monument",
+     "biomes": [
+      "minecraft:deep_frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:deep_lukewarm_ocean"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "ocean_ruins": {
+   "id": "minecraft:ocean_ruins",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357621,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 20,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 12
+   },
+   "structures": [
+    {
+     "id": "minecraft:ocean_ruin_cold",
+     "weight": 1,
+     "type": "ocean_ruin",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ocean_ruin_cold",
+     "biomes": [
+      "minecraft:frozen_ocean",
+      "minecraft:cold_ocean",
+      "minecraft:ocean",
+      "minecraft:deep_frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:deep_ocean"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ocean_ruin_warm",
+     "weight": 1,
+     "type": "ocean_ruin",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ocean_ruin_warm",
+     "biomes": [
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean",
+      "minecraft:deep_lukewarm_ocean"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "pillager_outposts": {
+   "id": "minecraft:pillager_outposts",
+   "placement": {
+    "type": "random_spread",
+    "salt": 165745296,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 0.2,
+    "frequency_reduction_method": "legacy_type_1",
+    "exclusion_zone": {
+     "other_set": "minecraft:villages",
+     "chunk_count": 10
+    },
+    "spacing": 32,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 24
+   },
+   "structures": [
+    {
+     "id": "minecraft:pillager_outpost",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/pillager_outpost",
+     "biomes": [
+      "minecraft:desert",
+      "minecraft:plains",
+      "minecraft:savanna",
+      "minecraft:snowy_plains",
+      "minecraft:taiga",
+      "minecraft:meadow",
+      "minecraft:frozen_peaks",
+      "minecraft:jagged_peaks",
+      "minecraft:stony_peaks",
+      "minecraft:snowy_slopes",
+      "minecraft:cherry_grove",
+      "minecraft:grove"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 7,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:pillager_outpost/base_plates",
+     "use_expansion_hack": true
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "ruined_portals": {
+   "id": "minecraft:ruined_portals",
+   "placement": {
+    "type": "random_spread",
+    "salt": 34222645,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 40,
+    "separation": 15,
+    "spread_type": "linear",
+    "limit": 25
+   },
+   "structures": [
+    {
+     "id": "minecraft:ruined_portal",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_standard",
+     "biomes": [
+      "minecraft:beach",
+      "minecraft:snowy_beach",
+      "minecraft:river",
+      "minecraft:frozen_river",
+      "minecraft:taiga",
+      "minecraft:snowy_taiga",
+      "minecraft:old_growth_pine_taiga",
+      "minecraft:old_growth_spruce_taiga",
+      "minecraft:forest",
+      "minecraft:flower_forest",
+      "minecraft:birch_forest",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:dark_forest",
+      "minecraft:pale_garden",
+      "minecraft:grove",
+      "minecraft:mushroom_fields",
+      "minecraft:ice_spikes",
+      "minecraft:dripstone_caves",
+      "minecraft:lush_caves",
+      "minecraft:sulfur_caves",
+      "minecraft:savanna",
+      "minecraft:snowy_plains",
+      "minecraft:plains",
+      "minecraft:sunflower_plains"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_desert",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_desert",
+     "biomes": [
+      "minecraft:desert"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_jungle",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_jungle",
+     "biomes": [
+      "minecraft:bamboo_jungle",
+      "minecraft:jungle",
+      "minecraft:sparse_jungle"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_swamp",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_swamp",
+     "biomes": [
+      "minecraft:swamp",
+      "minecraft:mangrove_swamp"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_mountain",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_mountain",
+     "biomes": [
+      "minecraft:badlands",
+      "minecraft:eroded_badlands",
+      "minecraft:wooded_badlands",
+      "minecraft:windswept_hills",
+      "minecraft:windswept_forest",
+      "minecraft:windswept_gravelly_hills",
+      "minecraft:savanna_plateau",
+      "minecraft:windswept_savanna",
+      "minecraft:stony_shore",
+      "minecraft:meadow",
+      "minecraft:frozen_peaks",
+      "minecraft:jagged_peaks",
+      "minecraft:stony_peaks",
+      "minecraft:snowy_slopes",
+      "minecraft:cherry_grove"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_ocean",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_ocean",
+     "biomes": [
+      "minecraft:deep_frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:deep_lukewarm_ocean",
+      "minecraft:frozen_ocean",
+      "minecraft:ocean",
+      "minecraft:cold_ocean",
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:ruined_portal_nether",
+     "weight": 1,
+     "type": "ruined_portal",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/ruined_portal_nether",
+     "biomes": [
+      "minecraft:nether_wastes",
+      "minecraft:soul_sand_valley",
+      "minecraft:crimson_forest",
+      "minecraft:warped_forest",
+      "minecraft:basalt_deltas"
+     ],
+     "dimensions": [
+      "the_nether"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld",
+    "the_nether"
+   ]
+  },
+  "shipwrecks": {
+   "id": "minecraft:shipwrecks",
+   "placement": {
+    "type": "random_spread",
+    "salt": 165745295,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 24,
+    "separation": 4,
+    "spread_type": "linear",
+    "limit": 20
+   },
+   "structures": [
+    {
+     "id": "minecraft:shipwreck",
+     "weight": 1,
+     "type": "shipwreck",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/shipwreck",
+     "biomes": [
+      "minecraft:deep_frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:deep_lukewarm_ocean",
+      "minecraft:frozen_ocean",
+      "minecraft:ocean",
+      "minecraft:cold_ocean",
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    },
+    {
+     "id": "minecraft:shipwreck_beached",
+     "weight": 1,
+     "type": "shipwreck",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/shipwreck_beached",
+     "biomes": [
+      "minecraft:beach",
+      "minecraft:snowy_beach"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "strongholds": {
+   "id": "minecraft:strongholds",
+   "placement": {
+    "type": "concentric_rings",
+    "salt": 0,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "distance": 32,
+    "spread": 3,
+    "count": 128,
+    "preferred_biomes": "#minecraft:stronghold_biased_to",
+    "preferred_biomes_expanded": [
+     "minecraft:plains",
+     "minecraft:sunflower_plains",
+     "minecraft:snowy_plains",
+     "minecraft:ice_spikes",
+     "minecraft:desert",
+     "minecraft:forest",
+     "minecraft:flower_forest",
+     "minecraft:birch_forest",
+     "minecraft:dark_forest",
+     "minecraft:pale_garden",
+     "minecraft:old_growth_birch_forest",
+     "minecraft:old_growth_pine_taiga",
+     "minecraft:old_growth_spruce_taiga",
+     "minecraft:taiga",
+     "minecraft:snowy_taiga",
+     "minecraft:savanna",
+     "minecraft:savanna_plateau",
+     "minecraft:windswept_hills",
+     "minecraft:windswept_gravelly_hills",
+     "minecraft:windswept_forest",
+     "minecraft:windswept_savanna",
+     "minecraft:jungle",
+     "minecraft:sparse_jungle",
+     "minecraft:bamboo_jungle",
+     "minecraft:badlands",
+     "minecraft:eroded_badlands",
+     "minecraft:wooded_badlands",
+     "minecraft:meadow",
+     "minecraft:cherry_grove",
+     "minecraft:grove",
+     "minecraft:snowy_slopes",
+     "minecraft:frozen_peaks",
+     "minecraft:jagged_peaks",
+     "minecraft:stony_peaks",
+     "minecraft:mushroom_fields",
+     "minecraft:dripstone_caves",
+     "minecraft:lush_caves",
+     "minecraft:sulfur_caves"
+    ]
+   },
+   "structures": [
+    {
+     "id": "minecraft:stronghold",
+     "weight": 1,
+     "type": "stronghold",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/stronghold",
+     "biomes": [
+      "minecraft:mushroom_fields",
+      "minecraft:deep_frozen_ocean",
+      "minecraft:frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:ocean",
+      "minecraft:deep_lukewarm_ocean",
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean",
+      "minecraft:stony_shore",
+      "minecraft:swamp",
+      "minecraft:mangrove_swamp",
+      "minecraft:snowy_slopes",
+      "minecraft:snowy_plains",
+      "minecraft:snowy_beach",
+      "minecraft:windswept_gravelly_hills",
+      "minecraft:grove",
+      "minecraft:windswept_hills",
+      "minecraft:snowy_taiga",
+      "minecraft:windswept_forest",
+      "minecraft:taiga",
+      "minecraft:plains",
+      "minecraft:meadow",
+      "minecraft:beach",
+      "minecraft:forest",
+      "minecraft:old_growth_spruce_taiga",
+      "minecraft:flower_forest",
+      "minecraft:birch_forest",
+      "minecraft:dark_forest",
+      "minecraft:pale_garden",
+      "minecraft:savanna_plateau",
+      "minecraft:savanna",
+      "minecraft:jungle",
+      "minecraft:badlands",
+      "minecraft:desert",
+      "minecraft:wooded_badlands",
+      "minecraft:jagged_peaks",
+      "minecraft:stony_peaks",
+      "minecraft:frozen_river",
+      "minecraft:river",
+      "minecraft:ice_spikes",
+      "minecraft:old_growth_pine_taiga",
+      "minecraft:sunflower_plains",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:sparse_jungle",
+      "minecraft:bamboo_jungle",
+      "minecraft:eroded_badlands",
+      "minecraft:windswept_savanna",
+      "minecraft:cherry_grove",
+      "minecraft:frozen_peaks",
+      "minecraft:dripstone_caves",
+      "minecraft:lush_caves",
+      "minecraft:sulfur_caves",
+      "minecraft:deep_dark"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "bury"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "swamp_huts": {
+   "id": "minecraft:swamp_huts",
+   "placement": {
+    "type": "random_spread",
+    "salt": 14357620,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 32,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 24
+   },
+   "structures": [
+    {
+     "id": "minecraft:swamp_hut",
+     "weight": 1,
+     "type": "swamp_hut",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/swamp_hut",
+     "biomes": [
+      "minecraft:swamp"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "trail_ruins": {
+   "id": "minecraft:trail_ruins",
+   "placement": {
+    "type": "random_spread",
+    "salt": 83469867,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 34,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 26
+   },
+   "structures": [
+    {
+     "id": "minecraft:trail_ruins",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "underground_structures",
+     "biomes_spec": "#minecraft:has_structure/trail_ruins",
+     "biomes": [
+      "minecraft:taiga",
+      "minecraft:snowy_taiga",
+      "minecraft:old_growth_pine_taiga",
+      "minecraft:old_growth_spruce_taiga",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:jungle"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "bury",
+     "start_height": {
+      "absolute": -15
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 7,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:trail_ruins/tower",
+     "use_expansion_hack": false
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "trial_chambers": {
+   "id": "minecraft:trial_chambers",
+   "placement": {
+    "type": "random_spread",
+    "salt": 94251327,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 34,
+    "separation": 12,
+    "spread_type": "linear",
+    "limit": 22
+   },
+   "structures": [
+    {
+     "id": "minecraft:trial_chambers",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "underground_structures",
+     "biomes_spec": "#minecraft:has_structure/trial_chambers",
+     "biomes": [
+      "minecraft:mushroom_fields",
+      "minecraft:deep_frozen_ocean",
+      "minecraft:frozen_ocean",
+      "minecraft:deep_cold_ocean",
+      "minecraft:cold_ocean",
+      "minecraft:deep_ocean",
+      "minecraft:ocean",
+      "minecraft:deep_lukewarm_ocean",
+      "minecraft:lukewarm_ocean",
+      "minecraft:warm_ocean",
+      "minecraft:stony_shore",
+      "minecraft:swamp",
+      "minecraft:mangrove_swamp",
+      "minecraft:snowy_slopes",
+      "minecraft:snowy_plains",
+      "minecraft:snowy_beach",
+      "minecraft:windswept_gravelly_hills",
+      "minecraft:grove",
+      "minecraft:windswept_hills",
+      "minecraft:snowy_taiga",
+      "minecraft:windswept_forest",
+      "minecraft:taiga",
+      "minecraft:plains",
+      "minecraft:meadow",
+      "minecraft:beach",
+      "minecraft:forest",
+      "minecraft:old_growth_spruce_taiga",
+      "minecraft:flower_forest",
+      "minecraft:birch_forest",
+      "minecraft:dark_forest",
+      "minecraft:pale_garden",
+      "minecraft:savanna_plateau",
+      "minecraft:savanna",
+      "minecraft:jungle",
+      "minecraft:badlands",
+      "minecraft:desert",
+      "minecraft:wooded_badlands",
+      "minecraft:jagged_peaks",
+      "minecraft:stony_peaks",
+      "minecraft:frozen_river",
+      "minecraft:river",
+      "minecraft:ice_spikes",
+      "minecraft:old_growth_pine_taiga",
+      "minecraft:sunflower_plains",
+      "minecraft:old_growth_birch_forest",
+      "minecraft:sparse_jungle",
+      "minecraft:bamboo_jungle",
+      "minecraft:eroded_badlands",
+      "minecraft:windswept_savanna",
+      "minecraft:cherry_grove",
+      "minecraft:frozen_peaks",
+      "minecraft:dripstone_caves",
+      "minecraft:lush_caves",
+      "minecraft:sulfur_caves"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "encapsulate",
+     "start_height": {
+      "type": "minecraft:uniform",
+      "max_inclusive": {
+       "absolute": -20
+      },
+      "min_inclusive": {
+       "absolute": -40
+      }
+     },
+     "size": 20,
+     "max_distance_from_center": 116,
+     "start_pool": "minecraft:trial_chambers/chamber/end",
+     "use_expansion_hack": false,
+     "dimension_padding": 10,
+     "liquid_settings": "ignore_waterlogging",
+     "pool_aliases": [
+      {
+       "type": "minecraft:random_group",
+       "groups": [
+        {
+         "data": [
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+           "target": "minecraft:trial_chambers/spawner/ranged/skeleton"
+          },
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+           "target": "minecraft:trial_chambers/spawner/slow_ranged/skeleton"
+          }
+         ],
+         "weight": 1
+        },
+        {
+         "data": [
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+           "target": "minecraft:trial_chambers/spawner/ranged/stray"
+          },
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+           "target": "minecraft:trial_chambers/spawner/slow_ranged/stray"
+          }
+         ],
+         "weight": 1
+        },
+        {
+         "data": [
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+           "target": "minecraft:trial_chambers/spawner/ranged/poison_skeleton"
+          },
+          {
+           "type": "minecraft:direct",
+           "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+           "target": "minecraft:trial_chambers/spawner/slow_ranged/poison_skeleton"
+          }
+         ],
+         "weight": 1
+        }
+       ]
+      },
+      {
+       "type": "minecraft:random",
+       "alias": "minecraft:trial_chambers/spawner/contents/melee",
+       "targets": [
+        {
+         "data": "minecraft:trial_chambers/spawner/melee/zombie",
+         "weight": 1
+        },
+        {
+         "data": "minecraft:trial_chambers/spawner/melee/husk",
+         "weight": 1
+        },
+        {
+         "data": "minecraft:trial_chambers/spawner/melee/spider",
+         "weight": 1
+        }
+       ]
+      },
+      {
+       "type": "minecraft:random",
+       "alias": "minecraft:trial_chambers/spawner/contents/small_melee",
+       "targets": [
+        {
+         "data": "minecraft:trial_chambers/spawner/small_melee/slime",
+         "weight": 1
+        },
+        {
+         "data": "minecraft:trial_chambers/spawner/small_melee/cave_spider",
+         "weight": 1
+        },
+        {
+         "data": "minecraft:trial_chambers/spawner/small_melee/silverfish",
+         "weight": 1
+        },
+        {
+         "data": "minecraft:trial_chambers/spawner/small_melee/baby_zombie",
+         "weight": 1
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "villages": {
+   "id": "minecraft:villages",
+   "placement": {
+    "type": "random_spread",
+    "salt": 10387312,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 34,
+    "separation": 8,
+    "spread_type": "linear",
+    "limit": 26
+   },
+   "structures": [
+    {
+     "id": "minecraft:village_plains",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/village_plains",
+     "biomes": [
+      "minecraft:plains",
+      "minecraft:meadow"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:village/plains/town_centers",
+     "use_expansion_hack": true
+    },
+    {
+     "id": "minecraft:village_desert",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/village_desert",
+     "biomes": [
+      "minecraft:desert"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:village/desert/town_centers",
+     "use_expansion_hack": true
+    },
+    {
+     "id": "minecraft:village_savanna",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/village_savanna",
+     "biomes": [
+      "minecraft:savanna"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:village/savanna/town_centers",
+     "use_expansion_hack": true
+    },
+    {
+     "id": "minecraft:village_snowy",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/village_snowy",
+     "biomes": [
+      "minecraft:snowy_plains"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:village/snowy/town_centers",
+     "use_expansion_hack": true
+    },
+    {
+     "id": "minecraft:village_taiga",
+     "weight": 1,
+     "type": "jigsaw",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/village_taiga",
+     "biomes": [
+      "minecraft:taiga"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "beard_thin",
+     "start_height": {
+      "absolute": 0
+     },
+     "project_start_to_heightmap": "WORLD_SURFACE_WG",
+     "size": 6,
+     "max_distance_from_center": 80,
+     "start_pool": "minecraft:village/taiga/town_centers",
+     "use_expansion_hack": true
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  "woodland_mansions": {
+   "id": "minecraft:woodland_mansions",
+   "placement": {
+    "type": "random_spread",
+    "salt": 10387319,
+    "locate_offset": [
+     0,
+     0,
+     0
+    ],
+    "frequency": 1.0,
+    "frequency_reduction_method": "default",
+    "exclusion_zone": null,
+    "spacing": 80,
+    "separation": 20,
+    "spread_type": "triangular",
+    "limit": 60
+   },
+   "structures": [
+    {
+     "id": "minecraft:mansion",
+     "weight": 1,
+     "type": "woodland_mansion",
+     "step": "surface_structures",
+     "biomes_spec": "#minecraft:has_structure/woodland_mansion",
+     "biomes": [
+      "minecraft:dark_forest",
+      "minecraft:pale_garden"
+     ],
+     "dimensions": [
+      "overworld"
+     ],
+     "terrain_adaptation": "none"
+    }
+   ],
+   "dimensions": [
+    "overworld"
+   ]
+  }
+ },
+ "structures": {
+  "ancient_city": {
+   "type": "jigsaw",
+   "step": "underground_decoration",
+   "biomes_spec": "#minecraft:has_structure/ancient_city",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 116,
+    "size": 7,
+    "start_height": {
+     "absolute": -27
+    },
+    "start_jigsaw_name": "minecraft:city_anchor",
+    "start_pool": "minecraft:ancient_city/city_center",
+    "terrain_adaptation": "beard_box",
+    "use_expansion_hack": false
+   }
+  },
+  "bastion_remnant": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/bastion_remnant",
+   "dimensions": [
+    "the_nether"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "size": 6,
+    "start_height": {
+     "absolute": 33
+    },
+    "start_pool": "minecraft:bastion/starts",
+    "use_expansion_hack": false
+   }
+  },
+  "buried_treasure": {
+   "type": "buried_treasure",
+   "step": "underground_structures",
+   "biomes_spec": "#minecraft:has_structure/buried_treasure",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "desert_pyramid": {
+   "type": "desert_pyramid",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/desert_pyramid",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "end_city": {
+   "type": "end_city",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/end_city",
+   "dimensions": [
+    "the_end"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "fortress": {
+   "type": "fortress",
+   "step": "underground_decoration",
+   "biomes_spec": "#minecraft:has_structure/nether_fortress",
+   "dimensions": [
+    "the_nether"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "igloo": {
+   "type": "igloo",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/igloo",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "jungle_pyramid": {
+   "type": "jungle_temple",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/jungle_temple",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "mansion": {
+   "type": "woodland_mansion",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/woodland_mansion",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "mineshaft": {
+   "type": "mineshaft",
+   "step": "underground_structures",
+   "biomes_spec": "#minecraft:has_structure/mineshaft",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "mineshaft_type": "normal"
+   }
+  },
+  "mineshaft_mesa": {
+   "type": "mineshaft",
+   "step": "underground_structures",
+   "biomes_spec": "#minecraft:has_structure/mineshaft_mesa",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "mineshaft_type": "mesa"
+   }
+  },
+  "monument": {
+   "type": "ocean_monument",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ocean_monument",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "nether_fossil": {
+   "type": "nether_fossil",
+   "step": "underground_decoration",
+   "biomes_spec": "#minecraft:has_structure/nether_fossil",
+   "dimensions": [
+    "the_nether"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "height": {
+     "type": "minecraft:uniform",
+     "max_inclusive": {
+      "below_top": 2
+     },
+     "min_inclusive": {
+      "absolute": 32
+     }
+    },
+    "terrain_adaptation": "beard_thin"
+   }
+  },
+  "ocean_ruin_cold": {
+   "type": "ocean_ruin",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ocean_ruin_cold",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "biome_temp": "cold",
+    "cluster_probability": 0.9,
+    "large_probability": 0.3
+   }
+  },
+  "ocean_ruin_warm": {
+   "type": "ocean_ruin",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ocean_ruin_warm",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "biome_temp": "warm",
+    "cluster_probability": 0.9,
+    "large_probability": 0.3
+   }
+  },
+  "pillager_outpost": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/pillager_outpost",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 7,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:pillager_outpost/base_plates",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  },
+  "ruined_portal": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_standard",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 1.0,
+      "can_be_cold": true,
+      "mossiness": 0.2,
+      "overgrown": false,
+      "placement": "underground",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 0.5
+     },
+     {
+      "air_pocket_probability": 0.5,
+      "can_be_cold": true,
+      "mossiness": 0.2,
+      "overgrown": false,
+      "placement": "on_land_surface",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 0.5
+     }
+    ]
+   }
+  },
+  "ruined_portal_desert": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_desert",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 0.0,
+      "can_be_cold": false,
+      "mossiness": 0.0,
+      "overgrown": false,
+      "placement": "partly_buried",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 1.0
+     }
+    ]
+   }
+  },
+  "ruined_portal_jungle": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_jungle",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 0.5,
+      "can_be_cold": false,
+      "mossiness": 0.8,
+      "overgrown": true,
+      "placement": "on_land_surface",
+      "replace_with_blackstone": false,
+      "vines": true,
+      "weight": 1.0
+     }
+    ]
+   }
+  },
+  "ruined_portal_mountain": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_mountain",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 1.0,
+      "can_be_cold": true,
+      "mossiness": 0.2,
+      "overgrown": false,
+      "placement": "in_mountain",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 0.5
+     },
+     {
+      "air_pocket_probability": 0.5,
+      "can_be_cold": true,
+      "mossiness": 0.2,
+      "overgrown": false,
+      "placement": "on_land_surface",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 0.5
+     }
+    ]
+   }
+  },
+  "ruined_portal_nether": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_nether",
+   "dimensions": [
+    "the_nether"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 0.5,
+      "can_be_cold": false,
+      "mossiness": 0.0,
+      "overgrown": false,
+      "placement": "in_nether",
+      "replace_with_blackstone": true,
+      "vines": false,
+      "weight": 1.0
+     }
+    ]
+   }
+  },
+  "ruined_portal_ocean": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_ocean",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 0.0,
+      "can_be_cold": true,
+      "mossiness": 0.8,
+      "overgrown": false,
+      "placement": "on_ocean_floor",
+      "replace_with_blackstone": false,
+      "vines": false,
+      "weight": 1.0
+     }
+    ]
+   }
+  },
+  "ruined_portal_swamp": {
+   "type": "ruined_portal",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/ruined_portal_swamp",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "setups": [
+     {
+      "air_pocket_probability": 0.0,
+      "can_be_cold": false,
+      "mossiness": 0.5,
+      "overgrown": false,
+      "placement": "on_ocean_floor",
+      "replace_with_blackstone": false,
+      "vines": true,
+      "weight": 1.0
+     }
+    ]
+   }
+  },
+  "shipwreck": {
+   "type": "shipwreck",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/shipwreck",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "is_beached": false
+   }
+  },
+  "shipwreck_beached": {
+   "type": "shipwreck",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/shipwreck_beached",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "is_beached": true
+   }
+  },
+  "stronghold": {
+   "type": "stronghold",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/stronghold",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "terrain_adaptation": "bury"
+   }
+  },
+  "swamp_hut": {
+   "type": "swamp_hut",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/swamp_hut",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {}
+  },
+  "trail_ruins": {
+   "type": "jigsaw",
+   "step": "underground_structures",
+   "biomes_spec": "#minecraft:has_structure/trail_ruins",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 7,
+    "start_height": {
+     "absolute": -15
+    },
+    "start_pool": "minecraft:trail_ruins/tower",
+    "terrain_adaptation": "bury",
+    "use_expansion_hack": false
+   }
+  },
+  "trial_chambers": {
+   "type": "jigsaw",
+   "step": "underground_structures",
+   "biomes_spec": "#minecraft:has_structure/trial_chambers",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "dimension_padding": 10,
+    "liquid_settings": "ignore_waterlogging",
+    "max_distance_from_center": 116,
+    "pool_aliases": [
+     {
+      "type": "minecraft:random_group",
+      "groups": [
+       {
+        "data": [
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+          "target": "minecraft:trial_chambers/spawner/ranged/skeleton"
+         },
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+          "target": "minecraft:trial_chambers/spawner/slow_ranged/skeleton"
+         }
+        ],
+        "weight": 1
+       },
+       {
+        "data": [
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+          "target": "minecraft:trial_chambers/spawner/ranged/stray"
+         },
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+          "target": "minecraft:trial_chambers/spawner/slow_ranged/stray"
+         }
+        ],
+        "weight": 1
+       },
+       {
+        "data": [
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/ranged",
+          "target": "minecraft:trial_chambers/spawner/ranged/poison_skeleton"
+         },
+         {
+          "type": "minecraft:direct",
+          "alias": "minecraft:trial_chambers/spawner/contents/slow_ranged",
+          "target": "minecraft:trial_chambers/spawner/slow_ranged/poison_skeleton"
+         }
+        ],
+        "weight": 1
+       }
+      ]
+     },
+     {
+      "type": "minecraft:random",
+      "alias": "minecraft:trial_chambers/spawner/contents/melee",
+      "targets": [
+       {
+        "data": "minecraft:trial_chambers/spawner/melee/zombie",
+        "weight": 1
+       },
+       {
+        "data": "minecraft:trial_chambers/spawner/melee/husk",
+        "weight": 1
+       },
+       {
+        "data": "minecraft:trial_chambers/spawner/melee/spider",
+        "weight": 1
+       }
+      ]
+     },
+     {
+      "type": "minecraft:random",
+      "alias": "minecraft:trial_chambers/spawner/contents/small_melee",
+      "targets": [
+       {
+        "data": "minecraft:trial_chambers/spawner/small_melee/slime",
+        "weight": 1
+       },
+       {
+        "data": "minecraft:trial_chambers/spawner/small_melee/cave_spider",
+        "weight": 1
+       },
+       {
+        "data": "minecraft:trial_chambers/spawner/small_melee/silverfish",
+        "weight": 1
+       },
+       {
+        "data": "minecraft:trial_chambers/spawner/small_melee/baby_zombie",
+        "weight": 1
+       }
+      ]
+     }
+    ],
+    "size": 20,
+    "start_height": {
+     "type": "minecraft:uniform",
+     "max_inclusive": {
+      "absolute": -20
+     },
+     "min_inclusive": {
+      "absolute": -40
+     }
+    },
+    "start_pool": "minecraft:trial_chambers/chamber/end",
+    "terrain_adaptation": "encapsulate",
+    "use_expansion_hack": false
+   }
+  },
+  "village_desert": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/village_desert",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 6,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:village/desert/town_centers",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  },
+  "village_plains": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/village_plains",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 6,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:village/plains/town_centers",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  },
+  "village_savanna": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/village_savanna",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 6,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:village/savanna/town_centers",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  },
+  "village_snowy": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/village_snowy",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 6,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:village/snowy/town_centers",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  },
+  "village_taiga": {
+   "type": "jigsaw",
+   "step": "surface_structures",
+   "biomes_spec": "#minecraft:has_structure/village_taiga",
+   "dimensions": [
+    "overworld"
+   ],
+   "in_structure_set": true,
+   "params": {
+    "max_distance_from_center": 80,
+    "project_start_to_heightmap": "WORLD_SURFACE_WG",
+    "size": 6,
+    "start_height": {
+     "absolute": 0
+    },
+    "start_pool": "minecraft:village/taiga/town_centers",
+    "terrain_adaptation": "beard_thin",
+    "use_expansion_hack": true
+   }
+  }
+ },
+ "warnings": []
+}

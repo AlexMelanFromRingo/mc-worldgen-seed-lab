@@ -1,0 +1,42 @@
+# Сборка инструментов восстановления seed по слайм-чанкам / башням Края / шахтам (crack-slime, crack-pillars, crack-mineshaft).
+# (отдельное имя Makefile.slp, чтобы не пересекаться с другими сборками в crack/)
+#   make -f Makefile.slp            — CUDA-версии crack-slime / crack-pillars / crack-mineshaft (nvcc, sm_89; ARCH=sm_86 для другой карты) в crack/bin/
+#   make -f Makefile.slp cpu        — CPU-only версии (g++ + OpenMP, без CUDA) в crack/bin/*-cpu
+#   make -f Makefile.slp test       — тесты против oracle для 26.1/26.2/26.3 (crack/tests/slime_pillars/run_tests.sh), ~10-20 мин
+#   make -f Makefile.slp bench      — замеры скорости (run_benches.sh; GPU-прогоны под flock /tmp/gpu.lock)
+#   make -f Makefile.slp clean      — удалить только бинарники этого Makefile
+ARCH   ?= sm_89
+NVCC   ?= nvcc
+NVFLAGS = -O3 -arch=$(ARCH) -std=c++17 -Xcompiler -fopenmp,-O3,-Wall,-Wno-unused-function,-Wno-unused-variable --expt-relaxed-constexpr
+CXX    ?= g++
+CXXFLAGS = -O3 -march=native -std=c++17 -fopenmp -Wall -Wno-unused-function -Wno-unused-variable -DNO_CUDA -x c++
+BIN = bin
+COMMON = $(wildcard src/common/*.h)
+
+TOOLS = slime pillars mineshaft
+all: $(foreach t,$(TOOLS),$(BIN)/crack-$(t))
+cpu: $(foreach t,$(TOOLS),$(BIN)/crack-$(t)-cpu)
+
+$(BIN)/crack-slime: src/slime/crack_slime.cu $(COMMON) | $(BIN)
+	$(NVCC) $(NVFLAGS) -o $@ $<
+$(BIN)/crack-pillars: src/pillars/crack_pillars.cu $(COMMON) | $(BIN)
+	$(NVCC) $(NVFLAGS) -o $@ $<
+$(BIN)/crack-mineshaft: src/mineshaft/crack_mineshaft.cu $(COMMON) | $(BIN)
+	$(NVCC) $(NVFLAGS) -o $@ $<
+
+$(BIN)/crack-slime-cpu: src/slime/crack_slime.cu $(COMMON) | $(BIN)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+$(BIN)/crack-pillars-cpu: src/pillars/crack_pillars.cu $(COMMON) | $(BIN)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+$(BIN)/crack-mineshaft-cpu: src/mineshaft/crack_mineshaft.cu $(COMMON) | $(BIN)
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+$(BIN):
+	mkdir -p $(BIN)
+test: all cpu
+	tests/slime_pillars/run_tests.sh
+bench: all cpu
+	tests/slime_pillars/run_benches.sh
+clean:
+	rm -f $(foreach t,$(TOOLS),$(BIN)/crack-$(t) $(BIN)/crack-$(t)-cpu)
+.PHONY: all cpu test bench clean

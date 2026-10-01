@@ -1,0 +1,34 @@
+# --- материалы Mojang: получайте их сами (make setup / tools/fetch_game.py) ---
+/jars/
+/src/
+/run/
+# --- сторонние клоны для справки (см. README → «Благодарности») ---
+/refs/
+# --- результаты сборки и артефакты ---
+/crack/bin/
+/crack/src/gpu_biomes/obj/
+/oracle/build/
+/oracle/logs/
+/tools/mcquery
+/tools/vineflower.jar
+*.o
+*.obj
+__pycache__/
+*.pyc
+# --- крупные результаты L3 (реальные чанки), воспроизводятся tools/l3_*.py ---
+/data/l3-*.npz
+/data/l3v/
+# --- служебное окружения ассистента ---
+/.remember/
+/.playwright-mcp/
+/PROJECT.md
+/logs/
+research/
+# --- собранные бинарники и артефакты сборки разных языков ---
+target/
+*.class
+/crack/experiments/c/selftest
+/crack/experiments/cuda/struct48
+/tests/unit/test_noise_new
+/tests/unit/test_noise_old
+/tests/unit/out*/

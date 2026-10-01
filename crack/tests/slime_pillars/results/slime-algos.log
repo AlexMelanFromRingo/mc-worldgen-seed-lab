@@ -1,0 +1,41 @@
+PASS cfg00 N=24 M=10 R=32 --mode pos: brute=284 analytic(GPU)=284 analytic(CPU)=284
+PASS cfg01 N=12 M=500 R=64 : brute=11 analytic(GPU)=11 analytic(CPU)=11
+PASS cfg02 N=20 M=500 R=64 --mode pos: brute=606 analytic(GPU)=606 analytic(CPU)=606
+PASS cfg03 N=12 M=100 R=32 --mode pos: brute=135350 analytic(GPU)=135350 analytic(CPU)=135350
+PASS cfg04 N=40 M=10 R=128 --mode pos: brute=12 analytic(GPU)=12 analytic(CPU)=12
+PASS cfg05 N=14 M=0 R=32 --mode pos: brute=4413 analytic(GPU)=4413 analytic(CPU)=4413
+PASS cfg06 N=18 M=10 R=64 : brute=3291 analytic(GPU)=3291 analytic(CPU)=3291
+PASS cfg07 N=200 M=0 R=32 : brute=38 analytic(GPU)=38 analytic(CPU)=38
+PASS cfg08 N=18 M=0 R=128 --mode pos: brute=7677 analytic(GPU)=7677 analytic(CPU)=7677
+PASS cfg09 N=200 M=0 R=128 : brute=24 analytic(GPU)=24 analytic(CPU)=24
+PASS cfg10 N=24 M=100 R=128 : brute=157 analytic(GPU)=157 analytic(CPU)=157
+PASS cfg11 N=100 M=500 R=128 --mode pos: brute=19 analytic(GPU)=19 analytic(CPU)=19
+PASS cfg12 N=20 M=0 R=128 --mode pos: brute=410 analytic(GPU)=410 analytic(CPU)=410
+PASS cfg13 N=24 M=0 R=32 : brute=608 analytic(GPU)=608 analytic(CPU)=608
+PASS cfg14 N=24 M=100 R=128 : brute=113 analytic(GPU)=113 analytic(CPU)=113
+PASS cfg15 N=13 M=10 R=128 : brute=3543 analytic(GPU)=3543 analytic(CPU)=3543
+PASS cfg16 N=40 M=0 R=128 : brute=44 analytic(GPU)=44 analytic(CPU)=44
+PASS cfg17 N=16 M=100 R=64 : brute=813 analytic(GPU)=813 analytic(CPU)=813
+PASS cfg18 N=200 M=500 R=128 : brute=38 analytic(GPU)=38 analytic(CPU)=38
+PASS cfg19 N=30 M=0 R=64 --mode pos: brute=512 analytic(GPU)=512 analytic(CPU)=512
+PASS cfg20 N=12 M=500 R=64 --mode pos: brute=6941 analytic(GPU)=6941 analytic(CPU)=6941
+PASS cfg21 N=64 M=100 R=64 : brute=17 analytic(GPU)=17 analytic(CPU)=17
+PASS cfg22 N=64 M=0 R=128 --mode pos: brute=84 analytic(GPU)=84 analytic(CPU)=84
+PASS cfg23 N=16 M=0 R=128 : brute=2288 analytic(GPU)=2288 analytic(CPU)=2288
+PASS cfg24 N=16 M=10 R=32 --mode pos: brute=6600 analytic(GPU)=6600 analytic(CPU)=6600
+PASS cfg25 N=200 M=100 R=32 : brute=30 analytic(GPU)=30 analytic(CPU)=30
+PASS cfg26 N=40 M=500 R=128 --mode pos: brute=72 analytic(GPU)=72 analytic(CPU)=72
+PASS cfg27 N=13 M=500 R=64 --mode pos: brute=29056 analytic(GPU)=29056 analytic(CPU)=29056
+PASS cfg28 N=20 M=500 R=128 --mode pos: brute=2520 analytic(GPU)=2520 analytic(CPU)=2520
+PASS cfg29 N=100 M=0 R=32 : brute=19 analytic(GPU)=19 analytic(CPU)=19
+PASS cfg30 N=40 M=0 R=64 : brute=222 analytic(GPU)=222 analytic(CPU)=222
+PASS cfg31 N=14 M=0 R=32 --mode pos: brute=20712 analytic(GPU)=20712 analytic(CPU)=20712
+PASS cfg32 N=18 M=100 R=128 : brute=333 analytic(GPU)=333 analytic(CPU)=333
+PASS cfg33 N=24 M=0 R=32 --mode pos: brute=10452 analytic(GPU)=10452 analytic(CPU)=10452
+PASS cfg34 N=64 M=500 R=64 : brute=5 analytic(GPU)=5 analytic(CPU)=5
+PASS cfg35 N=14 M=10 R=32 : brute=1918 analytic(GPU)=1918 analytic(CPU)=1918
+PASS cfg36 N=40 M=500 R=128 --mode pos: brute=67 analytic(GPU)=67 analytic(CPU)=67
+PASS cfg37 N=64 M=100 R=32 : brute=666 analytic(GPU)=666 analytic(CPU)=666
+PASS cfg38 N=13 M=10 R=64 : brute=16809 analytic(GPU)=16809 analytic(CPU)=16809
+PASS cfg39 N=200 M=0 R=128 --mode pos: brute=19 analytic(GPU)=19 analytic(CPU)=19
+== slime algos: 40 конфигураций, расхождений 0, суммарно кандидатов 256793 ==

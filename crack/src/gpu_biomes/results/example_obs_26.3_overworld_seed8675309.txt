@@ -1,0 +1,9 @@
+# seed=8675309 26.3 overworld normal quarts (oracle)
+-2799 16 4325 minecraft:bamboo_jungle
+-3967 16 -821 minecraft:plains
+-3069 16 3117 minecraft:deep_cold_ocean
+2364 16 2737 minecraft:forest
+1219 16 -1561 minecraft:savanna
+-3463 16 2993 minecraft:river
+-4536 16 1386 minecraft:river
+2090 16 4952 minecraft:deep_cold_ocean

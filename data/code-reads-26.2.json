@@ -1,0 +1,3045 @@
+{
+ "levelgen/feature/AbstractHugeMushroomFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 2,
+   "sea level / y bounds": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [
+   "LEAVES",
+   "REPLACEABLE_BY_MUSHROOMS"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 109
+ },
+ "levelgen/feature/BambooFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 2,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 5
+  },
+  "block_tags": [
+   "BENEATH_BAMBOO_PODZOL_REPLACEABLE"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BAMBOO",
+   "PODZOL"
+  ],
+  "heightmaps": [
+   "WORLD_SURFACE"
+  ],
+  "rng_calls": 3,
+  "lines": 76
+ },
+ "levelgen/feature/BasaltColumnsFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "isEmptyBlock/isAir": 3,
+   "sea level / y bounds": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BASALT",
+   "BEDROCK",
+   "CHEST",
+   "LAVA",
+   "MAGMA_BLOCK",
+   "NETHER_BRICKS",
+   "NETHER_BRICK_FENCE",
+   "NETHER_BRICK_STAIRS",
+   "NETHER_WART",
+   "SOUL_SAND",
+   "SPAWNER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 147
+ },
+ "levelgen/feature/BasaltPillarFeature": {
+  "reads": {
+   "isEmptyBlock/isAir": 5,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 4
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BASALT"
+  ],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 93
+ },
+ "levelgen/feature/BlockBlobFeature": {
+  "reads": {
+   "sea level / y bounds": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 6,
+  "lines": 46
+ },
+ "levelgen/feature/BlockColumnFeature": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 72
+ },
+ "levelgen/feature/BlockPileFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "DIRT_PATH"
+  ],
+  "heightmaps": [],
+  "rng_calls": 6,
+  "lines": 55
+ },
+ "levelgen/feature/BlueIceFeature": {
+  "reads": {
+   "getBlockState": 5,
+   "isEmptyBlock/isAir": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BLUE_ICE",
+   "ICE",
+   "PACKED_ICE",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 6,
+  "lines": 69
+ },
+ "levelgen/feature/BonusChestFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2,
+   "blockEntity/loot": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "CHEST",
+   "TORCH"
+  ],
+  "heightmaps": [
+   "MOTION_BLOCKING_NO_LEAVES"
+  ],
+  "rng_calls": 0,
+  "lines": 62
+ },
+ "levelgen/feature/ChorusPlantFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1
+  },
+  "writes": {},
+  "block_tags": [
+   "SUPPORTS_CHORUS_PLANT"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 28
+ },
+ "levelgen/feature/ConfiguredFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/feature/CoralClawFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 68
+ },
+ "levelgen/feature/CoralFeature": {
+  "reads": {
+   "getBlockState": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 4
+  },
+  "block_tags": [
+   "CORALS",
+   "CORAL_BLOCKS",
+   "WALL_CORALS"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SEA_PICKLE",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 71
+ },
+ "levelgen/feature/CoralMushroomFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 42
+ },
+ "levelgen/feature/CoralTreeFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 52
+ },
+ "levelgen/feature/DeltaFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2,
+   "entities": 4
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BEDROCK",
+   "CHEST",
+   "NETHER_BRICKS",
+   "NETHER_BRICK_FENCE",
+   "NETHER_BRICK_STAIRS",
+   "NETHER_WART",
+   "SPAWNER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 82
+ },
+ "levelgen/feature/DesertWellFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 3,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 17,
+   "blockEntity/loot": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SAND",
+   "SANDSTONE",
+   "SANDSTONE_SLAB",
+   "SUSPICIOUS_SAND",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 113
+ },
+ "levelgen/feature/DiskFeature": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 65
+ },
+ "levelgen/feature/EndGatewayFeature": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 5,
+   "blockEntity/loot": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "BEDROCK",
+   "END_GATEWAY"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 47
+ },
+ "levelgen/feature/EndIslandFeature": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "END_STONE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 37
+ },
+ "levelgen/feature/EndPlatformFeature": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "OBSIDIAN"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 40
+ },
+ "levelgen/feature/EndPodiumFeature": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 8
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "BEDROCK",
+   "END_PORTAL",
+   "END_STONE",
+   "WALL_TORCH"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 83
+ },
+ "levelgen/feature/EndSpikeFeature": {
+  "reads": {
+   "getHeight(heightmap)": 4,
+   "sea level / y bounds": 6,
+   "world seed": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 5,
+   "entities": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "BEDROCK",
+   "IRON_BARS",
+   "OBSIDIAN"
+  ],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 197
+ },
+ "levelgen/feature/FallenTreeFeature": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 141
+ },
+ "levelgen/feature/Feature": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 1,
+   "getChunk/hasChunk": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2,
+   "postProcessing/fluid tick": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 224
+ },
+ "levelgen/feature/FeatureCountTracker": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 89
+ },
+ "levelgen/feature/FeaturePlaceContext": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 57
+ },
+ "levelgen/feature/FillLayerFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/feature/FossilFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 3,
+   "structureManager": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "LAVA",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 2,
+  "lines": 81
+ },
+ "levelgen/feature/FossilFeatureConfiguration": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 50
+ },
+ "levelgen/feature/GeodeFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "getFluidState": 2,
+   "isEmptyBlock/isAir": 1,
+   "noise (Perlin/Simplex/Normal)": 4,
+   "world seed": 1
+  },
+  "writes": {
+   "postProcessing/fluid tick": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR"
+  ],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 175
+ },
+ "levelgen/feature/GlowstoneFeature": {
+  "reads": {
+   "getBlockState": 3,
+   "isEmptyBlock/isAir": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BASALT",
+   "BLACKSTONE",
+   "GLOWSTONE",
+   "NETHERRACK"
+  ],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 56
+ },
+ "levelgen/feature/HugeBrownMushroomFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 62
+ },
+ "levelgen/feature/HugeFungusConfiguration": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 43
+ },
+ "levelgen/feature/HugeFungusFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "isStateAtPosition": 1,
+   "isEmptyBlock/isAir": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 8
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "NETHER_WART_BLOCK"
+  ],
+  "heightmaps": [],
+  "rng_calls": 13,
+  "lines": 206
+ },
+ "levelgen/feature/HugeRedMushroomFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 70
+ },
+ "levelgen/feature/IcebergFeature": {
+  "reads": {
+   "getBlockState": 9,
+   "isEmptyBlock/isAir": 2,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 8
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "BLUE_ICE",
+   "ICE",
+   "PACKED_ICE",
+   "SNOW",
+   "SNOW_BLOCK",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 34,
+  "lines": 296
+ },
+ "levelgen/feature/KelpFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "KELP",
+   "KELP_PLANT",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR"
+  ],
+  "rng_calls": 3,
+  "lines": 54
+ },
+ "levelgen/feature/LakeFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "getFluidState": 1,
+   "isEmptyBlock/isAir": 1,
+   "getBiome": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 3,
+   "postProcessing/fluid tick": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [
+   "WATER"
+  ],
+  "biome_tags": [],
+  "blocks": [
+   "CAVE_AIR",
+   "ICE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 8,
+  "lines": 172
+ },
+ "levelgen/feature/LargeDripstoneFeature": {
+  "reads": {
+   "getBlockState": 3,
+   "getHeight(heightmap)": 4,
+   "sea level / y bounds": 6
+  },
+  "writes": {
+   "setBlock/setBlockState": 4
+  },
+  "block_tags": [
+   "BASE_STONE_OVERWORLD"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "CREEPER_HEAD",
+   "DIAMOND_BLOCK",
+   "DRIPSTONE_BLOCK",
+   "GLASS",
+   "GOLD_BLOCK",
+   "LAVA"
+  ],
+  "heightmaps": [
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 1,
+  "lines": 235
+ },
+ "levelgen/feature/MonsterRoomFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "isEmptyBlock/isAir": 3,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "blockEntity/loot": 4,
+   "entities": 3
+  },
+  "block_tags": [
+   "FEATURES_CANNOT_REPLACE"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "CAVE_AIR",
+   "CHEST",
+   "COBBLESTONE",
+   "MOSSY_COBBLESTONE",
+   "SPAWNER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 132
+ },
+ "levelgen/feature/MultifaceGrowthFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "isEmptyBlock/isAir": 1,
+   "getChunk/hasChunk": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "postProcessing/fluid tick": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 93
+ },
+ "levelgen/feature/NetherForestVegetationFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "sea level / y bounds": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [
+   "NYLIUM"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 6,
+  "lines": 49
+ },
+ "levelgen/feature/NoOpFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 15
+ },
+ "levelgen/feature/OreFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 5,
+  "lines": 190
+ },
+ "levelgen/feature/RandomBooleanSelectorFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 25
+ },
+ "levelgen/feature/RandomSelectorFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 31
+ },
+ "levelgen/feature/ReplaceBlobsFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "sea level / y bounds": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 63
+ },
+ "levelgen/feature/ReplaceBlockFeature": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 29
+ },
+ "levelgen/feature/RootSystemFeature": {
+  "reads": {
+   "getBlockState": 7,
+   "getFluidState": 2,
+   "isEmptyBlock/isAir": 5,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [
+   "LAVA",
+   "WATER"
+  ],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "WORLD_SURFACE"
+  ],
+  "rng_calls": 10,
+  "lines": 164
+ },
+ "levelgen/feature/ScatteredOreFeature": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 53
+ },
+ "levelgen/feature/SculkPatchFeature": {
+  "reads": {
+   "getBlockState": 5,
+   "getFluidState": 1,
+   "isEmptyBlock/isAir": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SCULK_CATALYST",
+   "SCULK_SHRIEKER",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 75
+ },
+ "levelgen/feature/SeaPickleFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SEA_PICKLE",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR"
+  ],
+  "rng_calls": 5,
+  "lines": 40
+ },
+ "levelgen/feature/SeagrassFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SEAGRASS",
+   "TALL_SEAGRASS",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR"
+  ],
+  "rng_calls": 5,
+  "lines": 51
+ },
+ "levelgen/feature/SequenceFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 23
+ },
+ "levelgen/feature/SimpleBlockFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "postProcessing/fluid tick": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 48
+ },
+ "levelgen/feature/SimpleRandomSelectorFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 27
+ },
+ "levelgen/feature/SnowAndFreezeFeature": {
+  "reads": {
+   "getBlockState": 1,
+   "getHeight(heightmap)": 1,
+   "getBiome": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "ICE",
+   "SNOW"
+  ],
+  "heightmaps": [
+   "MOTION_BLOCKING"
+  ],
+  "rng_calls": 0,
+  "lines": 50
+ },
+ "levelgen/feature/SpeleothemClusterFeature": {
+  "reads": {
+   "getBlockState": 4,
+   "getFluidState": 2,
+   "getHeight(heightmap)": 2,
+   "sea level / y bounds": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [
+   "BASE_STONE_OVERWORLD"
+  ],
+  "fluid_tags": [
+   "WATER"
+  ],
+  "biome_tags": [],
+  "blocks": [
+   "LAVA",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 236
+ },
+ "levelgen/feature/SpeleothemFeature": {
+  "reads": {
+   "getBlockState": 3
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 71
+ },
+ "levelgen/feature/SpeleothemUtils": {
+  "reads": {
+   "getBlockState": 2,
+   "isStateAtPosition": 2,
+   "isEmptyBlock/isAir": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "LAVA",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 137
+ },
+ "levelgen/feature/SpikeFeature": {
+  "reads": {
+   "getBlockState": 3,
+   "isEmptyBlock/isAir": 4,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 9,
+  "lines": 100
+ },
+ "levelgen/feature/SpringFeature": {
+  "reads": {
+   "getBlockState": 8,
+   "isEmptyBlock/isAir": 6
+  },
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "postProcessing/fluid tick": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 83
+ },
+ "levelgen/feature/TemplateFeature": {
+  "reads": {
+   "structureManager": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 40
+ },
+ "levelgen/feature/TreeFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isStateAtPosition": 3,
+   "isEmptyBlock/isAir": 2,
+   "sea level / y bounds": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 5
+  },
+  "block_tags": [
+   "LEAVES",
+   "REPLACEABLE_BY_TREES"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "VINE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 249
+ },
+ "levelgen/feature/TwistingVinesFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 4,
+   "sea level / y bounds": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "NETHERRACK",
+   "TWISTING_VINES",
+   "TWISTING_VINES_PLANT",
+   "WARPED_NYLIUM",
+   "WARPED_WART_BLOCK"
+  ],
+  "heightmaps": [],
+  "rng_calls": 7,
+  "lines": 96
+ },
+ "levelgen/feature/UnderwaterMagmaFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "MAGMA_BLOCK",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 82
+ },
+ "levelgen/feature/VegetationPatchFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "isStateAtPosition": 2,
+   "isEmptyBlock/isAir": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 136
+ },
+ "levelgen/feature/VinesFeature": {
+  "reads": {
+   "isEmptyBlock/isAir": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "VINE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/feature/VoidStartPlatformFeature": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "COBBLESTONE",
+   "STONE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 50
+ },
+ "levelgen/feature/WaterloggedVegetationPatchFeature": {
+  "reads": {
+   "getBlockState": 2,
+   "noise (Perlin/Simplex/Normal)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 81
+ },
+ "levelgen/feature/WeepingVinesFeature": {
+  "reads": {
+   "getBlockState": 3,
+   "isEmptyBlock/isAir": 5
+  },
+  "writes": {
+   "setBlock/setBlockState": 4
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "NETHERRACK",
+   "NETHER_WART_BLOCK",
+   "WEEPING_VINES",
+   "WEEPING_VINES_PLANT"
+  ],
+  "heightmaps": [],
+  "rng_calls": 16,
+  "lines": 110
+ },
+ "levelgen/feature/WeightedPlacedFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 22
+ },
+ "levelgen/feature/WeightedRandomSelectorFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 28
+ },
+ "levelgen/placement/BiomeFilter": {
+  "reads": {
+   "getBiome": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 32
+ },
+ "levelgen/placement/BlockPredicateFilter": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 32
+ },
+ "levelgen/placement/CaveSurface": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/placement/CountOnEveryLayerPlacement": {
+  "reads": {
+   "getBlockState": 2,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BEDROCK",
+   "LAVA",
+   "WATER"
+  ],
+  "heightmaps": [
+   "MOTION_BLOCKING"
+  ],
+  "rng_calls": 2,
+  "lines": 90
+ },
+ "levelgen/placement/CountPlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 35
+ },
+ "levelgen/placement/EnvironmentScanPlacement": {
+  "reads": {
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 77
+ },
+ "levelgen/placement/FixedPlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 49
+ },
+ "levelgen/placement/HeightRangePlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 44
+ },
+ "levelgen/placement/HeightmapPlacement": {
+  "reads": {
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "CODEC"
+  ],
+  "rng_calls": 0,
+  "lines": 36
+ },
+ "levelgen/placement/InSquarePlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 27
+ },
+ "levelgen/placement/NoiseBasedCountPlacement": {
+  "reads": {
+   "noise (Perlin/Simplex/Normal)": 3
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 43
+ },
+ "levelgen/placement/NoiseThresholdCountPlacement": {
+  "reads": {
+   "noise (Perlin/Simplex/Normal)": 19
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 43
+ },
+ "levelgen/placement/PlacedFeature": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 71
+ },
+ "levelgen/placement/PlacementContext": {
+  "reads": {
+   "getBlockState": 1,
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 2,
+   "getChunk/hasChunk": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 53
+ },
+ "levelgen/placement/PlacementFilter": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 14
+ },
+ "levelgen/placement/PlacementModifier": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 17
+ },
+ "levelgen/placement/PlacementModifierType": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 31
+ },
+ "levelgen/placement/RandomOffsetPlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 57
+ },
+ "levelgen/placement/RarityFilter": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 29
+ },
+ "levelgen/placement/RepeatingPlacement": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 15
+ },
+ "levelgen/placement/SurfaceRelativeThresholdFilter": {
+  "reads": {
+   "getHeight(heightmap)": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "CODEC"
+  ],
+  "rng_calls": 0,
+  "lines": 45
+ },
+ "levelgen/placement/SurfaceWaterDepthFilter": {
+  "reads": {
+   "getHeight(heightmap)": 2
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR",
+   "WORLD_SURFACE"
+  ],
+  "rng_calls": 0,
+  "lines": 35
+ },
+ "levelgen/carver/CanyonCarverConfiguration": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 81
+ },
+ "levelgen/carver/CanyonWorldCarver": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 15,
+  "lines": 156
+ },
+ "levelgen/carver/CarverConfiguration": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 49
+ },
+ "levelgen/carver/CarverDebugSettings": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "ACACIA_BUTTON",
+   "CANDLE",
+   "GLASS",
+   "STAINED_GLASS"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 75
+ },
+ "levelgen/carver/CarvingContext": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 54
+ },
+ "levelgen/carver/CaveCarverConfiguration": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 74
+ },
+ "levelgen/carver/CaveWorldCarver": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 31,
+  "lines": 236
+ },
+ "levelgen/carver/ConfiguredWorldCarver": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 44
+ },
+ "levelgen/carver/NetherWorldCarver": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 63
+ },
+ "levelgen/carver/WorldCarver": {
+  "reads": {
+   "getBlockState": 2,
+   "getFluidState": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 4,
+   "postProcessing/fluid tick": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CAVE_AIR",
+   "DIRT",
+   "GRASS_BLOCK",
+   "LAVA",
+   "MYCELIUM",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 227
+ },
+ "levelgen/structure/structures/BuriedTreasurePieces": {
+  "reads": {
+   "getBlockState": 4,
+   "isEmptyBlock/isAir": 3,
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 1,
+   "structureManager": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "ANDESITE",
+   "DIORITE",
+   "GRANITE",
+   "LAVA",
+   "SAND",
+   "SANDSTONE",
+   "STONE",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 84
+ },
+ "levelgen/structure/structures/BuriedTreasureStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 32
+ },
+ "levelgen/structure/structures/DesertPyramidPiece": {
+  "reads": {
+   "structureManager": 3,
+   "world seed": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 147
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CHISELED_SANDSTONE",
+   "CUT_SANDSTONE",
+   "DYED_TERRACOTTA",
+   "SAND",
+   "SANDSTONE",
+   "SANDSTONE_SLAB",
+   "SANDSTONE_STAIRS",
+   "STONE_PRESSURE_PLATE",
+   "TNT"
+  ],
+  "heightmaps": [],
+  "rng_calls": 5,
+  "lines": 435
+ },
+ "levelgen/structure/structures/DesertPyramidStructure": {
+  "reads": {
+   "structureManager": 3,
+   "world seed": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 2,
+   "blockEntity/loot": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SAND",
+   "SUSPICIOUS_SAND"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 81
+ },
+ "levelgen/structure/structures/EndCityPieces": {
+  "reads": {},
+  "writes": {
+   "blockEntity/loot": 3,
+   "entities": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 16,
+  "lines": 449
+ },
+ "levelgen/structure/structures/EndCityStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 42
+ },
+ "levelgen/structure/structures/IglooPieces": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 1,
+   "structureManager": 4
+  },
+  "writes": {
+   "setBlock/setBlockState": 2,
+   "blockEntity/loot": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "LADDER",
+   "SNOW_BLOCK"
+  ],
+  "heightmaps": [
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 3,
+  "lines": 152
+ },
+ "levelgen/structure/structures/IglooStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 38
+ },
+ "levelgen/structure/structures/JigsawStructure": {
+  "reads": {
+   "world seed": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "CODEC"
+  ],
+  "rng_calls": 0,
+  "lines": 199
+ },
+ "levelgen/structure/structures/JungleTemplePiece": {
+  "reads": {
+   "structureManager": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 71
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CHISELED_STONE_BRICKS",
+   "COBBLESTONE",
+   "COBBLESTONE_STAIRS",
+   "LEVER",
+   "MOSSY_COBBLESTONE",
+   "REDSTONE_WIRE",
+   "REPEATER",
+   "STICKY_PISTON",
+   "TRIPWIRE",
+   "TRIPWIRE_HOOK",
+   "VINE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 368
+ },
+ "levelgen/structure/structures/JungleTempleStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 19
+ },
+ "levelgen/structure/structures/MineshaftPieces": {
+  "reads": {
+   "getBlockState": 14,
+   "isEmptyBlock/isAir": 5,
+   "getBiome": 1,
+   "sea level / y bounds": 3,
+   "structureManager": 9
+  },
+  "writes": {
+   "setBlock/setBlockState": 7,
+   "blockEntity/loot": 2,
+   "entities": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [
+   "MINESHAFT_BLOCKING"
+  ],
+  "blocks": [
+   "COBWEB",
+   "IRON_CHAIN",
+   "LAVA",
+   "RAIL",
+   "SPAWNER",
+   "WALL_TORCH"
+  ],
+  "heightmaps": [],
+  "rng_calls": 42,
+  "lines": 1386
+ },
+ "levelgen/structure/structures/MineshaftStructure": {
+  "reads": {
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 2
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "DARK_OAK_FENCE",
+   "DARK_OAK_LOG",
+   "DARK_OAK_PLANKS",
+   "OAK_FENCE",
+   "OAK_LOG",
+   "OAK_PLANKS"
+  ],
+  "heightmaps": [
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 1,
+  "lines": 115
+ },
+ "levelgen/structure/structures/NetherFortressPieces": {
+  "reads": {
+   "structureManager": 29
+  },
+  "writes": {
+   "setBlock/setBlockState": 54,
+   "postProcessing/fluid tick": 1,
+   "blockEntity/loot": 1,
+   "entities": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "LAVA",
+   "NETHER_BRICKS",
+   "NETHER_BRICK_FENCE",
+   "NETHER_BRICK_STAIRS",
+   "NETHER_WART",
+   "SOUL_SAND",
+   "SPAWNER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 11,
+  "lines": 1630
+ },
+ "levelgen/structure/structures/NetherFortressStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 58
+ },
+ "levelgen/structure/structures/NetherFossilPieces": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 1,
+   "structureManager": 4,
+   "world seed": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "DRIED_GHAST"
+  ],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 116
+ },
+ "levelgen/structure/structures/NetherFossilStructure": {
+  "reads": {
+   "isEmptyBlock/isAir": 1,
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "SOUL_SAND"
+  ],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 62
+ },
+ "levelgen/structure/structures/OceanMonumentPieces": {
+  "reads": {
+   "sea level / y bounds": 2,
+   "structureManager": 26
+  },
+  "writes": {
+   "setBlock/setBlockState": 138,
+   "entities": 5
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "BLUE_ICE",
+   "DARK_PRISMARINE",
+   "GOLD_BLOCK",
+   "ICE",
+   "PACKED_ICE",
+   "PRISMARINE",
+   "PRISMARINE_BRICKS",
+   "SEA_LANTERN",
+   "WATER",
+   "WET_SPONGE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 7,
+  "lines": 1988
+ },
+ "levelgen/structure/structures/OceanMonumentStructure": {
+  "reads": {
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [
+   "REQUIRED_OCEAN_MONUMENT_SURROUNDING"
+  ],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 78
+ },
+ "levelgen/structure/structures/OceanRuinPieces": {
+  "reads": {
+   "getBlockState": 2,
+   "getFluidState": 3,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 2,
+   "sea level / y bounds": 2,
+   "structureManager": 4
+  },
+  "writes": {
+   "setBlock/setBlockState": 3,
+   "blockEntity/loot": 2,
+   "entities": 1
+  },
+  "block_tags": [
+   "ICE"
+  ],
+  "fluid_tags": [
+   "WATER"
+  ],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CHEST",
+   "GRAVEL",
+   "SAND",
+   "SUSPICIOUS_GRAVEL",
+   "SUSPICIOUS_SAND",
+   "WATER"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 22,
+  "lines": 400
+ },
+ "levelgen/structure/structures/OceanRuinStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 77
+ },
+ "levelgen/structure/structures/RuinedPortalPiece": {
+  "reads": {
+   "getBlockState": 6,
+   "isEmptyBlock/isAir": 3,
+   "getHeight(heightmap)": 1,
+   "structureManager": 4
+  },
+  "writes": {
+   "setBlock/setBlockState": 4
+  },
+  "block_tags": [
+   "FEATURES_CANNOT_REPLACE"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "GOLD_BLOCK",
+   "JUNGLE_LEAVES",
+   "LAVA",
+   "MAGMA_BLOCK",
+   "NETHERRACK",
+   "OBSIDIAN",
+   "VINE"
+  ],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG",
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 5,
+  "lines": 346
+ },
+ "levelgen/structure/structures/RuinedPortalStructure": {
+  "reads": {
+   "getHeight(heightmap)": 1,
+   "sea level / y bounds": 2
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG",
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 7,
+  "lines": 269
+ },
+ "levelgen/structure/structures/ShipwreckPieces": {
+  "reads": {
+   "getHeight(heightmap)": 2,
+   "sea level / y bounds": 1,
+   "structureManager": 5
+  },
+  "writes": {
+   "blockEntity/loot": 3
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG",
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 1,
+  "lines": 190
+ },
+ "levelgen/structure/structures/ShipwreckStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "OCEAN_FLOOR_WG",
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 56
+ },
+ "levelgen/structure/structures/StrongholdPieces": {
+  "reads": {
+   "structureManager": 25
+  },
+  "writes": {
+   "setBlock/setBlockState": 196,
+   "blockEntity/loot": 1,
+   "entities": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BOOKSHELF",
+   "CAVE_AIR",
+   "COBBLESTONE",
+   "COBBLESTONE_STAIRS",
+   "COBWEB",
+   "CRACKED_STONE_BRICKS",
+   "END_PORTAL",
+   "END_PORTAL_FRAME",
+   "INFESTED_STONE_BRICKS",
+   "IRON_BARS",
+   "IRON_DOOR",
+   "LADDER",
+   "LAVA",
+   "MOSSY_STONE_BRICKS",
+   "OAK_DOOR",
+   "OAK_FENCE",
+   "OAK_PLANKS",
+   "SMOOTH_STONE_SLAB",
+   "SPAWNER",
+   "STONE_BRICKS",
+   "STONE_BRICK_SLAB",
+   "STONE_BRICK_STAIRS",
+   "STONE_BUTTON",
+   "TORCH",
+   "WALL_TORCH",
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 11,
+  "lines": 1766
+ },
+ "levelgen/structure/structures/StrongholdStructure": {
+  "reads": {
+   "sea level / y bounds": 2,
+   "world seed": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 50
+ },
+ "levelgen/structure/structures/SwampHutPiece": {
+  "reads": {
+   "structureManager": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 14,
+   "entities": 14
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CAULDRON",
+   "CRAFTING_TABLE",
+   "OAK_FENCE",
+   "OAK_LOG",
+   "POTTED_RED_MUSHROOM",
+   "SPRUCE_PLANKS",
+   "SPRUCE_STAIRS"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 130
+ },
+ "levelgen/structure/structures/SwampHutStructure": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [
+   "WORLD_SURFACE_WG"
+  ],
+  "rng_calls": 0,
+  "lines": 30
+ },
+ "levelgen/structure/structures/WoodlandMansionPieces": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "entities": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "AIR",
+   "CHEST"
+  ],
+  "heightmaps": [],
+  "rng_calls": 20,
+  "lines": 1303
+ },
+ "levelgen/structure/structures/WoodlandMansionStructure": {
+  "reads": {
+   "getBlockState": 1,
+   "isEmptyBlock/isAir": 2,
+   "sea level / y bounds": 1,
+   "structureManager": 3
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "COBBLESTONE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 81
+ },
+ "levelgen/material/MaterialRuleList": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 20
+ },
+ "levelgen/blockpredicates/AllOfPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 29
+ },
+ "levelgen/blockpredicates/AnyOfPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 29
+ },
+ "levelgen/blockpredicates/BlockPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [
+   "AIR"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "WATER"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 147
+ },
+ "levelgen/blockpredicates/BlockPredicateType": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 28
+ },
+ "levelgen/blockpredicates/CombiningPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 18
+ },
+ "levelgen/blockpredicates/HasSturdyFacePredicate": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 35
+ },
+ "levelgen/blockpredicates/InsideWorldBoundsPredicate": {
+  "reads": {
+   "sea level / y bounds": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 27
+ },
+ "levelgen/blockpredicates/MatchingBiomesPredicate": {
+  "reads": {
+   "getBiome": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 30
+ },
+ "levelgen/blockpredicates/MatchingBlockTagPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 31
+ },
+ "levelgen/blockpredicates/MatchingBlocksPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/blockpredicates/MatchingFluidsPredicate": {
+  "reads": {
+   "getFluidState": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/blockpredicates/NotPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 26
+ },
+ "levelgen/blockpredicates/ReplaceablePredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 24
+ },
+ "levelgen/blockpredicates/SolidPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 25
+ },
+ "levelgen/blockpredicates/StateTestingPredicate": {
+  "reads": {
+   "getBlockState": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 27
+ },
+ "levelgen/blockpredicates/TrueBlockPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 22
+ },
+ "levelgen/blockpredicates/UnobstructedPredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 23
+ },
+ "levelgen/blockpredicates/WouldSurvivePredicate": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 33
+ },
+ "levelgen/feature/treedecorators/AlterGroundDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 70
+ },
+ "levelgen/feature/treedecorators/AttachedToLeavesDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 87
+ },
+ "levelgen/feature/treedecorators/AttachedToLogsDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 50
+ },
+ "levelgen/feature/treedecorators/BeehiveDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1,
+   "blockEntity/loot": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "BEE_NEST"
+  ],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 69
+ },
+ "levelgen/feature/treedecorators/CocoaDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "COCOA"
+  ],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 52
+ },
+ "levelgen/feature/treedecorators/CreakingHeartDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [
+   "LOGS"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "CREAKING_HEART"
+  ],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 61
+ },
+ "levelgen/feature/treedecorators/LeaveVineDecorator": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 68
+ },
+ "levelgen/feature/treedecorators/PaleMossDecorator": {
+  "reads": {},
+  "writes": {
+   "setBlock/setBlockState": 2
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "PALE_HANGING_MOSS"
+  ],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 84
+ },
+ "levelgen/feature/treedecorators/PlaceOnGroundDecorator": {
+  "reads": {
+   "isStateAtPosition": 1,
+   "isEmptyBlock/isAir": 1,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "VINE"
+  ],
+  "heightmaps": [
+   "MOTION_BLOCKING_NO_LEAVES"
+  ],
+  "rng_calls": 3,
+  "lines": 86
+ },
+ "levelgen/feature/treedecorators/TreeDecorator": {
+  "reads": {
+   "isStateAtPosition": 2
+  },
+  "writes": {
+   "setBlock/setBlockState": 1
+  },
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [
+   "VINE"
+  ],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 89
+ },
+ "levelgen/feature/treedecorators/TreeDecoratorType": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 31
+ },
+ "levelgen/feature/treedecorators/TrunkVineDecorator": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 50
+ },
+ "levelgen/feature/trunkplacers/BendingTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 90
+ },
+ "levelgen/feature/trunkplacers/CherryTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 185
+ },
+ "levelgen/feature/trunkplacers/DarkOakTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 89
+ },
+ "levelgen/feature/trunkplacers/FancyTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 201
+ },
+ "levelgen/feature/trunkplacers/ForkingTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 4,
+  "lines": 93
+ },
+ "levelgen/feature/trunkplacers/GiantTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 69
+ },
+ "levelgen/feature/trunkplacers/MegaJungleTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 57
+ },
+ "levelgen/feature/trunkplacers/StraightTrunkPlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 44
+ },
+ "levelgen/feature/trunkplacers/TrunkPlacer": {
+  "reads": {
+   "isStateAtPosition": 1,
+   "getHeight(heightmap)": 1
+  },
+  "writes": {},
+  "block_tags": [
+   "LOGS"
+  ],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 2,
+  "lines": 120
+ },
+ "levelgen/feature/trunkplacers/TrunkPlacerType": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 32
+ },
+ "levelgen/feature/trunkplacers/UpwardsBranchingTrunkPlacer": {
+  "reads": {
+   "isStateAtPosition": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 140
+ },
+ "levelgen/feature/foliageplacers/AcaciaFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 51
+ },
+ "levelgen/feature/foliageplacers/BlobFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 59
+ },
+ "levelgen/feature/foliageplacers/BushFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 44
+ },
+ "levelgen/feature/foliageplacers/CherryFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 3,
+  "lines": 102
+ },
+ "levelgen/feature/foliageplacers/DarkOakFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 72
+ },
+ "levelgen/feature/foliageplacers/FancyFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 45
+ },
+ "levelgen/feature/foliageplacers/FoliagePlacer": {
+  "reads": {
+   "isStateAtPosition": 1,
+   "isFluidAtPosition": 1
+  },
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 218
+ },
+ "levelgen/feature/foliageplacers/FoliagePlacerType": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 34
+ },
+ "levelgen/feature/foliageplacers/MegaJungleFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 56
+ },
+ "levelgen/feature/foliageplacers/MegaPineFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 0,
+  "lines": 70
+ },
+ "levelgen/feature/foliageplacers/PineFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 65
+ },
+ "levelgen/feature/foliageplacers/RandomSpreadFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 6,
+  "lines": 73
+ },
+ "levelgen/feature/foliageplacers/SpruceFoliagePlacer": {
+  "reads": {},
+  "writes": {},
+  "block_tags": [],
+  "fluid_tags": [],
+  "biome_tags": [],
+  "blocks": [],
+  "heightmaps": [],
+  "rng_calls": 1,
+  "lines": 66
+ }
+}

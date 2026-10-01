@@ -1,0 +1,245 @@
+[
+ {
+  "case": "4 liftable (desert_pyramids+igloos+villages+shipwrecks)",
+  "gpu_lift": {
+   "search_min": 0.0033,
+   "search_med": 0.0034,
+   "kernel_min": 0.0001,
+   "cands": [
+    2,
+    1,
+    2
+   ],
+   "hit": true,
+   "nx": "2"
+  },
+  "gpu_nolift": {
+   "search_min": 0.0389,
+   "search_med": 0.0389,
+   "kernel_min": 0.0354,
+   "cands": [
+    1,
+    2,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_lift": {
+   "search_min": 0.0012,
+   "search_med": 0.0029,
+   "kernel_min": 0.0,
+   "cands": [
+    2,
+    1,
+    3
+   ],
+   "hit": true,
+   "nx": "1"
+  },
+  "cpu_nolift": {
+   "search_min": 2.4447,
+   "search_med": 2.4689,
+   "kernel_min": 0.0,
+   "cands": [
+    2,
+    2,
+    2
+   ],
+   "hit": true,
+   "nx": "65536"
+  }
+ },
+ {
+  "case": "6 liftable (+trial_chambers+jungle_temples)",
+  "gpu_lift": {
+   "search_min": 0.0034,
+   "search_med": 0.0035,
+   "kernel_min": 0.0001,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "1"
+  },
+  "gpu_nolift": {
+   "search_min": 0.0401,
+   "search_med": 0.0402,
+   "kernel_min": 0.0363,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_lift": {
+   "search_min": 0.0011,
+   "search_med": 0.008,
+   "kernel_min": 0.0,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "1"
+  }
+ },
+ {
+  "case": "4 без lifting (ocean_monuments+woodland_mansions+ancient_cities+ruined_portals)",
+  "gpu_lift": {
+   "search_min": 0.049,
+   "search_med": 0.0504,
+   "kernel_min": 0.0455,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "gpu_nolift": {
+   "search_min": 0.0494,
+   "search_med": 0.0501,
+   "kernel_min": 0.0459,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_lift": {
+   "search_min": 3.5053,
+   "search_med": 3.514,
+   "kernel_min": 0.0,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_nolift": {
+   "search_min": 3.4757,
+   "search_med": 3.5283,
+   "kernel_min": 0.0,
+   "cands": [
+    1,
+    1,
+    1
+   ],
+   "hit": true,
+   "nx": "65536"
+  }
+ },
+ {
+  "case": "3 liftable + 10 слайм-чанков",
+  "gpu_lift": {
+   "search_min": 0.0033,
+   "search_med": 0.0033,
+   "kernel_min": 0.0001,
+   "cands": [
+    4,
+    4,
+    3
+   ],
+   "hit": true,
+   "nx": "2"
+  },
+  "gpu_nolift": {
+   "search_min": 0.0387,
+   "search_med": 0.0388,
+   "kernel_min": 0.0354,
+   "cands": [
+    3,
+    1,
+    3
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_lift": {
+   "search_min": 0.0012,
+   "search_med": 0.0151,
+   "kernel_min": 0.0,
+   "cands": [
+    4,
+    2,
+    1
+   ],
+   "hit": true,
+   "nx": "1"
+  },
+  "cpu_nolift": {
+   "search_min": 2.4631,
+   "search_med": 2.4911,
+   "kernel_min": 0.0,
+   "cands": [
+    9,
+    2,
+    2
+   ],
+   "hit": true,
+   "nx": "65536"
+  }
+ },
+ {
+  "case": "только 2 liftable (desert_pyramids+villages) — мало информации",
+  "gpu_lift": {
+   "search_min": 0.0038,
+   "search_med": 0.0039,
+   "kernel_min": 0.0004,
+   "cands": [
+    18357,
+    16361,
+    21263
+   ],
+   "hit": true,
+   "nx": "430"
+  },
+  "gpu_nolift": {
+   "search_min": 0.0393,
+   "search_med": 0.0396,
+   "kernel_min": 0.0357,
+   "cands": [
+    15497,
+    35977,
+    10200
+   ],
+   "hit": true,
+   "nx": "65536"
+  },
+  "cpu_lift": {
+   "search_min": 0.0105,
+   "search_med": 0.0136,
+   "kernel_min": 0.0,
+   "cands": [
+    10417,
+    18078,
+    6296
+   ],
+   "hit": true,
+   "nx": "239"
+  },
+  "cpu_nolift": {
+   "search_min": 2.4603,
+   "search_med": 2.4733,
+   "kernel_min": 0.0,
+   "cands": [
+    9329,
+    13586,
+    5209
+   ],
+   "hit": true,
+   "nx": "65536"
+  }
+ }
+]

@@ -1,0 +1,7 @@
+{"ok":true,"cmd":"params","version":"26.1","dim":"the_nether","preset":"normal","kind":"multi_noise","count":5,"quantization":10000,"axes":["temperature","humidity","continentalness","erosion","depth","weirdness"],"point_layout":["tmin","tmax","hmin","hmax","cmin","cmax","emin","emax","dmin","dmax","wmin","wmax","offset","biome"],"palette":["minecraft:nether_wastes","minecraft:soul_sand_valley","minecraft:crimson_forest","minecraft:warped_forest","minecraft:basalt_deltas"],"points":[
+[0,0,0,0,0,0,0,0,0,0,0,0,0,"minecraft:nether_wastes"],
+[0,0,-5000,-5000,0,0,0,0,0,0,0,0,0,"minecraft:soul_sand_valley"],
+[4000,4000,0,0,0,0,0,0,0,0,0,0,0,"minecraft:crimson_forest"],
+[0,0,5000,5000,0,0,0,0,0,0,0,0,3750,"minecraft:warped_forest"],
+[-5000,-5000,0,0,0,0,0,0,0,0,0,0,1750,"minecraft:basalt_deltas"]
+]}

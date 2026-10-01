@@ -1,0 +1,7 @@
+# <structure_set>;chunkX;chunkZ — по одному наблюдению (реальный код игры 26.3, seed 12345)
+desert_pyramids;-44;35
+igloos;-42;16
+villages;-58;-53
+shipwrecks;6;-7
+trial_chambers;-14;4
+swamp_huts;-27;-21

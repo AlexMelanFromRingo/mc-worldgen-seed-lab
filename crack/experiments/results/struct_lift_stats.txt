@@ -1,0 +1,5 @@
+набор={desert_pyramid,igloo,swamp_hut,shipwreck} info=36.2 бит | trials=12 recovered=1 | ложных кандидатов в сумме=49140 (среднее 4095.0) | среднее время 0.081 s | L,lows(последний)=20 3
+набор={desert_pyramid,igloo,swamp_hut,shipwreck,jungle_pyramid} info=45.3 бит | trials=12 recovered=11 | ложных кандидатов в сумме=39022 (среднее 3251.83) | среднее время 0.091 s | L,lows(последний)=20 1
+набор={desert_pyramid,igloo,swamp_hut,shipwreck,trial_chambers,village} info=54.5 бит | trials=12 recovered=12 | ложных кандидатов в сумме=11 (среднее 0.92) | среднее время 0.031 s | L,lows(последний)=20 1
+набор={desert_pyramid,igloo,swamp_hut,shipwreck,trial_chambers,village,trail_ruins,jungle_pyramid} info=73.0 бит | trials=12 recovered=12 | ложных кандидатов в сумме=0 (среднее 0.0) | среднее время 0.042 s | L,lows(последний)=20 1
+набор={village,trial_chambers,trail_ruins,shipwreck,igloo} info=45.5 бит | trials=12 recovered=12 | ложных кандидатов в сумме=194 (среднее 16.17) | среднее время 0.137 s | L,lows(последний)=20 29

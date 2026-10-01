@@ -1,0 +1,9 @@
+# seed=-7048155917072976836 26.3 overworld normal (oracle)
+3940 16 -647 minecraft:deep_ocean
+-3248 16 -1653 minecraft:beach
+-713 16 -3906 minecraft:forest
+4358 16 3624 minecraft:snowy_taiga
+-3714 16 -3808 minecraft:desert
+-1439 16 -2160 minecraft:frozen_ocean
+3380 16 2079 minecraft:snowy_plains
+-4643 16 4672 minecraft:dark_forest

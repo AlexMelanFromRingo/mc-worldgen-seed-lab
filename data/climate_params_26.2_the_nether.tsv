@@ -1,0 +1,7 @@
+# version=26.1/26.2 dim=the_nether preset=normal count=5 quantization=10000 (значение*10000, усечение к 0)
+# columns: tmin tmax hmin hmax cmin cmax emin emax dmin dmax wmin wmax offset biome
+0	0	0	0	0	0	0	0	0	0	0	0	0	minecraft:nether_wastes
+0	0	-5000	-5000	0	0	0	0	0	0	0	0	0	minecraft:soul_sand_valley
+4000	4000	0	0	0	0	0	0	0	0	0	0	0	minecraft:crimson_forest
+0	0	5000	5000	0	0	0	0	0	0	0	0	3750	minecraft:warped_forest
+-5000	-5000	0	0	0	0	0	0	0	0	0	0	1750	minecraft:basalt_deltas
