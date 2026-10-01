@@ -202,34 +202,47 @@ def analyze(paths, off, K, seed=7, blocks_sample=6000):
                 cs = cc + 16 * (k2 - kc)
                 HAk[j] += window_hist(cs, dtree, dxz)
                 TBk[j] += same_cell_table(w, cc, k2, dmap)
-            # (C) блочный тест: случайные блоки глины (того же набора) в окне, dy in [-140,-20]
+            # (C) блочный тест: случайные ДИСКИ глины (все их блоки, компоненты связности) в окне, dy in [-140,-20]; контроль переносит диск целиком
             cb = w.clay_blocks
             if setname == 'wet': cb = cb[cb[:, 3] == 1]
             if len(cb) and len(w.dia_blocks):
                 cbk = w.cell(cb[:, [0, 2]].astype(float))
                 inb = np.array([tuple(k) in interior for k in cbk], bool)
                 cb = cb[inb]; cbk = cbk[inb]
-                if len(cb) > blocks_sample:
-                    sub = rng.choice(len(cb), blocks_sample, replace=False); cb = cb[sub]; cbk = cbk[sub]
+                if len(cb) == 0: continue
+                lab, nc = comps(cb[:, :3].astype(float))
+                order = rng.permutation(nc)
+                sizes = np.bincount(lab, minlength=nc)
+                cum = np.cumsum(sizes[order]); take = order[:max(1, int(np.searchsorted(cum, blocks_sample)) + 1)]
+                sel = np.isin(lab, take)
+                cb = cb[sel]; cbk = cbk[sel]; lab = lab[sel]
                 ncl_int += len(cb)
                 db = w.dia_blocks
-                tr = cKDTree(db[:, [0, 2]].astype(float))
+                dxz = db[:, [0, 2]].astype(float)
+                tr = cKDTree(dxz)
 
                 def bh(src):
-                    H = np.zeros((NB, NB), np.int64)
                     idx = tr.query_ball_point(src[:, [0, 2]].astype(float), r=W + 0.5, p=np.inf)
-                    for i, ii in enumerate(idx):
-                        if not ii: continue
-                        q = db[ii] - src[i][:3]
-                        m = (np.abs(q[:, 0]) <= W) & (np.abs(q[:, 2]) <= W) & (q[:, 1] >= -140) & (q[:, 1] <= -20)
-                        q = q[m]
-                        if len(q): np.add.at(H, (q[:, 0] + W, q[:, 2] + W), 1)
-                    return H
+                    n = np.fromiter((len(i) for i in idx), int, len(idx))
+                    H = np.zeros((NB, NB), np.int64)
+                    if n.sum() == 0: return H
+                    flat = np.concatenate([np.asarray(i, int) for i in idx if len(i)])
+                    q = db[flat] - np.repeat(src[:, :3], n, axis=0)
+                    m = (np.abs(q[:, 0]) <= W) & (np.abs(q[:, 2]) <= W) & (q[:, 1] >= -140) & (q[:, 1] <= -20)
+                    q = q[m]
+                    return np.bincount((q[:, 0] + W) * NB + q[:, 2] + W, minlength=NB * NB).reshape(NB, NB)
                 HC += bh(cb)
                 cells = np.array(sorted(interior))
+                # ссылочная ячейка компоненты — ячейка её первого блока
+                first = {}
+                for i in range(len(lab)): first.setdefault(int(lab[i]), i)
+                labs = np.array(sorted(first)); refk = np.array([cbk[first[int(l)]] for l in labs])
+                pos_of = {int(l): j for j, l in enumerate(labs)}
+                li = np.array([pos_of[int(l)] for l in lab])
                 for j in range(min(K, 24)):
-                    k2 = pick_other(rng, cells, cbk)
-                    cs = cb.copy(); cs[:, 0] += 16 * (k2[:, 0] - cbk[:, 0]); cs[:, 2] += 16 * (k2[:, 1] - cbk[:, 1])
+                    k2 = pick_other(rng, cells, refk)
+                    shift = 16 * (k2 - refk)
+                    cs = cb.copy(); cs[:, 0] += shift[li, 0]; cs[:, 2] += shift[li, 1]
                     HCk[j] += bh(cs)
         out_sets[setname] = dict(nclay=nclay, ndia=ndia_int, n_clay_blocks_used=ncl_int, HA=HA, HAk=HAk, TB=TB, TBk=TBk, HC=HC, HCk=HCk)
     return res, out_sets
@@ -295,3 +308,22 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def power_fraction(Tobs, Tk, cell=(0, 3), target_z=5.0, seed=1):
+    """минимальная доля f пар таблицы B, «сдвинутых» в одну ячейку cell (инъекция искусственной связи), при которой chi2_z > target_z.
+    Показывает чувствительность теста для данной версии (если связь реально есть с долей >= f, она была бы замечена)."""
+    rng = np.random.default_rng(seed)
+    n = int(Tobs.sum())
+    if n < 50: return None
+    base = Tk.mean(axis=0).astype(float).ravel(); p = base / base.sum()
+    for f in np.concatenate([np.arange(0.002, 0.05, 0.002), np.arange(0.05, 0.5, 0.02)]):
+        zs = []
+        for _ in range(5):
+            T = np.zeros(256, np.int64)
+            m = int(round(f * n))
+            T += rng.multinomial(n - m, p)
+            T[cell[0] * 16 + cell[1]] += m
+            zs.append(chi2_stats(T.reshape(16, 16), Tk)['chi2_z'])
+        if np.mean(zs) > target_z: return float(f)
+    return None

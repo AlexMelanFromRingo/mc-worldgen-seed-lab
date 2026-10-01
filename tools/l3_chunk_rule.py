@@ -71,7 +71,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('version'); ap.add_argument('files', nargs='+')
     ap.add_argument('--bio', default='center'); ap.add_argument('--off', type=int, default=0)
-    ap.add_argument('--replay', action='store_true'); ap.add_argument('--json'); ap.add_argument('--minveins', type=int, default=40)
+    ap.add_argument('--replay', action='store_true'); ap.add_argument('--order', default='xzy', help='порядок вызовов nextInt(16) у алмаза: xzy (1.16–1.17: square, range) либо xyz (1.13–1.15: COUNT_RANGE)'); ap.add_argument('--json'); ap.add_argument('--minveins', type=int, default=40)
     a = ap.parse_args()
     worlds = [(world_seed(p), P.World(p, a.off)) for p in a.files]
     print(f'== {a.version}: миров {len(worlds)}, off={a.off}, биом по полю "{a.bio}"')
@@ -105,40 +105,44 @@ def main():
     result = dict(version=a.version, obs=rows)
     if a.replay:
         print('\n-- 2. воспроизведение decorationSeed: индексы фич по биомам')
-        # диамантовые жилы в чанках: ячейки off=0
-        byb = collections.defaultdict(lambda: ([], [], [], [], [], []))      # b -> (seedidx, cx, cz, fx, fz, y)
+        # индекс алмаза по биомам: по ВСЕМ внутренним ячейкам биома считаем долю ячеек, где в колонке (x_d-1,z_d-1) предсказанного начала жилы
+        # есть алмазная руда (правильный индекс ≈ 0.6, неверный ≈ 0.01) — это снимает «псевдонимы» индексов, у которых z почти совпадает
+        keymap = {}
         for si, (seed, w) in enumerate(worlds):
-            kd = w.cell(w.dc[:, :2])
-            for i in range(len(w.dc)):
-                k = (int(kd[i, 0]), int(kd[i, 1]))
-                if k not in w.interior: continue
-                b = cell_biome(w, k, a.bio)
-                t = byb[b]; t[0].append(si); t[1].append(k[0]); t[2].append(k[1]); t[3].append(w.dc[i, 0] - 16 * k[0] - a.off); t[4].append(w.dc[i, 1] - 16 * k[1] - a.off); t[5].append(w.dc[i, 2])
+            dcols = np.unique(np.stack([w.dia_blocks[:, 0], w.dia_blocks[:, 2]], axis=1), axis=0)
+            keymap[si] = np.sort(dcols[:, 0].astype(np.int64) * (1 << 21) + dcols[:, 1] + (1 << 20))
+
+        def colhit(si, X, Z):
+            keys = keymap[si]; kq = X.astype(np.int64) * (1 << 21) + Z.astype(np.int64) + (1 << 20)
+            pos = np.searchsorted(keys, kq); pos[pos >= len(keys)] = len(keys) - 1
+            return keys[pos] == kq
+        cells_by_b = collections.defaultdict(list)           # b -> list of (si, kx, kz)
+        for si, (seed, w) in enumerate(worlds):
+            for k in w.interior:
+                cells_by_b[cell_biome(w, k, a.bio)].append((si, k[0], k[1]))
         idx_d = {}
-        for b, t in sorted(byb.items(), key=lambda kv: -len(kv[1][0])):
-            if len(t[0]) < a.minveins: continue
-            si = np.array(t[0]); best = (0, -1, -1)
-            # по мирам раздельно (seed разные): суммируем попадания
+        for b, lst in sorted(cells_by_b.items(), key=lambda kv: -len(kv[1])):
+            if len(lst) < a.minveins: continue
+            arr = np.array(lst)
             hits = {}
             for st in range(0, 11):
                 for ix in range(0, 90):
-                    tot = 0; n = 0
-                    for s in set(si):
-                        m = si == s
-                        dec = R.decoration_seeds(worlds[s][0], np.array(t[1])[m], np.array(t[2])[m])
+                    tot = 0
+                    for si in set(arr[:, 0]):
+                        m = arr[:, 0] == si
+                        dec = R.decoration_seeds(worlds[si][0], arr[m, 1].astype(np.int64), arr[m, 2].astype(np.int64))
                         x, z, yy = R.feature_draws(dec, ix, st, n=3)
-                        fx = np.array(t[3])[m]; fz = np.array(t[4])[m]; fy = np.array(t[5])[m]
-                        dx = np.abs(((fx - (x + 0.5) + 8) % 16) - 8); dz = np.abs(((fz - (z + 0.5) + 8) % 16) - 8)
-                        tot += int(((dx <= 2) & (dz <= 2) & (np.abs(fy - yy) <= 2.5)).sum()); n += int(m.sum())
-                    hits[(st, ix)] = tot / n
+                        if a.order == 'xyz': z = yy
+                        tot += int(colhit(si, 16 * arr[m, 1] + a.off + x - 1, 16 * arr[m, 2] + a.off + z - 1).sum())
+                    hits[(st, ix)] = tot / len(arr)
             (st, ix), h = max(hits.items(), key=lambda kv: kv[1])
-            idx_d[b] = (st, ix, h, len(t[0]))
-            print(f'   биом {b:4d} ({bclass(b):7s}): жил {len(t[0]):5d}  лучший (step,index) для алмаза = ({st},{ix}), совпадений {h:.2f}')
+            idx_d[b] = (st, ix, h, len(arr))
+            print(f'   биом {b:4d} ({bclass(b):7s}): ячеек {len(arr):5d}  лучший (step,index) для алмаза = ({st},{ix}), колонка (x_d-1,z_d-1) содержит алмаз в {h:.2f} ячеек')
         result['idx_diamond'] = {str(b): dict(step=v[0], index=v[1], hit=v[2], n=v[3]) for b, v in idx_d.items()}
         # глина: индексы по ТОЧНЫМ дискам (полный шаблон радиуса 2/3, центр известен точно), по биомам; затем группы по (idx_d, idx_c)
         groups = collections.defaultdict(list)
         for b, (st, ix, h, n) in idx_d.items():
-            if h > 0.5: groups[(st, ix)].append(b)
+            if h > 0.3: groups[(st, ix)].append(b)
         print('   группы биомов по индексу алмаза:', {k: v for k, v in groups.items()})
         result['groups'] = {f'{k[0]}:{k[1]}': v for k, v in groups.items()}
         ex_by_b = collections.defaultdict(list)           # b -> (world idx, x0, z0)
@@ -166,79 +170,94 @@ def main():
             clay_by_b[b] = (top[0][0], top[0][1], len(arr))
             print(f'   биом {b:4d} ({bclass(b):7s}): точных дисков {len(arr):4d}; индекс глины (step,index)={top[0][0]}, точных совпадений {top[0][1]:.2f}; следующий {top[1][0]} {top[1][1]:.2f}')
         result['clay_idx_by_biome'] = {str(b): dict(step=v[0][0], index=v[0][1], hit=v[1], n=v[2]) for b, v in clay_by_b.items()}
-        grp_res = {}
-        for g, blist in groups.items():
-            votes = collections.Counter()
-            for b in blist:
-                if b in clay_by_b and clay_by_b[b][1] > 0.7: votes[clay_by_b[b][0]] += clay_by_b[b][2]
-            if not votes:
-                print(f'   группа {g}: нет надёжного индекса глины'); continue
-            (cst, cix), nv = votes.most_common(1)[0]
-            grp_res[g] = dict(biomes=blist, n_disks=nv, clay=(cst, cix, 1.0), dia=g)
-            print(f'   группа алмаза {g}: индекс глины (step,index) = ({cst},{cix}) по {nv} точным дискам; разность индексов clay-diamond = {cix - g[1]}')
-        result['clay_idx'] = {f'{k[0]}:{k[1]}': dict(biomes=v['biomes'], n_disks=v['n_disks'], clay_step=v['clay'][0], clay_index=v['clay'][1]) for k, v in grp_res.items()}
-        # отдельно: биомы вне групп с точными дисками (напр. болото) — собственные пары индексов
+        # индекс глины для каждого биома: собственная подгонка по точным дискам; иначе — типовой (для болот — болотный)
+        fit_ok = {b: v[0][1] for b, v in clay_by_b.items() if v[1] > 0.7}
+        nonswamp = collections.Counter(); swampc = collections.Counter()
+        for b, v in clay_by_b.items():
+            if v[1] > 0.7: (swampc if b in SWAMP else nonswamp)[(v[0][0], v[0][1])] += v[2]
+        default_c = nonswamp.most_common(1)[0][0] if nonswamp else None
+        swamp_c = swampc.most_common(1)[0][0] if swampc else default_c
+        pair_biomes = collections.defaultdict(list)
         for b, (st, ix, h, n) in idx_d.items():
-            if b in clay_by_b and clay_by_b[b][1] > 0.7 and not any(b in v['biomes'] and v['clay'][1] == clay_by_b[b][0][1] for v in grp_res.values()):
-                g = (st, ix)
-                grp_res[(g[0], g[1], 'b', b)] = dict(biomes=[b], n_disks=clay_by_b[b][2], clay=(clay_by_b[b][0][0], clay_by_b[b][0][1], 1.0), dia=g)
+            if h <= 0.3: continue
+            if b in clay_by_b and clay_by_b[b][1] > 0.7: c = clay_by_b[b][0]
+            else: c = swamp_c if b in SWAMP else default_c
+            if c is None: continue
+            pair_biomes[((st, ix), c)].append(b)
+        grp_res = {}
+        for (dpair, cpair), blist in pair_biomes.items():
+            nd = sum(clay_by_b[b][2] for b in blist if b in clay_by_b)
+            g = (dpair[0], dpair[1], cpair[1])
+            grp_res[g] = dict(biomes=blist, n_disks=nd, clay=(cpair[0], cpair[1], 1.0), dia=dpair)
+            print(f'   группа биомов {blist}: idx_diamond={dpair[1]}, idx_clay={cpair[1]} (step {cpair[0]}), разность clay-diamond = {cpair[1] - dpair[1]}, точных дисков для подгонки {nd}')
+        result['pairs'] = [dict(biomes=v['biomes'], step=v['dia'][0], idx_diamond=v['dia'][1], idx_clay=v['clay'][1], exact_disks=v['n_disks']) for v in grp_res.values()]
 
         # --- предсказанные смещения и успех трюка ---
-        print('\n-- 3. предсказание по ГСЧ и успех «трюка» (точный центр диска из ГСЧ; диск «существует», если наблюдаемый центр глины в 3 блоках от предсказанного)')
+        print('\n-- 3. предсказание по ГСЧ и успех «трюка» (точный центр диска из ГСЧ; диск «существует», если наблюдаемая глина лежит в круге радиуса 3 вокруг предсказанного центра)')
         for g, gr in grp_res.items():
             (st_d, ix_d) = gr['dia']; (st_c, ix_c, hc) = gr['clay']
-            if hc < 0.4:
-                print(f'   группа {g}: индекс глины не определён надёжно (совпадений {hc:.2f}) — пропуск'); continue
-            pred = np.zeros((16, 16), np.int64)
-            recs = []                                                    # (parity, dx_c, dz_c abs) для успеха
-            succ_cols = []
+            pred = np.zeros((16, 16), np.int64); vtot = [0, 0, 0]
+            recs = []          # (world, parity, exact_cx, exact_cz, est_cx, est_cz, dx_pred, dz_pred, dy)
             for si, (seed, w) in enumerate(worlds):
                 cells = [k for k in w.interior if cell_biome(w, k, a.bio) in gr['biomes']]
                 if not cells: continue
                 kk = np.array(cells, dtype=np.int64)
                 dec = R.decoration_seeds(seed, kk[:, 0], kk[:, 1])
-                xc, zc = R.feature_draws(dec, ix_c, st_c); xd, zd = R.feature_draws(dec, ix_d, st_d)
+                xc, zc = R.feature_draws(dec, ix_c, st_c)[:2]; xd, zd, y3 = R.feature_draws(dec, ix_d, st_d, n=3)
+                if a.order == 'xyz': zd = y3
                 np.add.at(pred, ((xd - xc) % 16, (zd - zc) % 16), 1)
-                # существование диска: наблюдаемый центр глины в пределах 3 блоков от предсказанного
-                cmap, dmap = group_cells(w, a.bio)
-                dcols = np.unique(np.stack([w.dia_blocks[:, 0], w.dia_blocks[:, 2]], axis=1), axis=0)
-                keys = np.sort(dcols[:, 0].astype(np.int64) * (1 << 21) + dcols[:, 1] + (1 << 20))
+                OX = 16 * kk[:, 0] + a.off + xd; OZ = 16 * kk[:, 1] + a.off + zd
+                h4 = colhit(si, OX - 1, OZ - 1) | colhit(si, OX, OZ - 1) | colhit(si, OX - 1, OZ) | colhit(si, OX, OZ)
+                h1 = colhit(si, OX - 1, OZ - 1)
+                vtot[0] += int(h4.sum()); vtot[1] += len(h4); vtot[2] += int(h1.sum())
+                cmap_i = collections.defaultdict(list)
+                for j in range(len(w.cc)):
+                    if not w.cc_wet[j]: continue
+                    k = (int(np.floor((w.cc[j, 0] - a.off) / 16)), int(np.floor((w.cc[j, 1] - a.off) / 16)))
+                    cmap_i[k].append(j)
                 for j, k in enumerate(cells):
-                    cx_abs = 16 * k[0] + a.off + xc[j]; cz_abs = 16 * k[1] + a.off + zc[j]
-                    ok = False
-                    for c in cmap.get(tuple(k), []):
-                        if abs(c[0] - (cx_abs + 0.5)) <= 3 and abs(c[1] - (cz_abs + 0.5)) <= 3: ok = True; break
-                    if not ok: continue
-                    recs.append((si, (k[0] + k[1]) & 1, cx_abs, cz_abs, 16 * k[0] + a.off, 16 * k[1] + a.off, int(xd[j] - xc[j]), int(zd[j] - zc[j])))
-                succ_cols.append((si, keys))
+                    cx_abs = 16 * k[0] + a.off + int(xc[j]); cz_abs = 16 * k[1] + a.off + int(zc[j])
+                    found = None
+                    for ci in cmap_i.get(tuple(k), []):
+                        cols = w.cc_cols[ci]
+                        if len(cols) >= 3 and (np.abs(cols[:, 0] - cx_abs) <= 3).all() and (np.abs(cols[:, 1] - cz_abs) <= 3).all() and (((cols[:, 0] - cx_abs) ** 2 + (cols[:, 1] - cz_abs) ** 2) <= 9).all():
+                            found = ci; break
+                    if found is None: continue
+                    recs.append((si, (k[0] + k[1]) & 1, cx_abs, cz_abs, int(round(w.cc[found, 0] - 0.5)), int(round(w.cc[found, 1] - 0.5)), int(xd[j] - xc[j]), int(zd[j] - zc[j])))
             nrec = len(recs)
-            print(f'   группа {g} (idx_d={ix_d}, idx_c={ix_c}, d={ix_c - ix_d}; биомы {gr["biomes"]}): ячеек {int(pred.sum())}, из них с реальным диском {nrec}')
+            print(f'   группа {g} (idx_d={ix_d}, idx_c={ix_c}, d={ix_c - ix_d}; биомы {gr["biomes"]}): ячеек {int(pred.sum())}, из них с реальным диском {nrec}; проверка: в 2x2 колонок у предсказанного начала жилы алмаз есть в {vtot[0] / max(vtot[1], 1):.3f} ячеек (в колонке (x_d-1,z_d-1): {vtot[2] / max(vtot[1], 1):.3f}; база ~0.02)')
+            result.setdefault('origin_check', {})[':'.join(str(v) for v in g)] = dict(cells=vtot[1], hit2x2=vtot[0] / max(vtot[1], 1))
             fl = np.argsort(pred.ravel())[::-1][:6]
             print('     предсказание ГСЧ (dx,dz mod 16) = (x_d - x_c, z_d - z_c) по всем ячейкам группы: ' + '  '.join(f'({k // 16},{k % 16}) {pred.ravel()[k] / pred.sum():.2f}' for k in fl))
             if nrec < 20: continue
-            # успех: колонка (x_c+dx, z_c+dz)
-            kmap = {si: keys for si, keys in succ_cols}
             R_ = np.array(recs)
-            S = {0: np.zeros((31, 31)), 1: np.zeros((31, 31))}; Nn = {0: 0, 1: 0}
-            for par in (0, 1):
-                sel = R_[R_[:, 1] == par]; Nn[par] = len(sel)
-                for si in set(sel[:, 0].astype(int)):
-                    ss = sel[sel[:, 0] == si]
-                    keys = kmap[si]
+            def hitmap(cxcol, czcol):
+                """bool (n,31,31): есть ли алмаз в колонке (c_x+dx, c_z+dz)"""
+                H = np.zeros((len(R_), 31, 31), bool)
+                for si in set(R_[:, 0].astype(int)):
+                    m = np.where(R_[:, 0] == si)[0]
+                    keys = keymap[si]
                     for dx in range(-15, 16):
                         for dz in range(-15, 16):
-                            kq = (ss[:, 2] + dx).astype(np.int64) * (1 << 21) + (ss[:, 3] + dz).astype(np.int64) + (1 << 20)
-                            pos = np.searchsorted(keys, kq)
-                            pos[pos >= len(keys)] = len(keys) - 1
-                            S[par][dx + 15, dz + 15] += int((keys[pos] == kq).sum())
-            tr = S[0] / max(Nn[0], 1); te = S[1] / max(Nn[1], 1)
-            i = np.unravel_index(np.argmax(tr), tr.shape)
-            base = float(np.mean(te))
-            print(f'     лучшее смещение по обучению (чётные cx+cz, {Nn[0]} дисков): (dx,dz)=({i[0] - 15},{i[1] - 15}), успех {tr[i]:.3f}; на тесте (нечётные, {Nn[1]} дисков): {te[i]:.3f}; база (среднее по окну 31x31): {base:.4f}')
-            allp = (S[0] + S[1]) / max(Nn[0] + Nn[1], 1)
+                            kq = (R_[m, cxcol] + dx).astype(np.int64) * (1 << 21) + (R_[m, czcol] + dz).astype(np.int64) + (1 << 20)
+                            pos = np.searchsorted(keys, kq); pos[pos >= len(keys)] = len(keys) - 1
+                            H[m, dx + 15, dz + 15] = keys[pos] == kq
+                return H
+            tr = R_[:, 1] == 0; te = ~tr
+            res_g = {}
+            for label, cxc, czc in (('точный центр (из ГСЧ)', 2, 3), ('оценка центра по блокам глины', 4, 5)):
+                H = hitmap(cxc, czc)
+                H2 = H[:, :-1, :-1] | H[:, 1:, :-1] | H[:, :-1, 1:] | H[:, 1:, 1:]            # любая из колонок 2x2 с якорем (dx,dz)
+                out = {}
+                for nm, HH in (('1 колонка', H), ('2x2', H2)):
+                    mt = HH[tr].mean(axis=0); i = np.unravel_index(np.argmax(mt), mt.shape)
+                    out[nm] = dict(best=(int(i[0] - 15), int(i[1] - 15)), train=float(mt[i]), test=float(HH[te][:, i[0], i[1]].mean()), base=float(HH.mean()))
+                res_g[label] = out
+                print(f'     [{label}] ' + '; '.join(f"{nm}: лучшее смещение по обучению (dx,dz)={o['best']}, успех обуч. {o['train']:.3f} ({int(tr.sum())}), тест {o['test']:.3f} ({int(te.sum())}), база {o['base']:.4f}" for nm, o in out.items()))
+            allp = hitmap(2, 3).mean(axis=0)
             top5 = np.argsort(allp.ravel())[::-1][:6]
-            print('     топ смещений (dx,dz): успех по всем дискам: ' + '  '.join(f'({k // 31 - 15},{k % 31 - 15}) {allp.ravel()[k]:.2f}' for k in top5))
-            result.setdefault('trick', {})[':'.join(str(v) for v in g)] = dict(biomes=gr['biomes'], disks=nrec, best=(int(i[0] - 15), int(i[1] - 15)), train=float(tr[i]), test=float(te[i]), base=base,
+            print('     топ смещений (dx,dz) от точного центра: успех по всем дискам: ' + '  '.join(f'({k // 31 - 15},{k % 31 - 15}) {allp.ravel()[k]:.2f}' for k in top5))
+            result.setdefault('trick', {})[':'.join(str(v) for v in g)] = dict(biomes=gr['biomes'], idx_d=ix_d, idx_c=ix_c, disks=nrec, results=res_g,
                                                                  pred_top=[(int(k // 16), int(k % 16), float(pred.ravel()[k] / pred.sum())) for k in fl],
                                                                  top=[(int(k // 31 - 15), int(k % 31 - 15), float(allp.ravel()[k])) for k in top5])
     if a.json:
