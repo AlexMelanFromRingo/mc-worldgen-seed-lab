@@ -163,6 +163,7 @@ docs/      документация (по-русски)
 | [13 · Стратегия GPU](docs/13-gpu-strategy.md) | какие наблюдения сколько бит дают и чем их перебирать |
 | [20](docs/20-crack-struct-lift.md) · [21](docs/21-gpu-biomes.md) · [22](docs/22-crack-slime-pillars.md) · [23](docs/23-crack-nether-bedrock.md) | описание и замеры инструментов |
 | [oracle](docs/oracle.md) | как устроен Java-эталон |
+| [PROJECT.md](PROJECT.md) | раскладка рабочего каталога, факты о версиях 26.1 → 26.3, соглашения |
 
 ## 🧪 Как проверяется корректность
 
