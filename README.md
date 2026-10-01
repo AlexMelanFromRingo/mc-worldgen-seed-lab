@@ -6,12 +6,18 @@
 
 Overworld · Nether · End &nbsp;|&nbsp; 26.1 · 26.2 · 26.3 (+ 26.4-snapshot-2) &nbsp;|&nbsp; CUDA · OpenMP · Java-эталон
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1%20%E2%80%93%2026.3-62b47a?style=flat-square)](docs/04-version-diff-26.md)
-[![CUDA](https://img.shields.io/badge/CUDA-12%20%C2%B7%20sm__89-76b900?style=flat-square&logo=nvidia&logoColor=white)](docs/13-gpu-strategy.md)
-[![C11](https://img.shields.io/badge/C11%20%2F%20C%2B%2B17-engine-00599c?style=flat-square&logo=c&logoColor=white)](engine)
-[![Verified against Mojang code](https://img.shields.io/badge/verified-against%20real%20game%20code-blue?style=flat-square)](docs/oracle.md)
-[![Docs](https://img.shields.io/badge/docs-%D0%BF%D0%BE--%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8-orange?style=flat-square)](docs/00-worldgen-guide.md)
+<a href="LICENSE"><img src="docs/badges/license.svg" alt="license: MIT"></a>
+<a href="docs/04-version-diff-26.md"><img src="docs/badges/minecraft.svg" alt="Minecraft 26.1 – 26.3"></a>
+<a href="docs/13-gpu-strategy.md"><img src="docs/badges/cuda.svg" alt="CUDA 12 · sm_89"></a>
+<a href="engine"><img src="docs/badges/engine.svg" alt="engine: C11 · C++17"></a>
+<a href="docs/oracle.md"><img src="docs/badges/verified.svg" alt="verified against real game code"></a>
+<a href="docs/00-worldgen-guide.md"><img src="docs/badges/docs.svg" alt="docs: по-русски"></a>
+<br>
+<img src="docs/badges/dimensions.svg" alt="Overworld · Nether · End">
+<a href="docs/23-crack-nether-bedrock.md"><img src="docs/badges/bedrock.svg" alt="bedrock: 2^48 in 0.16 s"></a>
+<img src="docs/badges/results.svg" alt="verification results, cycling">
+
+<sub>↑ все бейджи нарисованы <a href="https://github.com/AlexMelanFromRingo/blazon">blazon</a> — самодостаточным генератором с честными метриками шрифта (последний — анимированный SVG)</sub>
 
 [Путеводитель по генерации](docs/00-worldgen-guide.md) ·
 [Как восстановить seed](docs/13-gpu-strategy.md) ·
@@ -67,6 +73,12 @@ flowchart LR
 ```
 
 Почему так: структуры, слайм-чанки, шахты, башни Края и бедрок Незера считаются **LCG от младших 48 бит** seed'а, а биомы Overworld 1.18+ — **Xoroshiro128++ от всех 64 бит**. Поэтому сначала находится 48-битный structure seed, а старшие 16 бит добираются дешёвой проверкой. Детали — [`docs/03`](docs/03-seed-dependency-map.md) и [`docs/13`](docs/13-gpu-strategy.md).
+
+### Поддерживаемые версии
+
+<img src="docs/badges/matrix.svg" alt="support matrix: 26.1/26.2 use double noise math, 26.3 and 26.4-snapshot-2 use float; engine and oracle cover all four, GPU crackers cover 26.1–26.3">
+
+`double` / `float` — две численные ветки генератора шума: в 26.3 Mojang переписал шум на `NoiseStack` с `float`-накоплением, поэтому результаты 26.3 численно отличаются от 26.1/26.2 и порт воспроизводит обе ветки бит-в-бит ([`docs/04`](docs/04-version-diff-26.md), [`docs/05`](docs/05-noise-climate-port.md)).
 
 ## 🚀 Быстрый старт
 
@@ -169,7 +181,7 @@ docs/      документация (по-русски)
 
 ## 🙏 Благодарности
 
-[cubiomes](https://github.com/Cubitect/cubiomes) · [SeedcrackerX](https://github.com/19MisterX98/SeedcrackerX) · [SeedCracker](https://github.com/KaptainWutax/SeedCracker) · [Nether Bedrock Cracker](https://github.com/19MisterX98/Nether_Bedrock_Cracker) · [seedfinding](https://github.com/SeedFinding) · [chunkbase](https://www.chunkbase.com) (сравнительные скриншоты в `docs/img/` — для проверки совпадения карт) · [Vineflower](https://github.com/Vineflower/vineflower).
+[cubiomes](https://github.com/Cubitect/cubiomes) · [SeedcrackerX](https://github.com/19MisterX98/SeedcrackerX) · [SeedCracker](https://github.com/KaptainWutax/SeedCracker) · [Nether Bedrock Cracker](https://github.com/19MisterX98/Nether_Bedrock_Cracker) · [seedfinding](https://github.com/SeedFinding) · [chunkbase](https://www.chunkbase.com) (сравнительные скриншоты в `docs/img/` — для проверки совпадения карт) · [Vineflower](https://github.com/Vineflower/vineflower) · [blazon](https://github.com/AlexMelanFromRingo/blazon) (все бейджи этого README).
 
 Minecraft — торговая марка Mojang Studios / Microsoft. Проект не связан с Mojang и не одобрен ими.
 
