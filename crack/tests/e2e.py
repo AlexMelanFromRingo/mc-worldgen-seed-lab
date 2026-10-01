@@ -12,7 +12,7 @@
 по умолчанию 34; проверяет то же ядро); реальные полные прогоны 2^48 — опция --full-real N.
 
 Запуск:  crack/tests/e2e.py [--versions 26.3] [--seeds 6] [--rng-seed 1] [--real/--potential] [--full-real 1] [--json out.json]
-Требует: собранные crack/bin/crack-struct и crack/bin/crack-lift64 (make -C crack struct), JDK для oracle.
+Требует: собранные crack/bin/crack-struct и crack/bin/crack-lift64 (make -C crack), JDK для oracle.
 """
 import argparse
 import json
