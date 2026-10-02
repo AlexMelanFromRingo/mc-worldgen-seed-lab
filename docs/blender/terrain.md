@@ -1,0 +1,239 @@
+# W1 «Рельеф»: libmcgen — датапак, шумы, density-функции, заполнение, биомы
+
+Отчёт потока W1 аддона «MC Worldgen» (спецификация — `docs/superpowers/specs/2026-10-02-blender-worldgen-addon-design.md`,
+ворота G1, G2). Все числа ниже — измеренные; команды воспроизведения — в §5.
+
+## 1. Итог
+
+| что | результат |
+|---|---|
+| **G1** — граф density-функций из JSON, точка бит-в-бит с oracle `df` | **26.3:** 63 000 126 точек (63 пары «функция × измерение/пресет», по ≥ 1 000 002 точек) + 4 240 212 «перекрёстных» (212 пар), **0 расхождений**. **26.2:** 43 000 086 + 2 640 132, **0**. **26.1:** 43 000 086 + 2 640 132, **0**. **26.4-snapshot-2:** см. §6.1 |
+| **G2** — заполнение шумом против настоящего сервера (эталоны W6, `run/gt/`) | **26.3: 47 эталонов, 37 741 чанков, 3 288 235 776 блоков, 0 расхождений (100.000000 %)**, без масок жидкостей; 3 seed (12345, 8675309, −7048155917072976836) × 3 измерения; карты высот — 0 расхождений; биомы — 1 клетка из 51 378 624 (§7.2). 26.1, 26.2, 26.4-snapshot-2 — по одному эталону (r = 2): 100 % блоков, 0 расхождений карт высот |
+| Биомы (R-дерево климата) | таблицы параметров совпадают с дампом игры во всех 4 версиях; ничьи R-дерева воспроизводятся по порядку запросов чанка (§3.7) |
+| Пресеты, версии | 26.1, 26.2 (double), 26.3, 26.4-snapshot-2 (float); overworld normal/large_biomes/amplified/caves/floating_islands, nether, end — §6.3 |
+| Тонкие настройки | 17 в таблице (`libmcgen/tweaks.json`), 11 реализованы на стадиях biomes/terrain; значения по умолчанию — побитово ваниль (проверено: регион с явно переданными умолчаниями совпадает побитово, все G1/G2 идут с умолчаниями) |
+| Скорость (26.3, Overworld, BIOMES+TERRAIN с растеканием жидкостей) | 49.1 чанка/с на 1 поток; 150 / 215 / 273 чанка/с на 4 / 8 / 12 потоков (§6.4) |
+| NBT + inflate (для шаблонов построек) | свой gzip/zlib/DEFLATE + разбор NBT: все 1511 шаблонов 26.3 и 1202 шаблона 26.1 совпадают с независимым разбором на Python |
+
+## 2. Где код
+
+| файл | что |
+|---|---|
+| `libmcgen/src/util.[ch]` | память, строки, хэш-таблица, файлы, потоки (pthreads/Win32), Java-семантика `Math.min/max/clamp/round/floorDiv`, `strtod/strtof` в «C»-локали |
+| `libmcgen/src/json.[ch]` | свой JSON-DOM (числа хранят исходный текст: `float` парсится как `Float.parseFloat`, `double` — как `Double.parseDouble`) |
+| `libmcgen/src/pack.c` | `mcgen_open`: версия, `reports/blocks.json` → состояния блоков, биомы, теги блоков, шумы, функции, `noise_settings`, `world_preset` → измерения/пресеты |
+| `libmcgen/src/noise.[ch]` | ГСЧ (Xoroshiro/Legacy, позиционные фабрики), ImprovedNoise, PerlinNoise/NoiseStack (float 26.3+, double 26.1/26.2), NormalNoise, BlendedNoise (обе версии), Simplex End |
+| `libmcgen/src/df.h`, `df_parse.c` | AST density-функций (оба семейства JSON: `left/right/input` 26.3+ и `argument1/…` 26.1/26.2), структурное равенство/хэш |
+| `libmcgen/src/df_new.[ch]` | ветка 26.3+: аналог `DensityFunctionCompiler` (оптимизация AST, интервалы, выбор сэмплеров, кэш-ячейки `SamplerContext`, `sampleValue`/`sampleVolume`) |
+| `libmcgen/src/df_old.[ch]` | ветка 26.1/26.2: проводка как `NoiseWiringHelper`, обёртки `NoiseChunk` (`Interpolated`, `FlatCache`, `Cache2D`, `CacheOnce`, `CacheAllInCell`), `fillArray` |
+| `libmcgen/src/world.c` | `mcgen_world_new`: домены seed, экземпляры шумов, компиляция роутера/водоносных слоёв/жил, точечный вычислитель для тестов |
+| `libmcgen/src/biome_params.c`, `biome.c` | `OverworldBiomeBuilder` (по версиям) + Nether, R-дерево (`engine/mc_biomes.h`), источники биомов (мультишум, End, фиксированный), биомы чанка |
+| `libmcgen/src/terrain.c`, `terrain_old.c`, `terrain_veins.c` | заполнение чанка: 26.3+ (объёмный проход + `NoiseBasedAquifer` + жилы как правила материала), 26.1/26.2 (`doFill` по ячейкам + старый aquifer + `OreVeinifier`) |
+| `libmcgen/src/fluidpp.[ch]` | растекание жидкостей при переходе чанка в FULL (`LevelChunk.postProcessGeneration` → `FlowingFluid.tick`) |
+| `libmcgen/src/region.c` | пул потоков, регион, увеличение биомов (`BiomeManager`), карты высот, пост-обработка с «гало», MCR1 |
+| `libmcgen/src/tweaks.c` | тонкие настройки (таблица — `libmcgen/gen/mcgen_tweaks_table.h` из `libmcgen/tweaks.json`) |
+| `libmcgen/src/inflate.c`, `nbt.[ch]` | DEFLATE/gzip/zlib и NBT (для потоков построек) |
+| `libmcgen/src/mcgen_test.h` | тестовые экспорты `mcgen_x_*` (не часть ABI `mcgen.h`) |
+| `libmcgen/cli/mcgen-cli.c` | CLI: регион → MCR1 и подкоманды `info`, `df`, `biome`, `qbiome`, `climate`, `chunkbiomes`, `biometie`, `fillraw`, `bench` |
+| `libmcgen/tests/` | `g1_df.py`, `g2_terrain.py`, `biome_check.py`, `biome_ties.py`, `presets_check.py` (+ `java/` — эталон на настоящих классах игры), `tweaks_effect.py`, `nbt_check.py`, `biome_cells.c`, `nbt_dump.c`, `biome_params_dump.c`; результаты — `tests/results/` |
+| `libmcgen/Makefile` | локальная сборка gcc: `build/libmcgen.so`, `build/libmcgen.a`, статический `build/mcgen-cli`, тесты `build/tests/*` |
+
+Публичный ABI (`include/mcgen.h`) **не менялся**. Добавлено только: тестовые экспорты в `src/mcgen_test.h`
+(`mcgen_x_df_eval`, `mcgen_x_is_float`, `mcgen_x_noise_biomes`, `mcgen_x_climate`, `mcgen_x_biome_tie`, `mcgen_x_fill_chunk`,
+`mcgen_x_generate_region_pp`) и две настройки в `tweaks.json` (`aquifers`, `fluid_flow`, §4).
+
+## 3. Как устроено
+
+### 3.1. Данные
+`mcgen_open(pack, version)` читает пак-каталог (`tools/make_pack.py`): `reports/blocks.json` (имена состояний
+`minecraft:x[k=v,…]` в порядке id), `worldgen/biome` (id биома — индекс в отсортированном списке файлов), `worldgen/noise`,
+`worldgen/density_function`, `worldgen/noise_settings`, `worldgen/world_preset`, `tags/block`. Измерения и пресеты берутся из
+`world_preset` (дедупликация по паре «настройки шума + источник биомов»); настройки шума без мирового пресета (`caves`,
+`floating_islands`) добавляются пресетами Overworld (тип измерения `overworld_<имя>`, если есть). Числа JSON: `float`
+(26.3+) — `Float.parseFloat` (strtof в «C»-локали), `double` — `strtod`. Версия выбирает только **поведение, закодированное в
+Java** (ветка вычислений, правила оптимизации, `OverworldBiomeBuilder`, aquifer, жилы, End); всё остальное — из данных,
+поэтому новая версия с изменёнными JSON работает без перекомпиляции. Загрузка пака 26.3 — ≈ 0.2 с.
+
+### 3.2. Домены seed (`McSeeds`)
+* **climate** — шумы, достижимые из полей роутера `temperature/vegetation/continents/erosion/depth/ridges` (вместе с
+  `offset`-шумом сдвига), шумы биомов Nether (`Legacy(seed)`, `Legacy(seed+1)` в устаревшем режиме), остров End
+  (`Legacy(seed)`, `consumeCount(17292)`), seed увеличения биомов (`BiomeManager.obfuscateSeed`, SHA-256).
+* **terrain** — остальные именованные шумы (пещеры, водоносные слои, жилы, `jagged`, …), `BlendedNoise`
+  (`fromHashOf("minecraft:terrain")`; при `legacy_random_source` — `Legacy(seed)`), фабрики `minecraft:aquifer`/`minecraft:ore`.
+При равных seed доменов — побитово ваниль (это и проверяют G1/G2).
+
+### 3.3. Density-функции: две численные ветки
+* **26.3+ (float)** — `df_new.c` повторяет `DensityFunctionCompiler`: подстановка ссылок, оптимизации (свёртка констант,
+  `div` на константу → умножение на `1/c`, `min/max` по интервалам значений, правило `SliceUniformAxes`), выбор сэмплера по
+  осям, на которых функция меняется; кэш-маркеры (`flat_cache`, `cache_2d`, `cache_once`, `interpolated`, `cache_all_in_cell`)
+  — ячейки `SamplerContext` (последний объём + последняя точка, ключ `BlockPos.asLong`), дедупликация подготовленных кэшей по
+  структурному равенству. Отдельные пути `sampleValue` и `sampleVolume` (их результаты в игре могут различаться —
+  повторены оба). Отличия 26.4-snapshot-2: `clamp` компилируется по диапазону входа (тождество / только `max` / только `min`),
+  `SliceUniformAxes` больше не пропускает градиенты.
+* **26.1/26.2 (double)** — `df_old.c`: `compute`/`fillArray` как в `DensityFunctions`, проводка `NoiseChunk.wrap` с
+  `hash-consing`, `MulOrAdd` против `Ap2` по литеральной константе, `FlatCache` квантует к углу кварты в любом контексте,
+  `CacheAllInCell` заполняется `lerp3` (порядок x-сначала) — отличается от поблочной интерполяции y→x→z, повторено.
+  End (`end_islands`): переполнение `int` у центрального острова → NaN (§7.4).
+
+### 3.4. Заполнение шумом (`terrain*.c`)
+* 26.3+: объём чанка `16 × H × 16` в контексте `NoiseChunk` (интерполяция 4×8×4 и кэши — внутри сэмплеров),
+  `NoiseBasedAquifer` (сетка 16×12×16, `aquifer_*`, исключение «глубокая тьма», уровень поверхности для `skipSamplingAboveY`
+  считается объёмно до плотности, как в игре), выбор жидкости `createFluidPicker` (`y < min(−54, sea_level)` → лава),
+  жилы — правила материала `minecraft:ore_vein` из `material_rule` (плотность/богатство — предзаполненными объёмами, щель —
+  точкой, случайность — `minecraft:ore`). 26.4-snapshot-2: `default_block` в настройках нет → stone/netherrack/end_stone.
+* 26.1/26.2: цикл `doFill` по ячейкам `NoiseChunk` (`initializeForFirstCellX/advanceCellX/selectCellYZ/updateForY/X/Z/swapSlices`),
+  старый `Aquifer` и `OreVeinifier`.
+* Блоки, которым aquifer назначил `shouldScheduleFluidUpdate`, помечаются (как `ProtoChunk.markPosForPostprocessing`).
+
+### 3.5. Растекание жидкостей (`fluidpp.c`, `region.c`)
+Игра в `ChunkMap.prepareTickingChunk` (чанк стал тикающим: все 8 соседей — FULL) вызывает `LevelChunk.postProcessGeneration`:
+для помеченных блоков — `FlowingFluid.tick` (растекание вниз и в стороны с поиском уклона `getSlopeDistance`, порядок сторон
+N, S, W, E, кэш `SpreadContext` по (x, z), правило «бесконечной воды», лава ↔ вода: обсидиан/булыжник/камень,
+`fast_lava` из атрибутов типа измерения). libmcgen повторяет это для всех чанков региона (мир бесконечен: в игре все чанки
+рано или поздно тикают); пометки соседей за краем региона, лежащие в 1 блоке от края, тоже обрабатываются («гало», блоки
+соседей генерируются лениво). Порядок — по чанкам (cz, затем cx). Настройка `fluid_flow = 0` выключает растекание
+(«чистое» заполнение, как у чанков ниже FULL).
+
+### 3.6. Пресеты и измерения
+Overworld: `normal`, `large_biomes`, `amplified`, `caves`, `floating_islands`; Nether, End — `normal`. Высоты — из типа измерения
+(`clampToHeightAccessor`). Источник биомов: мультишум Overworld (`OverworldBiomeBuilder` по версии: 26.2 +`sulfur_caves`,
+26.3 `dappled_forest`, 26.4 изменён диапазон влажности подземных), мультишум Nether (5 точек), End (`TheEndBiomeSource`),
+фиксированный.
+
+### 3.7. Биомы и ничьи R-дерева
+`Climate.RTree.search` начинает с кандидата `lastResult` (ThreadLocal) и заменяет его только **строго** более близким
+листом. Следствие (доказано разбором обхода): при ничьей результат = прошлый лист, если он на минимальном расстоянии, иначе —
+первый минимальный лист в порядке обхода. Поэтому результат зависит от порядка запросов: внутри чанка он детерминирован
+(`LevelChunkSection.fillBiomesFromNoise`: секции снизу вверх, x, y, z), а первый запрос чанка наследует лист от
+предыдущего чанка того же рабочего потока — это в игре недетерминировано. libmcgen:
+* биомы чанка (стадия BIOMES) — запросы в порядке игры с `lastResult`;
+* `mcgen_biome_at`/`mcgen_biome_grid` (увеличение `BiomeManager`, y кварты зажат в пределы чанка, как
+  `ChunkAccess.getNoiseBiome`) — тот же результат без генерации чанка: при ничьей откат по порядку заполнения до клетки без
+  ничьей и развёртка цепочки вперёд (`biome.c: world_biome_cell`; совпадение двух путей проверяет `tests/biome_cells.c`).
+26.4-snapshot-2 хранит в секциях биомы **поблочно** (4096 значений, `CachedChunkBiomeResolver`): они совпадают с
+`mcgen_biome_at` (884 736 блоков 3×3 чанков всех высот эталона — 0 расхождений). В MCR1 по-прежнему клетки 4×4×4 (шумовые
+биомы чанка).
+
+## 4. Тонкие настройки (стадии biomes/terrain)
+
+Таблица — `libmcgen/tweaks.json` (порождает `gen/mcgen_tweaks_table.h` и `blender/mcgen_addon/core/tweaks.json` скрипт
+`libmcgen/gen_tweaks.py`). Умолчания ничего не меняют (не строятся даже переопределения функций). Реализация — `tweaks.c`.
+
+| id | что делает в libmcgen | эффект (26.3, Overworld, seed 12345, 8×8 чанков у (0,0), 6 291 456 блоков) |
+|---|---|---|
+| `sea_level_offset` | уровень моря настроек шума + k (выбор жидкости, aquifer) | +10 → 163 326 блоков (2.596 %) |
+| `terrain_amplitude` | `…/offset` → `(f + 0.50375)·A − 0.50375`, `…/jaggedness` × A (только Overworld) | 1.5 → 118 388 (1.882 %), 2 046 клеток биомов |
+| `terrain_steepness` | `…/factor` × S | 2.0 → 32 549 (0.517 %) |
+| `climate_scale_xz` | координаты XZ шумов домена climate ÷ s | 2.0 → 2 051 (0.033 %; у (0,0) сжатие почти не видно), 564 клетки биомов |
+| `climate_scale_y` | y шумов climate ÷ s и **параметр depth выбора биома ÷ s** (ванильные шумы климата двумерны, поэтому «вертикальный масштаб» = растяжение слоёв подземных биомов вниз; «сухая» зона глубокой тьмы aquifer следует); только Overworld | 2.0 → 0 блоков, 3 278 клеток биомов |
+| `cave_density` | к `…/caves/*` и шуму `cave_cheese` + (1 − D)·0.15; D = 0 — эти функции = +10⁶ (пещер нет) | 0.5 → 141 387 (2.247 %) |
+| `cave_size` | координаты шумов `cave_*`, `spaghetti_*`, `noodle*`, `pillar*` ÷ s | 2.0 → 311 158 (4.946 %) |
+| `lava_level_offset` | граница лавы `−54 + k` в выборе жидкости | +40 → 58 632 (0.932 %) |
+| `aquifers` (новая, bool) | `NoiseBasedAquifer` вкл/выкл (`aquifers_enabled`) | 0 → 95 493 (1.518 %) |
+| `fluid_flow` (новая, bool) | растекание жидкостей при переходе в FULL вкл/выкл (§3.5) | 0 → 0 в этом регионе; на эталоне W6 (841 чанк) — 62 блока |
+| `ore_veins` | крупные жилы меди/железа | 0 → 10 830 (0.172 %) |
+
+`canyon_frequency`, `ore_density`, `ore_size`, `feature_density`, `tree_size`, `structure_frequency` — стадии других
+потоков, libmcgen их только хранит (`w->tweak[]`).
+
+## 5. Тесты и воспроизведение
+
+```
+make -C libmcgen && make -C libmcgen tests
+# G1: точки density-функций против oracle (одна JVM `oracle/run.sh <V> serve`)
+python3 libmcgen/tests/g1_df.py --version 26.3 --points 1000000 --cross 20000 --report libmcgen/tests/results/g1-26.3.json
+# G2: регионы против эталонов W6 (run/gt/<V>/{raw,veins}/*), все чанки дампа r+4, без масок жидкостей
+python3 libmcgen/tests/g2_terrain.py --version 26.3 --report libmcgen/tests/results/g2-26.3.json
+# пресеты caves/floating_islands и поля роутера/Aquifer.Config — эталон на настоящих классах игры (без сервера)
+libmcgen/tests/java/build.sh 26.3 && python3 libmcgen/tests/presets_check.py --version 26.3
+python3 libmcgen/tests/biome_check.py --version 26.3          # «сырые» биомы против oracle `biome`, классификация ничьих
+libmcgen/build/tests/biome_cells run/pack-26.3 26.3 minecraft:overworld 12345 -10 -10 21
+python3 libmcgen/tests/tweaks_effect.py --version 26.3        # умолчания = ваниль, эффект каждой настройки
+python3 libmcgen/tests/nbt_check.py --version 26.3            # inflate + NBT на всех шаблонах построек
+libmcgen/build/mcgen-cli bench --pack run/pack-26.3 --version 26.3 --dim minecraft:overworld --seed 12345 \
+    --cx0 300 --cz0 300 --nx 24 --nz 24 --stages 3 --threads 1
+```
+Для сравнения с загруженной игрой областью CLI принимает `--pp-margin K`: растекание только в чанках не ближе K к краю
+региона (без гало) — так воспроизводятся кольца эталона W6 (§6.2).
+
+## 6. Результаты
+
+### 6.1. G1 (`libmcgen/tests/results/g1-*.json|log`)
+«Домашние» точки — функция в своём измерении/пресете; «перекрёстные» — функции чужих измерений в данном (проверка независимости
+от контекста). Точки: 80 % в |x|,|z| ≤ 20 000, 20 % до 2 000 000 (и за пределами обычного мира), y по всей высоте ± 16.
+
+| версия | пар «функция × измерение/пресет» | точек «домашних» | точек «перекрёстных» | расхождений | время |
+|---|---:|---:|---:|---:|---:|
+| 26.3 | 63 (55 функций; overworld normal/large_biomes/amplified, nether, end) | 63 000 126 | 4 240 212 | 0 | 994 с |
+| 26.2 | 43 (35 функций) | 43 000 086 | 2 640 132 | 0 | 283 с |
+| 26.1 | 43 (35 функций) | 43 000 086 | 2 640 132 | 0 | 360 с |
+| 26.4-snapshot-2 | G1_264_PAIRS | G1_264_HOME | G1_264_CROSS | G1_264_BAD | G1_264_TIME |
+
+Сравнение — по битам (`float` 26.3+, `double` 26.1/26.2), NaN — тоже по битам.
+
+### 6.2. G2 (`libmcgen/tests/results/g2-26.3.json|log`)
+Эталон W6 — область радиуса r = 10 (forceload) и кольца, которые игра догенерирует сама: r+1 — тикающие, r+2 — FULL без
+тиков, r+3, r+4 — ниже FULL. **Растекание жидкостей игра выполнила только в тикающих чанках (кольца 0…r+1)** — это и было
+причиной остатка «water/lava[level=N] → air» в таблице `accuracy.md` (их libmcgen ставил в кольцах r+2…r+4, где игра растекание
+ещё не выполняла; карты высот там же). Тест генерирует дамп r+4 с `--pp-margin 3` и сравнивает **все** чанки строго:
+
+| версия | эталонов (вариант) | чанков (FULL / ниже FULL) | блоков | расхождений | карты высот | биомы (клеток 4×4×4) |
+|---|---|---:|---:|---:|---:|---:|
+| 26.3 | 31 raw + 16 veins | 37 741 (28 329 / 9 910) | 3 288 235 776 | **0** | 0 | 1 / 51 378 624 |
+| 26.2 | 1 raw (r = 2) | 124 (82 / 42) | 12 189 696 | **0** | 0 | 0 / 190 464 |
+| 26.1 | 1 raw (r = 2) | см. `g2-26.1.json` | — | **0** | 0 | 0 |
+| 26.4-snapshot-2 | 1 raw (r = 2) | см. `g2-26.4-snapshot-2.json` | — | **0** | 0 | (читатель W6 — §7.3) |
+
+26.3 по измерениям: Overworld — 16 областей (spawn, ocean, mountains, desert, jungle × 3 seed + r=2), Nether — 6, End — 9.
+Маски: только столбцы «расширений» бесплодных земель/айсбергов (`--mask-ext`, код системы материалов игры).
+
+### 6.3. Пресеты и поля роутера (`presets_check.py`, эталон — настоящие классы игры, `tests/java/Ref.java`)
+PRESETS_RESULT
+
+### 6.4. Скорость (gcc -O2, WSL2, 12 логических ядер; `mcgen-cli bench`, область 24×24 чанка у (300, 300))
+
+| версия, измерение, стадии | 1 поток | 4 | 8 | 12 |
+|---|---:|---:|---:|---:|
+| 26.3 Overworld, BIOMES+TERRAIN (+ растекание) | 49.1 ч/с | 150.3 | 214.9 | 272.9 |
+| 26.2 Overworld, BIOMES+TERRAIN | 14.3 ч/с | — | — | — |
+
+Требование «≥ 3–5 чанков/с/поток» выполнено с запасом. Карта биомов 1024 × 1024 точек (`mcgen_biome_grid`, теперь
+многопоточная по строкам): 4.35 с (26.3), 3.06 с (26.2) при средней загрузке машины ≈ 20 (другие потоки работ); прежде
+однопоточно — ≈ 11 с (замер W5). PERF_EXTRA
+
+## 7. Решения и особенности
+
+1. **ABI не менялся.** Для тестов — `mcgen_x_*` в `src/mcgen_test.h` (экспортируются, но не входят в контракт).
+2. **Ничьи R-дерева** (§3.7): единственное оставшееся расхождение биомов G2 — клетка (800, 0, −976) Nether, seed 8675309:
+   первая клетка чанка (50, −61), её результат в игре зависит от чанка, обработанного тем же рабочим потоком раньше.
+   Предсказать это нельзя; до учёта `lastResult` таких клеток было 0.02–0.07 % (3 598 на 19 717 чанков).
+3. **26.4-snapshot-2 хранит биомы поблочно** (4096 значений на секцию). `tools/gt/anvil.py` (W6) читает 64 значения —
+   поэтому сравнение биомов 26.4 в `diff.py` сейчас некорректно (14 168 / 259 584 «расхождений» на r = 2). Проверено
+   отдельно: блочные биомы эталона = `mcgen_biome_at`, 884 736 / 884 736.
+4. **End 26.1/26.2: переполнение `int`** у центрального острова (`sx² + sz²` при |блок| ≳ 262 144) → NaN во всей функции;
+   oracle это подтверждает, libmcgen повторяет. `engine/mc_end.h` считает в 64 битах — исправлено описание в `docs/05` §4.
+5. **26.3+: жилы руды — правила материала.** Стадия TERRAIN применяет из `material_rule` только правила `ore_vein` (так
+   получается вариант эталона `veins`). Потоку поверхности (W2): при запросе SURFACE полный `material_rule` должен считаться
+   по заполнению **без** жил (ore_vein — часть той же последовательности правил, первое сработавшее правило побеждает) —
+   конвейер `region.c` для этого вызывает заполнение с `ore_veins=0`, когда стадия SURFACE будет реализована.
+6. **Растекание в бесконечном мире**: по умолчанию libmcgen растекает жидкости во всех чанках региона (как увидит игрок,
+   обойдя мир); `--pp-margin` / `mcgen_x_generate_region_pp` нужны только для сверки с загруженной сервером областью.
+   **Для `tools/gt/run_gate.py` (W6):** ворота G2–G4 надо запускать с `--pp-margin <margin − 1>` (при margin = 4 → 3) и
+   сравнивать все чанки строго — тогда остаток «water/lava → air» и карт высот исчезает (проверено на всех 47 эталонах 26.3).
+7. **Карты высот**: после растекания; классы состояний (воздух / блокирует движение / жидкость / листва) — по именам блоков
+   (`gen_compute_state_classes`), на G2 расхождений 0.
+8. **Прогресс `McProgressFn`**: `what` = `"<стадия> <готово>/<всего>"` — `biomes`/`terrain` (проход по чанкам, доля 0–0.9),
+   `fluids` (растекание, 0.9–0.98), `heightmaps` (0.99), `done` (1.0); отмена (≠ 0) работает на всех этапах.
+9. **Инкрементальный пересчёт стадий** пока не сделан: из стадий реализованы только BIOMES и TERRAIN, и обе зависят от
+   одних и тех же настроек; имеет смысл вместе со стадиями W2/W3 (снимок блоков после каждой стадии в регионе и
+   `mcgen_generate_region_from(base, keep_stages, …)` новой функцией ABI).
+10. **Windows**: `src/util.c` подключает `<locale.h>` (нужен `_create_locale`); `python3 libmcgen/build.py --targets all`
+    (zig 0.16) собирает win-x64, linux-x64, macos-arm64, macos-x64, экспорт 42 функций — OK.
+11. **NBT/inflate** (`src/nbt.h`): `mc_decompress_auto` (gzip, в т. ч. несколько членов, zlib, несжатое; CRC-32/Adler-32
+    проверяются), `nbt_parse`/`nbt_read_file` → дерево в арене, строки в UTF-8, `nbt_get/nbt_at/nbt_int/nbt_num/nbt_str`.
+
+## 8. Что не сделано / ограничения
+* G1 для 26.4-snapshot-2 — см. §6.1; эталонов G2 для 26.1/26.2/26.4 у W6 по одному (r = 2) — для этих версий заполнение
+  дополнительно проверено эталоном на классах игры (`presets_check.py`).
+* `mcgen_biome_at` для клеток с ничьей откатывается по чанку — в худшем случае (длинные цепочки ничьих) это десятки поисков
+  по дереву на точку; на практике незаметно (карта 1024² — секунды).
