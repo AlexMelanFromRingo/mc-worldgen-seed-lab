@@ -270,15 +270,28 @@ static int aq_substance(Aq *a, int x, int y, int z, double density) {
 }
 
 /* ---------------- контекст и заполнение ---------------- */
-struct TerrainCtx { SCtx *x; void *old; PPMarks marks; };
+struct TerrainCtx { SCtx *x; void *old; PPMarks marks; Aq aq; int aq_ok; /* aquifer последнего заполненного чанка (для стадии CARVERS, carver.c) */ };
 TerrainCtx *terrain_ctx_new(McWorld *w) {
     TerrainCtx *t = xcalloc(1, sizeof *t);
     if (w->g->newf) t->x = sctx_new(w->nc, 1);
     else t->old = terrain_old_ctx_new(w);
     return t;
 }
-void terrain_ctx_free(TerrainCtx *t) { if (!t) return; sctx_free(t->x); if (t->old) terrain_old_ctx_free(t->old); ppmarks_free(&t->marks); free(t); }
+void terrain_ctx_free(TerrainCtx *t) { if (!t) return; if (t->aq_ok) aq_free(&t->aq); sctx_free(t->x); if (t->old) terrain_old_ctx_free(t->old); ppmarks_free(&t->marks); free(t); }
 const PPMarks *terrain_marks(const TerrainCtx *t) { return &t->marks; }
+PPMarks *terrain_marks_rw(TerrainCtx *t) { return &t->marks; }
+/* Aquifer.computeSubstance(x, y, z, 0.0) aquifer последнего заполненного чанка (applyCarvingMask): состояние или −1 (null);
+ * *sched — shouldScheduleFluidUpdate(). −2 — у контекста нет заполненного чанка. */
+int terrain_old_carve_substance(void *octx, int x, int y, int z);   /* terrain_old.c */
+int terrain_old_carve_sched(void *octx);
+int terrain_carve_sched(TerrainCtx *t) { return t->old ? terrain_old_carve_sched(t->old) : t->aq.sched; }   /* shouldScheduleFluidUpdate() последнего вызова (может быть «старым») */
+int terrain_carve_substance(TerrainCtx *t, int x, int y, int z, int *sched) {
+    if (t->old) { int st = terrain_old_carve_substance(t->old, x, y, z); *sched = terrain_old_carve_sched(t->old); return st; }
+    if (!t->aq_ok) return -2;
+    int st = aq_substance(&t->aq, x, y, z, 0.0);
+    *sched = t->aq.sched;
+    return st;
+}
 
 void terrain_picker(const McWorld *w, int *lava_level, int *sea_level) {
     *sea_level = w->ns->sea_level + (int)w->tweak[MCGEN_TWEAK_SEA_LEVEL_OFFSET];
@@ -290,6 +303,7 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
     size_t tot = (size_t)w->height * 256;
     for (size_t i = 0; i < tot; i++) blocks[i] = (uint16_t)g->st_air;
     ppmarks_clear(&t->marks);
+    if (t->aq_ok) { aq_free(&t->aq); t->aq_ok = 0; }
     if (!g->newf) return terrain_old_fill(w, t->old, cx, cz, blocks, &t->marks, err, errlen);
     /* NoiseSettings.clampToHeightAccessor */
     int nmin = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
@@ -313,7 +327,7 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
         if (aq.sched && (g->state_cls[st] & 4)) ppmarks_add(&t->marks, (by - w->min_y) >> 4, xx, by & 15, z);
     }
     sctx_release(x, dens);
-    aq_free(&aq);
+    t->aq = aq; t->aq_ok = 1;
     if (w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0) veins_apply_new(w, x, cx, cz, nmin - w->min_y, nh, blocks);
     return MCGEN_OK;
 }

@@ -1,0 +1,9 @@
+minecraft:overworld    normal            ns=minecraft:overworld: готово (113 с)
+minecraft:overworld    large_biomes      ns=minecraft:large_biomes: готово (198 с)
+minecraft:overworld    amplified         ns=minecraft:amplified: готово (274 с)
+minecraft:overworld    caves             ns=minecraft:caves: готово (303 с)
+minecraft:overworld    floating_islands  ns=minecraft:floating_islands: готово (326 с)
+minecraft:the_nether   normal            ns=minecraft:nether: готово (356 с)
+minecraft:the_end      normal            ns=minecraft:end: готово (415 с)
+
+ИТОГО 26.4-snapshot-2: поля роутера — точек 7400000, расхождений 0; заполнение — чанков 448, блоков 39845888, расхождений 0; 413 с

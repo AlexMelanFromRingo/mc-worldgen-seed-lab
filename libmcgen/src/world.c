@@ -1,6 +1,7 @@
 /* world.c — McWorld: измерение + пресет + сиды по доменам + тонкие настройки; экземпляры шумов, компиляция роутера. */
 #include "mcgen_internal.h"
 #include "df_old.h"
+#include "surface.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -152,6 +153,7 @@ static i64 obfuscate_seed(i64 seed) {
 static void noise_inst_free(void *p) { NoiseInst *ni = p; if (!ni) return; ns_free(&ni->ns); if (ni->on.first.lev) old_normal_free(&ni->on); free(ni); }
 
 int tweaks_apply(McWorld *w, const McTweakValue *tw, int n, char *err, size_t errlen);   /* tweaks.c */
+void carvers_world_free(McWorld *w);   /* carver.c */
 
 int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const McSeeds *seeds,
                     const McTweakValue *tweaks, int ntweaks, McWorld **out, char *err, size_t errlen) {
@@ -201,6 +203,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
         w->old = old_wire_new(w, err, errlen);
         if (!w->old) rcode = MCGEN_E_DATA;
     }
+    if (!rcode && surface_world_init(w, err, errlen)) rcode = MCGEN_E_DATA;   /* стадия SURFACE: правила и шумы (surface.c) */
     if (rcode) { mcgen_world_free(w); return rcode; }
     *out = w;
     return MCGEN_OK;
@@ -208,6 +211,8 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
 
 void mcgen_world_free(McWorld *w) {
     if (!w) return;
+    carvers_world_free(w);
+    surface_world_free(w);
     veins_free(w);
     nc_free(w->nc);
     tweaks_release(w);

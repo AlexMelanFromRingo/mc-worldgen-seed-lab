@@ -26,6 +26,7 @@ typedef struct {
     int *loc; u8 *loc_set; Fluid *status; u8 *status_set; int cap;
     int skip_above_y;
     int sched;
+    int pt;          /* 1 — вызов из карверов: контекст — SinglePointContext(x, y, z), а не NoiseChunk (барьерный шум по точке) */
 } AqOld;
 
 static inline int gx_of(int b) { return b >> 4; }
@@ -133,14 +134,15 @@ static double pressure(AqOld *a, int bx, int by, int bz, double *barrier, Fluid 
     else { double c = 3.0 + edge; grad = c > 0.0 ? c / 3.0 : c / 10.0; }
     double nv;
     if (!(grad < -2.0) && !(grad > 2.0)) {
-        if (*barrier != *barrier) *barrier = nchunk_router_here(a->nc, RF_BARRIER);   /* barrierNoise.compute(context = NoiseChunk) */
+        if (*barrier != *barrier) *barrier = a->pt ? nchunk_router_point(a->nc, RF_BARRIER, bx, by, bz) : nchunk_router_here(a->nc, RF_BARRIER);   /* barrierNoise.compute(context = NoiseChunk | SinglePointContext) */
         nv = *barrier;
     } else nv = 0.0;
     return 2.0 * (nv + grad);
 }
-static int aq_substance(AqOld *a, double density) {
+static int aq_substance_xyz(AqOld *a, int x, int y, int z, double density);
+static int aq_substance(AqOld *a, double density) { return aq_substance_xyz(a, nchunk_block_x(a->nc), nchunk_block_y(a->nc), nchunk_block_z(a->nc), density); }
+static int aq_substance_xyz(AqOld *a, int x, int y, int z, double density) {
     const McGen *g = a->g;
-    int x = nchunk_block_x(a->nc), y = nchunk_block_y(a->nc), z = nchunk_block_z(a->nc);
     a->sched = 0;
     if (density > 0.0) return -1;
     Fluid global = pick(&a->pk, y);
@@ -230,6 +232,15 @@ void terrain_old_ctx_free(void *p) {
     OldCtx *c = p; if (!c) return;
     nchunk_free(c->nc); free(c->aq.loc); free(c->aq.loc_set); free(c->aq.status); free(c->aq.status_set); free(c);
 }
+
+/* стадия CARVERS (carver.c): computeSubstance(SinglePointContext(x, y, z), 0.0) водоносного слоя последнего заполненного чанка */
+int terrain_old_carve_substance(void *octx, int x, int y, int z) {
+    OldCtx *oc = octx; oc->aq.pt = 1;
+    int st = aq_substance_xyz(&oc->aq, x, y, z, 0.0);
+    oc->aq.pt = 0;
+    return st;
+}
+int terrain_old_carve_sched(void *octx) { return ((OldCtx *)octx)->aq.sched; }
 
 int terrain_old_fill(McWorld *w, void *octx, int cx, int cz, uint16_t *blocks, PPMarks *marks, char *err, size_t errlen) {
     OldCtx *oc = octx;

@@ -86,8 +86,9 @@ def main():
                     R = 300 if k % 2 == 0 else 60000
                     cx, cz = rng.randint(-R, R), rng.randint(-R, R)
                     o = base64.b64decode(ref.cmd(f'fill {ns} {seed} {cx} {cz} {lo} {h}'))
+                    # 26.3+: жилы — правила материала (в эталоне fill их нет), 26.1/26.2: OreVeinifier внутри NoiseChunk (есть в обоих)
                     r = subprocess.run([CLI, 'fillraw', '--pack', pack, '--version', a.version, '--dim', dim, '--preset', preset, '--seed', str(seed),
-                                        '--cx0', str(cx), '--cz0', str(cz)], capture_output=True)
+                                        '--cx0', str(cx), '--cz0', str(cz)] + (['--tweak', 'ore_veins=0'] if newf else []), capture_output=True)
                     if r.returncode:
                         print(f'  {preset} fill: ошибка {r.stderr.decode()[-200:]}'); continue
                     ob = struct.unpack(f'<{len(o) // 2}H', o); mb = struct.unpack(f'<{len(r.stdout) // 2}H', r.stdout)

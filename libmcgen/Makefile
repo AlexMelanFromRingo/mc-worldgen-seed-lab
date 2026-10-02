@@ -1,6 +1,6 @@
 # libmcgen — локальная сборка gcc (кросс-сборка zig — отдельный поток, build.py).
 #   make                 build/libmcgen.so + build/mcgen-cli (статически слинкованный с библиотекой)
-#   make test            юнит-тесты (tests/*.c)
+#   make test            быстрые самопроверки (tests/*.c, nbt_check, tweaks_effect)
 #   make clean
 # Бит-точность с Java: -ffp-contract=off, без -ffast-math.
 CC      ?= gcc
@@ -39,8 +39,13 @@ build/tests/%: tests/%.c build/libmcgen.a $(HDR)
 	@mkdir -p build/tests
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< build/libmcgen.a $(LDLIBS)
 tests: $(TESTS)
-test: tests
-	@for t in $(TESTS); do echo "== $$t"; $$t || exit 1; done
+# быстрые самопроверки без oracle/сервера (нужен пак-каталог ../run/pack-26.3); G1/G2 — см. docs/blender/terrain.md §5
+PACK ?= ../run/pack-26.3
+test: all tests
+	./build/tests/biome_cells $(PACK) 26.3 minecraft:overworld 12345 -4 -4 8
+	./build/tests/biome_cells $(PACK) 26.3 minecraft:the_nether 12345 -4 -4 8
+	python3 tests/nbt_check.py --version 26.3
+	python3 tests/tweaks_effect.py --version 26.3 --n 4
 
 clean:
 	rm -rf build

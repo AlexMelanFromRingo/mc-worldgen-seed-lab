@@ -123,6 +123,8 @@ struct McWorld {
     Df *rf_over[RF__COUNT];     /* изменённые поля роутера */
     Df *aq_over[AQ__COUNT];     /* изменённые поля Aquifer.Config (26.3+) */
     double noise_mxz, noise_my, cave_m;
+    void *carvers;              /* стадия CARVERS (carver.c): определения карверов, списки по биомам; строится лениво */
+    void *surface;              /* стадия SURFACE (surface.c): дерево правил, шумы, полосы; строится в mcgen_world_new */
 };
 
 void tweaks_prepare(McWorld *w);

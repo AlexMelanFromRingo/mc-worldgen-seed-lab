@@ -25,7 +25,8 @@ typedef struct {
     const McGen *g;
     int water[16], lava[16];       /* состояния water[level=i], lava[level=i] */
     int obsidian, cobblestone, stone;
-    const u8 *washed;              /* тег washed_away_by_fluids */
+    const u8 *washed;              /* тег washed_away_by_fluids (26.3+) */
+    u8 *legacy_hold;               /* 26.1/26.2: canHoldAnyFluid по коду игры (тега ещё нет), по состояниям */
 } FTab;
 
 static FTab *ftab_get(const McGen *g) {
@@ -42,6 +43,26 @@ static FTab *ftab_get(const McGen *g) {
     t->cobblestone = gen_state_id(g, "minecraft:cobblestone");
     t->stone = gen_state_id(g, "minecraft:stone");
     t->washed = gen_block_tag(g, "minecraft:washed_away_by_fluids");
+    if (!g->newf) {
+        /* 26.1/26.2 FlowingFluid.canHoldAnyFluid: LiquidBlockContainer → да; blocksMotion → нет; иначе нет только у дверей,
+         * табличек, лестницы, тростника, пузырькового столба, порталов, шлюза Края, structure_void */
+        static const char *EXCL[] = { "door[", "sign[", "minecraft:ladder[", "minecraft:sugar_cane[", "minecraft:bubble_column[",
+                                      "minecraft:nether_portal[", "minecraft:end_portal", "minecraft:end_gateway", "minecraft:structure_void" };
+        t->legacy_hold = xcalloc((size_t)g->nstates, 1);
+        for (int st = 0; st < g->nstates; st++) {
+            const char *n = g->state_names[st];
+            char nb[256]; snprintf(nb, sizeof nb, "%s[", n);   /* состояние без свойств — тоже с «[» для сравнения */
+            int container = strstr(n, "waterlogged=") || strstr(n, "minecraft:kelp") || strstr(n, "seagrass");
+            int hold = 0;
+            if (container) hold = 1;
+            else if (!(g->state_cls[st] & 2)) {          /* CL_MOTION: blocksMotion */
+                hold = 1;
+                for (size_t k = 0; k < sizeof EXCL / sizeof *EXCL; k++) if (strstr(nb, EXCL[k])) hold = 0;
+                if (strstr(n, "_door") && strchr(n, '[')) hold = 0;
+            }
+            t->legacy_hold[st] = (u8)hold;
+        }
+    }
     cache = t; owner = g;
     return t;
 }
@@ -80,7 +101,10 @@ static inline int full_shape(const FTab *t, int st) {
     return 1;
 }
 static inline int is_solid(const FTab *t, int st) { return full_shape(t, st); }
-static inline int can_hold_any(const FTab *t, int st) { return t->washed && t->washed[t->g->state_block[st]]; }
+static inline int can_hold_any(const FTab *t, int st) {
+    if (t->legacy_hold) return t->legacy_hold[st];
+    return t->washed && t->washed[t->g->state_block[st]];
+}
 
 /* ---------------- мир ---------------- */
 typedef struct { FluidWorld *w; const FTab *t; int ft; } Ctx;   /* ft — тип текущей жидкости */

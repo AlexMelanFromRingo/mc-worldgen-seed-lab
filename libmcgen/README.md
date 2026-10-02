@@ -28,3 +28,6 @@ mcgen-cli --pack run/pack-26.3 --version 26.3 --dim minecraft:overworld --preset
           [--seeds climate,terrain,structures,features] [--tweak id=value …] \
           --cx0 0 --cz0 0 --nx 8 --nz 8 --stages 0x3f --threads 0 --out region.mcr
 ```
+Дополнительно: `--pp-margin K` — растекание жидкостей только в чанках не ближе K к краю региона (сверка с областью,
+загруженной сервером); подкоманды `info`, `df`, `biome`, `qbiome`, `climate`, `chunkbiomes`, `biometie`, `fillraw`, `bench`
+(описание — в начале `cli/mcgen-cli.c`). Устройство, тесты и измеренные результаты — `docs/blender/terrain.md`.

@@ -1,0 +1,10 @@
+{
+  "name": "carve_raw",
+  "title": "Чистое заполнение шумом + карверы",
+  "doc": "Как raw (material_rule пуст: нет бедрока, сланца, жил, травы), плюс карверы биомов (пещеры, каньоны, карверы Нижнего мира). Фич и структур нет. Для проверки карверов отдельно от поверхности (G4c). Как и в raw, расширения eroded_badlands/frozen_ocean выполняются кодом игры (diff.py --mask-ext).",
+  "generate_structures": false,
+  "terrain_rule": "empty",
+  "carvers": true,
+  "features": false,
+  "structures": false
+}

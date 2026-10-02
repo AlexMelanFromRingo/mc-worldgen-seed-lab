@@ -15,7 +15,8 @@ r+1, r+2 — full; r+3 — initialize_light; r+4 — terrain. Чанки со с
                                               (--veins-mask: вместо твика маскировать состояния жил: filler/ore/raw из material_rule)
   G2v  veins    stages 0x3                    + жилы руды; маска только ext-биомы
   G3   surface  stages 0x7                    настоящие правила материала (бедрок, сланец, трава, бэдленды, лёд)
-  G4   carvers  stages 0xf                    + карверы
+  G4   carvers  stages 0xf                    + карверы (к surface)
+  G4c  carve_raw stages 0xb (БЕЗ SURFACE)     карверы без поверхности (как raw: --tweak ore_veins=0, маска ext-биомов) — для проверки карверов отдельно
   G5   features stages 0x1f                   + все декорации; порог 99.9 % (изолированные фичи — feature:<id>, --gate G5i --feature ID)
   G6   full     stages 0x3f                   + постройки; порог 99.9 %
 Библиотека: --cli libmcgen/build/mcgen-cli (по умолчанию), либо --lib libmcgen/build/libmcgen.so (ctypes). Если нет ни того, ни другого —
@@ -42,6 +43,8 @@ GATES = {
                margin=4, min_status='minecraft:terrain'),
     'G4': dict(title='G4: + карверы', variant='carvers', stages=0xf, mask_ext=False, mask_veins=False, min_match=100.0,
                margin=4, min_status='minecraft:terrain'),
+    'G4c': dict(title='G4c: карверы без поверхности (carve_raw)', variant='carve_raw', stages=0xb, mask_ext=True, mask_veins=False, tweaks={'ore_veins': 0},
+                min_match=100.0, margin=4, min_status='minecraft:terrain'),
     'G5': dict(title='G5: + декорации (все вместе)', variant='features', stages=0x1f, mask_ext=False, mask_veins=False, min_match=99.9,
                margin=2, min_status='minecraft:full'),
     'G6': dict(title='G6: + постройки (полная ваниль)', variant='full', stages=0x3f, mask_ext=False, mask_veins=False, min_match=99.9,

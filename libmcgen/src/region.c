@@ -2,6 +2,8 @@
 #include "mcgen_internal.h"
 #include "mcgen_test.h"
 #include "fluidpp.h"
+#include "carver.h"
+#include "surface.h"
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,7 +108,20 @@ void gen_compute_state_classes(McGen *g) {
         int fluid = !strncmp(b, "water", 5) || !strncmp(b, "lava", 4) || !strncmp(b, "bubble_column", 13) || strstr(n, "waterlogged=true");
         int motion = !(!strncmp(b, "water", 5) || !strncmp(b, "lava", 4) || !strncmp(b, "bubble_column", 13));
         for (int k = 0; NONSOLID[k] && motion; k++) if (strstr(b, NONSOLID[k])) motion = 0;
+        if (!strcmp(b, "grass_block") || !strncmp(b, "flowering_azalea", 16) || !strncmp(b, "azalea_leaves", 13)) motion = 1;   /* «grass»/«flower» — подстроки не про них */
+        if (!strncmp(b, "powder_snow", 11) && strncmp(b, "powder_snow_cauldron", 20)) motion = 0;                         /* пустая форма коллизии */
         c[i] = (u8)((motion ? CL_MOTION : 0) | (fluid ? CL_FLUID : 0) | (strstr(b, "_leaves") ? CL_LEAVES : 0));
+    }
+    /* 26.3+: Heightmap.Types берёт состав из тегов датапака (blocks_motion_in_heightmap[_no_leaves]) — точнее эвристики по именам */
+    {
+        const u8 *tm = gen_block_tag(g, "minecraft:blocks_motion_in_heightmap"), *tn = gen_block_tag(g, "minecraft:blocks_motion_in_heightmap_no_leaves");
+        int any = 0;
+        for (int b = 0; b < g->nblocks && !any; b++) any = tm[b];
+        if (any) for (int i = 0; i < g->nstates; i++) {
+            if (c[i] & CL_AIR) continue;
+            int b = g->state_block[i];
+            c[i] = (u8)((c[i] & CL_FLUID) | (tm[b] ? CL_MOTION : 0) | (tm[b] && !tn[b] ? CL_LEAVES : 0));
+        }
     }
     g->state_cls = c;
 }
@@ -141,6 +156,7 @@ static void worker(void *arg) {
     McWorld *w = j->w; McRegion *r = j->r;
     TerrainCtx *t = (j->stages & ~MC_STAGE_BIOMES) ? terrain_ctx_new(w) : NULL;
     SCtx *bx = w->nc ? sctx_new(w->nc, 1) : NULL;
+    SurfCtx *sc = (j->stages & MC_STAGE_SURFACE) ? surface_ctx_new(w) : NULL;   /* стадия SURFACE (surface.c) */
     int H = r->info.height;
     size_t bsz = (size_t)H * 256, isz = (size_t)(H / 4) * 16;
     for (;;) {
@@ -158,6 +174,16 @@ static void worker(void *arg) {
                 mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
                 break;
             }
+            if (sc && surface_apply_chunk(w, sc, cx, cz, blk, bio, terrain_marks_rw(t), e, sizeof e)) {
+                mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
+                break;
+            }
+            if (j->stages & MC_STAGE_CARVERS) {   /* после TERRAIN (и SURFACE) на том же контексте: aquifer и кэши чанка (carver.h) */
+                if (carvers_apply_chunk(w, t, cx, cz, blk, terrain_marks_rw(t), e, sizeof e)) {
+                    mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
+                    break;
+                }
+            }
             ppmarks_copy(&r->marks[i], terrain_marks(t));
         }
         mutex_lock(j->lock);
@@ -171,13 +197,14 @@ static void worker(void *arg) {
     }
     if (t) terrain_ctx_free(t);
     if (bx) sctx_free(bx);
+    if (sc) surface_ctx_free(sc);
 }
 
 /* ---------------- пост-обработка жидкостей по региону (LevelChunk.postProcessGeneration) ----------------
  * Блоки соседних чанков вне региона («гало») при необходимости генерируются лениво (TERRAIN); пометки гало-чанков,
  * лежащие у границы региона (могут растечься внутрь), тоже обрабатываются. Порядок — по чанкам (cz, затем cx). */
 typedef struct HaloChunk { int cx, cz; uint16_t *blocks; PPMarks marks; struct HaloChunk *next; } HaloChunk;
-typedef struct { McWorld *w; McRegion *r; HaloChunk *halo[256]; TerrainCtx *t; int fail; char err[256]; } View;
+typedef struct { McWorld *w; McRegion *r; HaloChunk *halo[256]; TerrainCtx *t; int fail; char err[256]; SurfCtx *sc; } View;
 static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     McRegion *r = v->r;
     int i = chunk_index(r, cx, cz);
@@ -189,6 +216,9 @@ static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     if (!v->t) v->t = terrain_ctx_new(v->w);
     char e[256] = {0};
     if (terrain_fill_chunk(v->w, v->t, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
+    else if ((r->stages & MC_STAGE_SURFACE) && (v->sc || (v->sc = surface_ctx_new(v->w))) &&
+             surface_apply_chunk(v->w, v->sc, cx, cz, h->blocks, NULL, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
+    else if ((r->stages & MC_STAGE_CARVERS) && carvers_apply_chunk(v->w, v->t, cx, cz, h->blocks, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
     ppmarks_copy(&h->marks, terrain_marks(v->t));
     h->next = v->halo[b]; v->halo[b] = h;
     if (marks) *marks = &h->marks;
@@ -245,6 +275,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     }
     for (int b = 0; b < 256; b++) { HaloChunk *h = v.halo[b]; while (h) { HaloChunk *nx2 = h->next; free(h->blocks); ppmarks_free(&h->marks); free(h); h = nx2; } }
     if (v.t) terrain_ctx_free(v.t);
+    if (v.sc) surface_ctx_free(v.sc);
     if (v.fail) { set_err(err, errlen, "%s", v.err); return -1; }
     if (cancel) { set_err(err, errlen, "отменено"); return 1; }
     return 0;
@@ -254,7 +285,9 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
                     McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     if (!w || !out || nx <= 0 || nz <= 0 || (long)nx * nz > 1 << 20) { set_err(err, errlen, "mcgen_generate_region: аргументы"); return MCGEN_E_ARG; }
     *out = NULL;
-    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN;
+    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS;
+    if (stages & MC_STAGE_SURFACE) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* поверхность: заполненный чанк и биомы для правил */
+    if (stages & MC_STAGE_CARVERS) stages |= MC_STAGE_TERRAIN;   /* карверы работают над заполненным чанком */
     if (stages & ~sup & MC_STAGE_ALL) {
         /* стадии SURFACE и выше — другие потоки работ; пока считаем доступные */
         stages &= sup;

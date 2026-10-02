@@ -7,7 +7,7 @@
    "variant": "raw",
    "dim": "overworld",
    "seed": 12345,
-   "gen_s": 3.17,
+   "gen_s": 2.24,
    "chunks": 124,
    "blocks": 12189696,
    "mismatch": 0,
