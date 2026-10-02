@@ -1,0 +1,11 @@
+{
+  "name": "full",
+  "title": "Полная ваниль",
+  "doc": "Без датапака-переопределения: чистая ваниль, структуры включены.",
+  "generate_structures": true,
+  "terrain_rule": "full",
+  "carvers": true,
+  "features": true,
+  "structures": true,
+  "vanilla": true
+}

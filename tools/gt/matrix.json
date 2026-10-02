@@ -1,0 +1,526 @@
+{
+ "doc": "Матрица ворот G2-G6: сгенерировано tools/gt/pick_regions.py (mcquery, y=68). label — класс ландшафта области. extras — области (r=5) с редкими биомами для изоляции фич.",
+ "seeds": [
+  12345,
+  8675309,
+  -7048155917072976836
+ ],
+ "picked": {
+  "12345": {
+   "ocean": {
+    "cx": 2,
+    "cz": 212,
+    "frac": 0.85,
+    "top_biomes": [
+     "ocean:5931",
+     "beach:649",
+     "river:192",
+     "dark_forest:114",
+     "stony_shore:104",
+     "deep_ocean:66"
+    ]
+   },
+   "mountains": {
+    "cx": -19,
+    "cz": -208,
+    "frac": 0.907,
+    "top_biomes": [
+     "windswept_hills:6403",
+     "swamp:275",
+     "sunflower_plains:220",
+     "plains:158"
+    ]
+   },
+   "desert": {
+    "cx": -177,
+    "cz": 86,
+    "frac": 0.809,
+    "top_biomes": [
+     "desert:5706",
+     "river:1349",
+     "plains:1"
+    ]
+   },
+   "jungle": {
+    "cx": -103,
+    "cz": 2,
+    "frac": 0.96,
+    "top_biomes": [
+     "jungle:6554",
+     "river:280",
+     "sparse_jungle:222"
+    ]
+   }
+  },
+  "8675309": {
+   "ocean": {
+    "cx": 12,
+    "cz": -19,
+    "frac": 0.849,
+    "top_biomes": [
+     "ocean:2369",
+     "lukewarm_ocean:2277",
+     "deep_ocean:1345",
+     "forest:458",
+     "birch_forest:285",
+     "river:151"
+    ]
+   },
+   "mountains": {
+    "cx": 180,
+    "cz": -103,
+    "frac": 0.441,
+    "top_biomes": [
+     "plains:1940",
+     "frozen_peaks:1691",
+     "dripstone_caves:1041",
+     "stony_peaks:710",
+     "forest:555",
+     "grove:370"
+    ]
+   },
+   "desert": {
+    "cx": -114,
+    "cz": -51,
+    "frac": 0.984,
+    "top_biomes": [
+     "desert:6946",
+     "jungle:110"
+    ]
+   },
+   "jungle": {
+    "cx": -30,
+    "cz": -187,
+    "frac": 0.934,
+    "top_biomes": [
+     "sparse_jungle:4634",
+     "bamboo_jungle:1301",
+     "jungle:654",
+     "river:440",
+     "forest:20",
+     "beach:7"
+    ]
+   }
+  },
+  "-7048155917072976836": {
+   "ocean": {
+    "cx": 138,
+    "cz": -208,
+    "frac": 0.85,
+    "top_biomes": [
+     "deep_ocean:3521",
+     "ocean:2474",
+     "plains:883",
+     "beach:119",
+     "river:53",
+     "stony_shore:6"
+    ]
+   },
+   "mountains": {
+    "cx": -61,
+    "cz": -208,
+    "frac": 0.882,
+    "top_biomes": [
+     "grove:5273",
+     "snowy_slopes:948",
+     "stony_shore:272",
+     "snowy_taiga:253",
+     "snowy_plains:158",
+     "frozen_ocean:105"
+    ]
+   },
+   "desert": {
+    "cx": 201,
+    "cz": -145,
+    "frac": 1.0,
+    "top_biomes": [
+     "desert:5389",
+     "eroded_badlands:1667"
+    ]
+   },
+   "jungle": {
+    "cx": 107,
+    "cz": 170,
+    "frac": 0.909,
+    "top_biomes": [
+     "jungle:2880",
+     "bamboo_jungle:2838",
+     "sparse_jungle:698",
+     "river:596",
+     "plains:43",
+     "forest:1"
+    ]
+   }
+  }
+ },
+ "configs": [
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "spawn"
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 2,
+   "cz": 212,
+   "radius": 10,
+   "label": "ocean"
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -19,
+   "cz": -208,
+   "radius": 10,
+   "label": "mountains"
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -177,
+   "cz": 86,
+   "radius": 10,
+   "label": "desert"
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -103,
+   "cz": 2,
+   "radius": 10,
+   "label": "jungle"
+  },
+  {
+   "dim": "nether",
+   "seed": 12345,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "center"
+  },
+  {
+   "dim": "nether",
+   "seed": 12345,
+   "cx": 60,
+   "cz": -60,
+   "radius": 10,
+   "label": "offset"
+  },
+  {
+   "dim": "end",
+   "seed": 12345,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "main_island"
+  },
+  {
+   "dim": "end",
+   "seed": 12345,
+   "cx": 90,
+   "cz": 0,
+   "radius": 10,
+   "label": "outer_east"
+  },
+  {
+   "dim": "end",
+   "seed": 12345,
+   "cx": -40,
+   "cz": -90,
+   "radius": 10,
+   "label": "outer_north"
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "spawn"
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": 12,
+   "cz": -19,
+   "radius": 10,
+   "label": "ocean"
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": 180,
+   "cz": -103,
+   "radius": 10,
+   "label": "mountains"
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -114,
+   "cz": -51,
+   "radius": 10,
+   "label": "desert"
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -30,
+   "cz": -187,
+   "radius": 10,
+   "label": "jungle"
+  },
+  {
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "center"
+  },
+  {
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": 60,
+   "cz": -60,
+   "radius": 10,
+   "label": "offset"
+  },
+  {
+   "dim": "end",
+   "seed": 8675309,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "main_island"
+  },
+  {
+   "dim": "end",
+   "seed": 8675309,
+   "cx": 90,
+   "cz": 0,
+   "radius": 10,
+   "label": "outer_east"
+  },
+  {
+   "dim": "end",
+   "seed": 8675309,
+   "cx": -40,
+   "cz": -90,
+   "radius": 10,
+   "label": "outer_north"
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "spawn"
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 138,
+   "cz": -208,
+   "radius": 10,
+   "label": "ocean"
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -61,
+   "cz": -208,
+   "radius": 10,
+   "label": "mountains"
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 201,
+   "cz": -145,
+   "radius": 10,
+   "label": "desert"
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": 170,
+   "radius": 10,
+   "label": "jungle"
+  },
+  {
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "center"
+  },
+  {
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": 60,
+   "cz": -60,
+   "radius": 10,
+   "label": "offset"
+  },
+  {
+   "dim": "end",
+   "seed": -7048155917072976836,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "main_island"
+  },
+  {
+   "dim": "end",
+   "seed": -7048155917072976836,
+   "cx": 90,
+   "cz": 0,
+   "radius": 10,
+   "label": "outer_east"
+  },
+  {
+   "dim": "end",
+   "seed": -7048155917072976836,
+   "cx": -40,
+   "cz": -90,
+   "radius": 10,
+   "label": "outer_north"
+  }
+ ],
+ "extras": [
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 5,
+   "label": "old_growth_taiga",
+   "cells": 1936
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -118,
+   "cz": -157,
+   "radius": 5,
+   "label": "pale_garden",
+   "cells": 472
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 41,
+   "cz": -69,
+   "radius": 5,
+   "label": "dappled_forest",
+   "cells": 1805
+  },
+  {
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -179,
+   "cz": -135,
+   "radius": 5,
+   "label": "flower_forest",
+   "cells": 1931
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "label": "mangrove_swamp",
+   "cells": 1936
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -135,
+   "cz": -151,
+   "radius": 5,
+   "label": "ice_spikes",
+   "cells": 1827
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -74,
+   "cz": -52,
+   "radius": 5,
+   "label": "warm_ocean",
+   "cells": 1936
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -19,
+   "cz": -25,
+   "radius": 5,
+   "label": "cold_ocean",
+   "cells": 1936
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 30,
+   "cz": 124,
+   "radius": 5,
+   "label": "deep_lukewarm_ocean",
+   "cells": 1936
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": 52,
+   "cz": -206,
+   "radius": 5,
+   "label": "mushroom_fields",
+   "cells": 1865
+  },
+  {
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "label": "wooded_badlands",
+   "cells": 1854
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 162,
+   "cz": 69,
+   "radius": 5,
+   "label": "windswept_forest",
+   "cells": 1514
+  },
+  {
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 118,
+   "cz": 3,
+   "radius": 5,
+   "label": "windswept_savanna",
+   "cells": 1823
+  },
+  {
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": -7,
+   "cz": 26,
+   "radius": 5,
+   "label": "soul_sand_valley",
+   "cells": 1936
+  }
+ ]
+}

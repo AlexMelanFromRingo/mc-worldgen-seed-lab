@@ -1,0 +1,10 @@
+{
+  "name": "carvers",
+  "title": "surface + карверы",
+  "doc": "Как surface, плюс карверы биомов (пещеры, каньоны, карверы Нижнего мира). Фич и структур нет.",
+  "generate_structures": false,
+  "terrain_rule": "full",
+  "carvers": true,
+  "features": false,
+  "structures": false
+}

@@ -1,0 +1,10 @@
+{
+  "name": "veins",
+  "title": "Заполнение шумом + жилы руды",
+  "doc": "raw + большие жилы руды (26.3+: copper_ore_vein, iron_ore_vein из material_rule; 26.1/26.2: ore_veins_enabled). Без бедрока, сланца, поверхности, карверов, фич, структур.",
+  "generate_structures": false,
+  "terrain_rule": "veins",
+  "carvers": false,
+  "features": false,
+  "structures": false
+}

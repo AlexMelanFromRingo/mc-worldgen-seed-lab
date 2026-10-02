@@ -1,0 +1,33 @@
+schema_version = "1.0.0"
+
+id = "mcgen"
+version = "0.1.0"
+name = "MC Worldgen"
+tagline = "Generate Minecraft 26.x worlds with real blocks"
+maintainer = "Alex Melan <cleverbotam@gmail.com>"
+type = "add-on"
+
+website = "https://github.com/AlexMelanFromRingo/mc-worldgen-seed-lab"
+
+tags = ["Scene", "Add Mesh", "3D View"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:MIT"]
+copyright = ["2026 Alex Melan"]
+
+# Windows, Linux, macOS: библиотека libmcgen лежит в lib/<платформа>/ (собирается libmcgen/build.py, пакуется tools/build_extension.py)
+platforms = ["windows-x64", "linux-x64", "macos-arm64", "macos-x64"]
+
+[permissions]
+files = "Read your Minecraft jars and keep a cache of unpacked game data"
+network = "Optional: download the official Minecraft jars from Mojang"
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "*.pyc",
+  "*.zip",
+  "/dev/",
+  "*/dev/*",
+]

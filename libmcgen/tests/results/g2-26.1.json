@@ -1,0 +1,34 @@
+{
+ "version": "26.1",
+ "margin": 4,
+ "rows": [
+  {
+   "ref": "run/gt/26.1/raw/overworld-s12345-c0_0-r2_t2",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s_ff1": 2.74,
+   "gen_s_ff0": 1.8,
+   "full_chunks": 49,
+   "full_blocks": 4816896,
+   "full_mismatch": 0,
+   "pure_chunks": 42,
+   "pure_blocks": 4128768,
+   "pure_mismatch": 0,
+   "border_chunks": 32,
+   "border_blocks": 3145728,
+   "border_mismatch": 0,
+   "masked_ext_columns": 0,
+   "biome_cells": 190464,
+   "biome_mismatch": 0,
+   "top_full": [],
+   "top_pure": [],
+   "top_border": []
+  }
+ ],
+ "gate_chunks": 91,
+ "gate_blocks": 8945664,
+ "gate_mismatch": 0,
+ "border_chunks": 32,
+ "border_mismatch": 0
+}

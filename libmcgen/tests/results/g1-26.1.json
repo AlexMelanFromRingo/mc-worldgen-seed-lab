@@ -1,0 +1,1589 @@
+{
+ "version": "26.1",
+ "seeds": [
+  12345,
+  -4172144997902289642,
+  1
+ ],
+ "home_points": 43000086,
+ "cross_points": 2640132,
+ "mismatch_total": 0,
+ "seconds": 360.22200751304626,
+ "rows": [
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:end/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:end/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:nether/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/base_3d_noise",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/entrances",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/noodle",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/pillars",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d_thickness_modulator",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_roughness_function",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/continents",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/depth",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/erosion",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/factor",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/jaggedness",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/offset",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges_folded",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld/sloped_cheese",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:shift_x",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:shift_z",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:y",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "normal",
+   "id": "minecraft:zero",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:end/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:end/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:nether/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/entrances",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/noodle",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/pillars",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/spaghetti_2d",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/spaghetti_2d_thickness_modulator",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/caves/spaghetti_roughness_function",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/ridges",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/ridges_folded",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_amplified/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_amplified/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_amplified/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_amplified/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_amplified/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/continents",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/depth",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/erosion",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/factor",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/jaggedness",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/offset",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:overworld_large_biomes/sloped_cheese",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:shift_x",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:shift_z",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:y",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "large_biomes",
+   "id": "minecraft:zero",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:end/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:end/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:nether/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/entrances",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/noodle",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/pillars",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/spaghetti_2d",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/spaghetti_2d_thickness_modulator",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/caves/spaghetti_roughness_function",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/ridges",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/ridges_folded",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_amplified/depth",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_amplified/factor",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_amplified/jaggedness",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_amplified/offset",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_amplified/sloped_cheese",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:overworld_large_biomes/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:shift_x",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:shift_z",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:y",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "overworld",
+   "preset": "amplified",
+   "id": "minecraft:zero",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:end/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:end/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:nether/base_3d_noise",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/entrances",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/noodle",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/pillars",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d_thickness_modulator",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_roughness_function",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges_folded",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:shift_x",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:shift_z",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:y",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "nether",
+   "preset": "normal",
+   "id": "minecraft:zero",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:end/base_3d_noise",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:end/sloped_cheese",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:nether/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/base_3d_noise",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/entrances",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/noodle",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/pillars",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_2d_thickness_modulator",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/caves/spaghetti_roughness_function",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/ridges_folded",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_amplified/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/continents",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/depth",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/erosion",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/factor",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/jaggedness",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/offset",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:overworld_large_biomes/sloped_cheese",
+   "kind": "cross",
+   "points": 20001,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:shift_x",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:shift_z",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:y",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  },
+  {
+   "dim": "end",
+   "preset": "normal",
+   "id": "minecraft:zero",
+   "kind": "home",
+   "points": 1000002,
+   "mismatch": 0,
+   "examples": []
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "feature:<placed_feature_id>",
+  "title": "Одна фича",
+  "doc": "Параметрический вариант: `feature:minecraft:ore_diamond`. Правила материала настоящие (surface включён), карверов нет; у каждого биома остаётся только эта placed_feature на её шаге (если биом её содержит). Структур нет.",
+  "parametric": "feature",
+  "generate_structures": false,
+  "terrain_rule": "full",
+  "carvers": false,
+  "features": "only",
+  "structures": false
+}

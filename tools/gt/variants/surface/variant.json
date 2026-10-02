@@ -1,0 +1,10 @@
+{
+  "name": "surface",
+  "title": "Рельеф + настоящие правила материала/поверхности",
+  "doc": "Настоящие material_rule (26.3+: бедрок, жилы, поверхность, глубинный сланец) / surface_rule + ore_veins (26.1/26.2). Карверов, фич, структур нет.",
+  "generate_structures": false,
+  "terrain_rule": "full",
+  "carvers": false,
+  "features": false,
+  "structures": false
+}

@@ -1,0 +1,45 @@
+{
+ "version": "26.4-snapshot-2",
+ "margin": 4,
+ "rows": [
+  {
+   "ref": "run/gt/26.4-snapshot-2/raw/overworld-s12345-c0_0-r2_t2",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s_ff1": 2.14,
+   "gen_s_ff0": 0.89,
+   "full_chunks": 49,
+   "full_blocks": 4816896,
+   "full_mismatch": 0,
+   "pure_chunks": 87,
+   "pure_blocks": 8552448,
+   "pure_mismatch": 0,
+   "border_chunks": 32,
+   "border_blocks": 3145728,
+   "border_mismatch": 17,
+   "masked_ext_columns": 0,
+   "biome_cells": 259584,
+   "biome_mismatch": 14168,
+   "top_full": [],
+   "top_pure": [],
+   "top_border": [
+    {
+     "ours": "minecraft:water[level=1]",
+     "ref": "minecraft:air",
+     "count": 13
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:air",
+     "count": 4
+    }
+   ]
+  }
+ ],
+ "gate_chunks": 136,
+ "gate_blocks": 13369344,
+ "gate_mismatch": 0,
+ "border_chunks": 32,
+ "border_mismatch": 17
+}

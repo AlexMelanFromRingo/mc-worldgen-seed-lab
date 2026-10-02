@@ -1,0 +1,10 @@
+{
+  "name": "features",
+  "title": "carvers + все декорации (без структур)",
+  "doc": "Как carvers, плюс все placed_feature биомов (деревья, руды-фичи, растения, озёра...). Структур нет (generate-structures=false).",
+  "generate_structures": false,
+  "terrain_rule": "full",
+  "carvers": true,
+  "features": true,
+  "structures": false
+}

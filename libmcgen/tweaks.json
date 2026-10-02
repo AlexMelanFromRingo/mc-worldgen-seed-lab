@@ -1,0 +1,373 @@
+{
+ "schema": 1,
+ "comment": "Единственный источник правды о «тонких настройках мира» (несерийных параметрах, которые игра не даёт менять). Значения по умолчанию воспроизводят ваниль побитово (нейтральны: множители = 1, смещения = 0). Таблицу C (McTweakInfo) и копию для аддона порождает libmcgen/gen_tweaks.py; ползунки аддона строятся из этого файла динамически. Поле stage — НИЖНЯЯ стадия, на которую настройка влияет (biomes < terrain < surface < carvers < features < structures): по нему «Update Layers» решает, что пересчитывать.",
+ "stages": [
+  "biomes",
+  "terrain",
+  "surface",
+  "carvers",
+  "features",
+  "structures"
+ ],
+ "groups": [
+  {
+   "id": "terrain",
+   "label": "Terrain shape",
+   "label_ru": "Форма рельефа"
+  },
+  {
+   "id": "climate",
+   "label": "Climate scales",
+   "label_ru": "Масштабы климата"
+  },
+  {
+   "id": "caves",
+   "label": "Caves and fluids",
+   "label_ru": "Пещеры и жидкости"
+  },
+  {
+   "id": "ores",
+   "label": "Ores",
+   "label_ru": "Руды"
+  },
+  {
+   "id": "features",
+   "label": "Decoration",
+   "label_ru": "Декорации"
+  },
+  {
+   "id": "structures",
+   "label": "Structures",
+   "label_ru": "Постройки"
+  }
+ ],
+ "tweaks": [
+  {
+   "id": "sea_level_offset",
+   "group": "terrain",
+   "type": "int",
+   "stage": "terrain",
+   "label": "Sea level offset",
+   "label_ru": "Смещение уровня моря",
+   "description": "Added to the sea level of the noise settings (blocks). Raises or lowers the water line and the aquifer surface",
+   "description_ru": "Прибавляется к уровню моря из noise_settings (в блоках). Поднимает или опускает линию воды и поверхность водоносных слоёв",
+   "default": 0,
+   "min": -128,
+   "max": 128,
+   "soft_min": -32,
+   "soft_max": 32,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "terrain_amplitude",
+   "group": "terrain",
+   "type": "float",
+   "stage": "terrain",
+   "label": "Terrain amplitude",
+   "label_ru": "Амплитуда рельефа",
+   "description": "Multiplier of the vertical variation of the terrain (hills, mountains, ocean depth). 1 = vanilla",
+   "description_ru": "Множитель вертикального размаха рельефа (холмы, горы, глубина океанов). 1 = как в игре",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 8.0,
+   "soft_min": 0.0,
+   "soft_max": 3.0,
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  {
+   "id": "terrain_steepness",
+   "group": "terrain",
+   "type": "float",
+   "stage": "terrain",
+   "label": "Terrain steepness",
+   "label_ru": "Крутизна рельефа",
+   "description": "Multiplier of the terrain slope factor: >1 makes cliffs, <1 smooths the land. 1 = vanilla",
+   "description_ru": "Множитель крутизны склонов: >1 даёт обрывы, <1 сглаживает землю. 1 = как в игре",
+   "default": 1.0,
+   "min": 0.05,
+   "max": 8.0,
+   "soft_min": 0.25,
+   "soft_max": 3.0,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "climate_scale_xz",
+   "group": "climate",
+   "type": "float",
+   "stage": "biomes",
+   "label": "Climate scale XZ",
+   "label_ru": "Масштаб климата по XZ",
+   "description": "Horizontal scale of the climate noises (temperature, humidity, continentalness, erosion, weirdness). >1 stretches biomes and continents",
+   "description_ru": "Горизонтальный масштаб шумов климата (температура, влажность, континентальность, эрозия, странность). >1 растягивает биомы и материки",
+   "default": 1.0,
+   "min": 0.05,
+   "max": 16.0,
+   "soft_min": 0.25,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld",
+    "nether"
+   ]
+  },
+  {
+   "id": "climate_scale_y",
+   "group": "climate",
+   "type": "float",
+   "stage": "biomes",
+   "label": "Climate scale Y",
+   "label_ru": "Масштаб климата по Y",
+   "description": "Vertical scale of the climate noises (underground biome layers, Nether biome strata)",
+   "description_ru": "Вертикальный масштаб шумов климата (подземные биомы, слои биомов Нижнего мира)",
+   "default": 1.0,
+   "min": 0.05,
+   "max": 16.0,
+   "soft_min": 0.25,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld",
+    "nether"
+   ]
+  },
+  {
+   "id": "cave_density",
+   "group": "caves",
+   "type": "float",
+   "stage": "terrain",
+   "label": "Cave density",
+   "label_ru": "Плотность пещер",
+   "description": "Multiplier of how much of the underground is hollow (cheese and spaghetti caves, classic carvers). 0 = no caves",
+   "description_ru": "Множитель доли пустот под землёй (сырные и спагетти-пещеры, классические карверы). 0 = без пещер",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 4.0,
+   "soft_min": 0.0,
+   "soft_max": 2.0,
+   "dimensions": [
+    "overworld",
+    "nether"
+   ]
+  },
+  {
+   "id": "cave_size",
+   "group": "caves",
+   "type": "float",
+   "stage": "terrain",
+   "label": "Cave size",
+   "label_ru": "Размер пещер",
+   "description": "Multiplier of cave radius and chamber size",
+   "description_ru": "Множитель радиуса пещер и размера залов",
+   "default": 1.0,
+   "min": 0.1,
+   "max": 4.0,
+   "soft_min": 0.25,
+   "soft_max": 2.5,
+   "dimensions": [
+    "overworld",
+    "nether"
+   ]
+  },
+  {
+   "id": "canyon_frequency",
+   "group": "caves",
+   "type": "float",
+   "stage": "carvers",
+   "label": "Canyon frequency",
+   "label_ru": "Частота каньонов",
+   "description": "Multiplier of the probability of canyon carvers",
+   "description_ru": "Множитель вероятности каньонов",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 8.0,
+   "soft_min": 0.0,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  {
+   "id": "lava_level_offset",
+   "group": "caves",
+   "type": "int",
+   "stage": "terrain",
+   "label": "Lava level offset",
+   "label_ru": "Смещение уровня лавы",
+   "description": "Added to the Y of the lava lakes boundary below which caves are filled with lava (vanilla Overworld: -54)",
+   "description_ru": "Прибавляется к высоте границы лавы: ниже неё пещеры заливает лава (ваниль, Верхний мир: -54)",
+   "default": 0,
+   "min": -64,
+   "max": 128,
+   "soft_min": -32,
+   "soft_max": 64,
+   "dimensions": [
+    "overworld",
+    "nether"
+   ]
+  },
+  {
+   "id": "aquifers",
+   "group": "caves",
+   "type": "bool",
+   "stage": "terrain",
+   "label": "Aquifers",
+   "label_ru": "Водоносные слои",
+   "description": "Enables noise aquifers (underground water and lava lakes at their own levels). 0 = below sea level all caves are filled with water, below the lava level with lava (aquifers_enabled = false)",
+   "description_ru": "Включает шумовые водоносные слои (подземные озёра воды и лавы со своими уровнями). 0 — ниже уровня моря все пустоты заполнены водой, ниже уровня лавы — лавой (aquifers_enabled = false)",
+   "default": 1,
+   "min": 0,
+   "max": 1,
+   "soft_min": 0,
+   "soft_max": 1,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "fluid_flow",
+   "group": "caves",
+   "type": "bool",
+   "stage": "terrain",
+   "label": "Fluid flow",
+   "label_ru": "Растекание жидкостей",
+   "description": "Lets water and lava placed by the noise fill flow once, as the game does when a chunk becomes FULL (LevelChunk.postProcessGeneration). 0 = the pure noise fill, as in chunks whose status is below full",
+   "description_ru": "Даёт воде и лаве, поставленным заполнением шумом, один раз растечься — как игра делает при переходе чанка в FULL (LevelChunk.postProcessGeneration). 0 — «чистое» заполнение шумом, как у чанков со статусом ниже full",
+   "default": 1,
+   "min": 0,
+   "max": 1,
+   "soft_min": 0,
+   "soft_max": 1,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "ore_veins",
+   "group": "ores",
+   "type": "bool",
+   "stage": "terrain",
+   "label": "Large ore veins",
+   "label_ru": "Крупные рудные жилы",
+   "description": "Enables the large copper and iron veins (ore_veins_enabled of the noise settings)",
+   "description_ru": "Включает крупные жилы меди и железа (ore_veins_enabled в noise_settings)",
+   "default": 1,
+   "min": 0,
+   "max": 1,
+   "soft_min": 0,
+   "soft_max": 1,
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  {
+   "id": "ore_density",
+   "group": "ores",
+   "type": "float",
+   "stage": "features",
+   "label": "Ore density",
+   "label_ru": "Плотность руд",
+   "description": "Multiplier of the number of ore veins attempted per chunk",
+   "description_ru": "Множитель числа попыток разместить жилу руды на чанк",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 16.0,
+   "soft_min": 0.0,
+   "soft_max": 5.0,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "ore_size",
+   "group": "ores",
+   "type": "float",
+   "stage": "features",
+   "label": "Ore vein size",
+   "label_ru": "Размер жил руды",
+   "description": "Multiplier of the size of ore veins",
+   "description_ru": "Множитель размера жил руды",
+   "default": 1.0,
+   "min": 0.1,
+   "max": 8.0,
+   "soft_min": 0.25,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "feature_density",
+   "group": "features",
+   "type": "float",
+   "stage": "features",
+   "label": "Vegetation density",
+   "label_ru": "Плотность растительности",
+   "description": "Multiplier of the number of trees, flowers, grass and other plants per chunk",
+   "description_ru": "Множитель числа деревьев, цветов, травы и прочих растений на чанк",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 8.0,
+   "soft_min": 0.0,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  },
+  {
+   "id": "tree_size",
+   "group": "features",
+   "type": "float",
+   "stage": "features",
+   "label": "Tree size",
+   "label_ru": "Размер деревьев",
+   "description": "Multiplier of trunk height and canopy radius of trees",
+   "description_ru": "Множитель высоты ствола и радиуса кроны деревьев",
+   "default": 1.0,
+   "min": 0.25,
+   "max": 6.0,
+   "soft_min": 0.5,
+   "soft_max": 3.0,
+   "dimensions": [
+    "overworld"
+   ]
+  },
+  {
+   "id": "structure_frequency",
+   "group": "structures",
+   "type": "float",
+   "stage": "structures",
+   "label": "Structure frequency",
+   "label_ru": "Частота построек",
+   "description": "Multiplier of the structure density: spacing between structures of one set is divided by it. 0 = no structures",
+   "description_ru": "Множитель плотности построек: расстояние между постройками одного набора делится на него. 0 = без построек",
+   "default": 1.0,
+   "min": 0.0,
+   "max": 8.0,
+   "soft_min": 0.0,
+   "soft_max": 4.0,
+   "dimensions": [
+    "overworld",
+    "nether",
+    "end"
+   ]
+  }
+ ]
+}

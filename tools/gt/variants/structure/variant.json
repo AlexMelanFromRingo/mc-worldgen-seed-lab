@@ -1,0 +1,11 @@
+{
+  "name": "structure:<structure_set_id>",
+  "title": "Один набор структур",
+  "doc": "Параметрический вариант: `structure:minecraft:villages`. Правила материала настоящие, карверов и фич нет; все остальные structure_set опустошены датапаком. generate-structures=true.",
+  "parametric": "structure",
+  "generate_structures": true,
+  "terrain_rule": "full",
+  "carvers": false,
+  "features": false,
+  "structures": "only"
+}

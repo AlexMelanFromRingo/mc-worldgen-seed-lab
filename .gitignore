@@ -31,3 +31,14 @@ target/
 /tests/unit/test_noise_new
 /tests/unit/test_noise_old
 /tests/unit/out*/
+# --- Blender-аддон / libmcgen: артефакты сборки ---
+/libmcgen/build/
+/libmcgen/__pycache__/
+/blender/dist/
+/blender/mcgen_addon/lib/
+/blender/mcgen_addon/**/__pycache__/
+*.mcr
+# отладочные рендеры (с текстурами Mojang) — не публикуем; кураторские картинки добавляются осознанно
+/docs/blender/img/t_*.png
+/docs/blender/img/dbg_*.png
+/docs/blender/img/showcase_*.png
