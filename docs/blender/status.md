@@ -7,10 +7,11 @@
 
 | Поток | agentId | Зона | Состояние |
 |---|---|---|---|
-| W1 Рельеф (libmcgen core, G1/G2) | `a7e8e3a5dc842f9e6` | `libmcgen/src` (ядро), cli, tests, `docs/blender/terrain.md` | в работе: довести G2 Overworld до 100 %, версии 26.1/26.2/26.4, пресеты, тонкие настройки |
+| W1 Рельеф (libmcgen core, G1/G2) | `a7e8e3a5dc842f9e6` | `libmcgen/src` (ядро), cli, tests, `docs/blender/terrain.md` | **завершён**: G1/G2 100 % на 26.1/26.2/26.3/26.4 (коммит b4314dd); независимая проверка координатора: overworld s8675309 PASS 100 %, ≈205 чанков/с |
 | W6 Эталоны (tools/gt) | `a6156045dff329959` | `tools/gt`, `run/gt`, `docs/blender/ground-truth.md`, `accuracy.md` | в работе: варианты carve_raw, 26.1/26.2/26.4, «одна фича/структура» |
 | W2 Поверхность (G3) | `a468f63f23ac4aa63` | `libmcgen/src/surface*`, `docs/blender/surface.md` | запущен |
 | W3 Карверы (G4) | `a8319bcd54fb7c8f1` | `libmcgen/src/carver*`, `docs/blender/carvers.md` | запущен |
+| W8 Декорации: ядро фич + руды/диски/блобы (G5) | `ae66c86e0ce60f9b9` | `libmcgen/src/feature*`, `placement*`, `docs/blender/features.md` | запущен (проверка по `feature_<id>` после готовности SURFACE) |
 | W4 Ресурсы/меши/редактор | `a58bdad9fdd163941` | `blender/mcgen_addon/{assets,mesh,render}`, `libmcgen/src/mesh` | **завершён** (G7, G8 пройдены) |
 | W5 Аддон/UI/сборка | `a1b8b8ad3319d87fe` | `blender/mcgen_addon/{core,ui}`, `libmcgen/build.py` | **завершён** (кроме мелких доработок под новые стадии) |
 
@@ -36,4 +37,5 @@
 Всегда: отвечай пользователю по-русски, фиксируй только измеренное; не раскрывай секретов.
 
 ## 4. Журнал вех
+* 2026-10-03 00:00: W1 завершён (G1/G2 100 %); запущен W8 (каркас фич). Для W6: `--pp-margin margin-1` в run_gate, 26.4 биомы поблочно в anvil.py.
 * 2026-10-02: спека, контракт `mcgen.h`, pack-каталоги; W1/W4/W5/W6 запущены; G2 raw: Nether/End 100 %, Overworld ≥99,9999 %; W4 и W5 завершены (G7/G8 пройдены); запущены W2 и W3.
