@@ -3,32 +3,632 @@
  "margin": 4,
  "rows": [
   {
+   "ref": "run/gt/26.2/raw/end-s-7048155917072976836-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": -7048155917072976836,
+   "gen_s": 3.22,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/end-s-7048155917072976836-c90_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": -7048155917072976836,
+   "gen_s": 3.09,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/end-s12345-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": 12345,
+   "gen_s": 1.04,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/end-s12345-c90_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": 12345,
+   "gen_s": 3.68,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/end-s8675309-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": 8675309,
+   "gen_s": 2.18,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/end-s8675309-c90_0-r10",
+   "variant": "raw",
+   "dim": "the_end",
+   "seed": 8675309,
+   "gen_s": 5.33,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/nether-s-7048155917072976836-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_nether",
+   "seed": -7048155917072976836,
+   "gen_s": 1.11,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/nether-s12345-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_nether",
+   "seed": 12345,
+   "gen_s": 1.81,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/nether-s8675309-c0_0-r10",
+   "variant": "raw",
+   "dim": "the_nether",
+   "seed": 8675309,
+   "gen_s": 1.24,
+   "chunks": 729,
+   "blocks": 47775744,
+   "mismatch": 0,
+   "full": {
+    "chunks": 625,
+    "blocks": 40960000,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 6815744,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 746496,
+   "biome_mismatch": 0,
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s-7048155917072976836-c0_0-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "gen_s": 7.62,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 38,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 38
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 10,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 10,
+    "MOTION_BLOCKING_NO_LEAVES": 10
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 22
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 9
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 4
+    }
+   ]
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s12345-c-103_2-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s": 7.57,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 79,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 79
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 3,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 3,
+    "MOTION_BLOCKING_NO_LEAVES": 3
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 55
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 21
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=8]",
+     "count": 3
+    }
+   ]
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s12345-c-177_86-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s": 12.69,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 83,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 83
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 6,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 6,
+    "MOTION_BLOCKING_NO_LEAVES": 6
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 47
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 19
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 15
+    }
+   ]
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s12345-c-19_-208-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s": 8.34,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 26,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 26
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 12
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 10
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 4
+    }
+   ]
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s12345-c0_0-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s": 7.18,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 62,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 62
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 35
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 13
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 13
+    }
+   ]
+  },
+  {
    "ref": "run/gt/26.2/raw/overworld-s12345-c0_0-r2_t2",
    "variant": "raw",
    "dim": "overworld",
    "seed": 12345,
-   "gen_s_ff1": 1.8,
-   "gen_s_ff0": 1.64,
-   "full_chunks": 49,
-   "full_blocks": 4816896,
-   "full_mismatch": 0,
-   "pure_chunks": 42,
-   "pure_blocks": 4128768,
-   "pure_mismatch": 0,
-   "border_chunks": 32,
-   "border_blocks": 3145728,
-   "border_mismatch": 0,
-   "masked_ext_columns": 0,
+   "gen_s": 1.77,
+   "chunks": 124,
+   "blocks": 12189696,
+   "mismatch": 0,
+   "full": {
+    "chunks": 82,
+    "blocks": 8060928,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 42,
+    "blocks": 4128768,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
    "biome_cells": 190464,
    "biome_mismatch": 0,
-   "top_full": [],
-   "top_pure": [],
-   "top_border": []
+   "top": []
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s12345-c2_212-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 12345,
+   "gen_s": 5.39,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 56,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 56
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 42
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=8]",
+     "count": 5
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 5
+    }
+   ]
+  },
+  {
+   "ref": "run/gt/26.2/raw/overworld-s8675309-c0_0-r10",
+   "variant": "raw",
+   "dim": "overworld",
+   "seed": 8675309,
+   "gen_s": 7.61,
+   "chunks": 729,
+   "blocks": 71663616,
+   "mismatch": 70,
+   "full": {
+    "chunks": 625,
+    "blocks": 61440000,
+    "mismatch": 70
+   },
+   "pure": {
+    "chunks": 104,
+    "blocks": 10223616,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 9,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 9,
+    "MOTION_BLOCKING_NO_LEAVES": 9
+   },
+   "biome_cells": 1119744,
+   "biome_mismatch": 0,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=1]",
+     "count": 38
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 15
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:lava[level=2]",
+     "count": 15
+    }
+   ]
   }
  ],
- "gate_chunks": 91,
- "gate_blocks": 8945664,
- "gate_mismatch": 0,
- "border_chunks": 32,
- "border_mismatch": 0
+ "chunks": 11788,
+ "blocks": 943816704,
+ "mismatch": 414,
+ "heightmap_mismatch": 84,
+ "biome_cells": 14747136,
+ "biome_mismatch": 0
 }

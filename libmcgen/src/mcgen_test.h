@@ -18,6 +18,11 @@ MCGEN_API int mcgen_x_climate(const McWorld *w, int qx, int qy, int qz, float ou
 MCGEN_API int mcgen_x_biome_tie(const McWorld *w, int qx, int qy, int qz, int a, int b);
 /* «сырое» заполнение шумом одного чанка (TERRAIN без поверхности): height*256 u16 [y][z][x] */
 MCGEN_API int mcgen_x_fill_chunk(McWorld *w, int cx, int cz, uint16_t *blocks, char *err, size_t errlen);
+/* mcgen_generate_region с ограничением пост-обработки жидкостей: только чанки на расстоянии >= pp_margin от края региона,
+ * без гало (pp_margin < 0 — как mcgen_generate_region). Нужно для сравнения с эталоном, где растекание прошли только
+ * «тикающие» чанки загруженной области (см. docs/blender/terrain.md, G2). */
+MCGEN_API int mcgen_x_generate_region_pp(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
+                                         McRegion **out, char *err, size_t errlen);
 #ifdef __cplusplus
 }
 #endif

@@ -193,7 +193,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
             if (!w->s_rf[k]) rcode = MCGEN_E_DATA;
         }
         for (int k = 0; k < AQ__COUNT && !rcode && ns->has_aquifers; k++) {
-            w->s_aq[k] = nc_get(w->nc, ns->aq[k], err, errlen);
+            w->s_aq[k] = nc_get(w->nc, world_aq(w, k), err, errlen);
             if (!w->s_aq[k]) rcode = MCGEN_E_DATA;
         }
         if (!rcode && veins_init(w, err, errlen)) rcode = MCGEN_E_DATA;
@@ -231,7 +231,7 @@ static const char *AQ_NAMES[AQ__COUNT] = { "barrier", "fluid_level_floodedness",
 int world_df_point(McWorld *w, const char *id, int n, const int *xyz, double *out, char *err, size_t errlen) {
     const Df *f = NULL;
     if (!strncmp(id, "rf:", 3)) { for (int k = 0; k < RF__COUNT; k++) if (!strcmp(id + 3, RF_NAMES[k])) f = world_rf(w, k); }
-    else if (!strncmp(id, "aq:", 3)) { for (int k = 0; k < AQ__COUNT; k++) if (!strcmp(id + 3, AQ_NAMES[k])) f = w->ns->aq[k]; }
+    else if (!strncmp(id, "aq:", 3)) { for (int k = 0; k < AQ__COUNT; k++) if (!strcmp(id + 3, AQ_NAMES[k])) f = world_aq(w, k); }
     else f = world_df_lookup(w, id);
     if (!f) { set_err(err, errlen, "нет density_function %s", id); return MCGEN_E_ARG; }
     if (w->g->newf) {

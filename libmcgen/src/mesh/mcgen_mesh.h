@@ -23,7 +23,7 @@ extern "C" {
 #  define MCMESH_API __attribute__((visibility("default")))
 #endif
 
-#define MCMESH_ABI_VERSION 2
+#define MCMESH_ABI_VERSION 3
 
 /* Биты state_flags (совпадают с assets/state_table.py: class F). */
 enum {
@@ -64,7 +64,9 @@ enum {
     MCM_OPT_NO_MODELS = 1u << 5,
     MCM_OPT_AO = 1u << 6,             /* запечь затенение углов (ambient occlusion) в цвет вершины */
     MCM_OPT_MERGE = 1u << 7,          /* жадное слияние плоских граней с повтором тайла в шейдере (см. McMeshOutput.merged/rect) */
-    MCM_OPT_NO_VARIANTS = 1u << 8     /* всегда первый вариант модели (без случайных поворотов) — лучше сливаются грани */
+    MCM_OPT_NO_VARIANTS = 1u << 8,    /* всегда первый вариант модели (без случайных поворотов) — лучше сливаются грани */
+    MCM_OPT_NO_WATER = 1u << 9,       /* не рисовать воду (блоки-жидкости); водосодержащие блоки с моделями рисуются */
+    MCM_OPT_YRANGE = 1u << 10         /* учитывать y_lo/y_hi */
 };
 
 /* Таблицы. Все указатели принадлежат вызывающему и должны жить, пока ядро с ними работает; формат — см. assets/state_table.py. */
@@ -114,6 +116,7 @@ typedef struct McMeshOptions {
     float shade[6];                 /* затенение по направлениям (DOWN, UP, N, S, W, E) при MCM_OPT_BAKE_SHADE */
     float scale;                    /* масштаб координат на выходе (1.0 — блок = единица) */
     int32_t y_offset;               /* добавка к y-координате выхода (в блоках, до масштаба); 0 — от min_y */
+    int32_t y_lo, y_hi;             /* диапазон высот (локальные индексы y от min_y, включительно); блоки вне диапазона — как воздух. действует только с MCM_OPT_YRANGE */
 } McMeshOptions;
 
 /* Вход: окрестность чанка 3×3 (индекс (dz+1)*3 + (dx+1); центр = 4). NULL — соседа нет (граница рисуется как открытая). */

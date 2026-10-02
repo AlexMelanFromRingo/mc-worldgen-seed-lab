@@ -21,7 +21,7 @@ import numpy as np
 __all__ = ['MeshOptions', 'MeshData', 'Mesher', 'load_library', 'build_core', 'MAT_SOLID', 'MAT_CUTOUT', 'MAT_TRANSLUCENT', 'MAT_WATER',
            'N_MAT', 'DIR_NAMES', 'ABI_VERSION', 'reference_mesh_chunk']
 
-ABI_VERSION = 2
+ABI_VERSION = 3
 MAT_SOLID, MAT_CUTOUT, MAT_TRANSLUCENT, MAT_WATER, N_MAT = 0, 1, 2, 3, 4
 DIR_NAMES = ('down', 'up', 'north', 'south', 'west', 'east')
 
@@ -34,6 +34,8 @@ OPT_NO_MODELS = 1 << 5
 OPT_AO = 1 << 6
 OPT_MERGE = 1 << 7
 OPT_NO_VARIANTS = 1 << 8
+OPT_NO_WATER = 1 << 9
+OPT_YRANGE = 1 << 10
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ADDON = os.path.dirname(_HERE)
@@ -70,7 +72,7 @@ class _Options(ctypes.Structure):
     _fields_ = [
         ('flags', ctypes.c_uint32), ('blend_radius', ctypes.c_int32), ('cx', ctypes.c_int32), ('cz', ctypes.c_int32),
         ('min_y', ctypes.c_int32), ('n_sections', ctypes.c_int32), ('shade', ctypes.c_float * 6), ('scale', ctypes.c_float),
-        ('y_offset', ctypes.c_int32),
+        ('y_offset', ctypes.c_int32), ('y_lo', ctypes.c_int32), ('y_hi', ctypes.c_int32),
     ]
 
 
@@ -239,11 +241,12 @@ class MeshOptions:
 
     def __init__(self, cutout_leaves=True, bake_shade=False, blender_axes=True, blender_uv=True, blend_radius=2,
                  shade=(0.5, 1.0, 0.8, 0.8, 0.6, 0.6), scale=1.0, no_fluids=False, no_models=False, y_offset=0, ao=False,
-                 merge=False, no_variants=False):
+                 merge=False, no_variants=False, no_water=False, y_min=None, y_max=None):
         self.cutout_leaves, self.bake_shade, self.blender_axes, self.blender_uv = cutout_leaves, bake_shade, blender_axes, blender_uv
         self.blend_radius, self.shade, self.scale = blend_radius, tuple(shade), scale
         self.no_fluids, self.no_models, self.y_offset, self.ao = no_fluids, no_models, y_offset, ao
         self.merge, self.no_variants = merge, no_variants
+        self.no_water, self.y_min, self.y_max = no_water, y_min, y_max      # y_min/y_max — мировые y (включительно) либо None
 
     def flags(self):
         f = 0
@@ -265,11 +268,15 @@ class MeshOptions:
             f |= OPT_MERGE
         if self.no_variants or self.merge:
             f |= OPT_NO_VARIANTS
+        if self.no_water:
+            f |= OPT_NO_WATER
+        if self.y_min is not None or self.y_max is not None:
+            f |= OPT_YRANGE
         return f
 
     def copy(self, **kw):
         o = MeshOptions(self.cutout_leaves, self.bake_shade, self.blender_axes, self.blender_uv, self.blend_radius, self.shade,
-                        self.scale, self.no_fluids, self.no_models, self.y_offset, self.ao, self.merge, self.no_variants)
+                        self.scale, self.no_fluids, self.no_models, self.y_offset, self.ao, self.merge, self.no_variants, self.no_water, self.y_min, self.y_max)
         for k, v in kw.items():
             setattr(o, k, v)
         return o
@@ -422,6 +429,8 @@ class Mesher:
             O.shade[i] = float(o.shade[i])
         O.scale = float(o.scale)
         O.y_offset = int(o.y_offset)
+        O.y_lo = 0 if o.y_min is None else max(0, int(o.y_min) - min_y)
+        O.y_hi = height - 1 if o.y_max is None else min(height - 1, int(o.y_max) - min_y)
         out = _Output()
         rc = self.lib.mcmesh_chunk(ctypes.byref(self._T), ctypes.byref(I), ctypes.byref(O), ctypes.byref(out))
         if rc != 0:

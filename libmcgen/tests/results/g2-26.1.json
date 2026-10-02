@@ -7,28 +7,36 @@
    "variant": "raw",
    "dim": "overworld",
    "seed": 12345,
-   "gen_s_ff1": 2.74,
-   "gen_s_ff0": 1.8,
-   "full_chunks": 49,
-   "full_blocks": 4816896,
-   "full_mismatch": 0,
-   "pure_chunks": 42,
-   "pure_blocks": 4128768,
-   "pure_mismatch": 0,
-   "border_chunks": 32,
-   "border_blocks": 3145728,
-   "border_mismatch": 0,
-   "masked_ext_columns": 0,
+   "gen_s": 3.17,
+   "chunks": 124,
+   "blocks": 12189696,
+   "mismatch": 0,
+   "full": {
+    "chunks": 82,
+    "blocks": 8060928,
+    "mismatch": 0
+   },
+   "pure": {
+    "chunks": 42,
+    "blocks": 4128768,
+    "mismatch": 0
+   },
+   "ext_columns_masked": 0,
+   "heightmaps": {
+    "WORLD_SURFACE": 0,
+    "OCEAN_FLOOR": 0,
+    "MOTION_BLOCKING": 0,
+    "MOTION_BLOCKING_NO_LEAVES": 0
+   },
    "biome_cells": 190464,
    "biome_mismatch": 0,
-   "top_full": [],
-   "top_pure": [],
-   "top_border": []
+   "top": []
   }
  ],
- "gate_chunks": 91,
- "gate_blocks": 8945664,
- "gate_mismatch": 0,
- "border_chunks": 32,
- "border_mismatch": 0
+ "chunks": 124,
+ "blocks": 12189696,
+ "mismatch": 0,
+ "heightmap_mismatch": 0,
+ "biome_cells": 190464,
+ "biome_mismatch": 0
 }

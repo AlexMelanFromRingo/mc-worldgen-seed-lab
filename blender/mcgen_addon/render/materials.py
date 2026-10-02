@@ -56,8 +56,9 @@ def _build(mat, image, kind, shading, pixel_style, tiled=False):
     tex.interpolation = 'Closest' if pixel_style else 'Linear'
     tex.extension = 'EXTEND'
     tex.location = (-700, 100)
-    vc = nodes.new('ShaderNodeVertexColor')
-    vc.layer_name = 'Col'
+    vc = nodes.new('ShaderNodeAttribute')       # цвет граней (атрибут Col в области FACE — быстрее заполняется, чем цвет углов)
+    vc.attribute_type = 'GEOMETRY'
+    vc.attribute_name = 'Col'
     vc.location = (-700, -150)
     mix = nodes.new('ShaderNodeMix')
     mix.data_type = 'RGBA'
@@ -165,13 +166,14 @@ def _build(mat, image, kind, shading, pixel_style, tiled=False):
     mat.diffuse_color = (0.5, 0.5, 0.5, 1.0)
 
 
-def ensure_materials(table, cache_dir, shading='lit', pixel_style=True):
+def ensure_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT'):
     """Создаёт (или обновляет) четыре материала; возвращает список по индексам MAT_SOLID..MAT_WATER."""
     image = ensure_atlas_image(table, cache_dir, pixel_style)
     mats = []
-    for name, kind in zip(MAT_NAMES, ('opaque', 'cutout', 'translucent', 'water')):
+    wk = 'opaque' if water_style == 'OPAQUE' else 'water'
+    for name, kind in zip(MAT_NAMES, ('opaque', 'cutout', 'translucent', wk)):
         mat = bpy.data.materials.get(name)
-        stamp = '%s|%s|%s' % (image.name, shading, pixel_style)
+        stamp = '%s|%s|%s|%s' % (image.name, shading, pixel_style, wk)
         if mat is None:
             mat = bpy.data.materials.new(name)
             mat['mc_stamp'] = ''
@@ -182,13 +184,14 @@ def ensure_materials(table, cache_dir, shading='lit', pixel_style=True):
     return mats
 
 
-def ensure_tiled_materials(table, cache_dir, shading='lit', pixel_style=True):
+def ensure_tiled_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT'):
     """Материалы для слитых граней (тайл повторяется в шейдере)."""
     image = ensure_atlas_image(table, cache_dir, pixel_style)
     mats = []
-    for name, kind in zip(TILED_NAMES, ('opaque', 'cutout', 'translucent', 'water')):
+    wk = 'opaque' if water_style == 'OPAQUE' else 'water'
+    for name, kind in zip(TILED_NAMES, ('opaque', 'cutout', 'translucent', wk)):
         mat = bpy.data.materials.get(name)
-        stamp = '%s|%s|%s|t' % (image.name, shading, pixel_style)
+        stamp = '%s|%s|%s|%s|t' % (image.name, shading, pixel_style, wk)
         if mat is None:
             mat = bpy.data.materials.new(name)
             mat['mc_stamp'] = ''
@@ -211,8 +214,9 @@ def ensure_lod_material(shading='lit'):
         nt = mat.node_tree
         nt.nodes.clear()
         out = nt.nodes.new('ShaderNodeOutputMaterial')
-        vc = nt.nodes.new('ShaderNodeVertexColor')
-        vc.layer_name = 'Col'
+        vc = nt.nodes.new('ShaderNodeAttribute')
+        vc.attribute_type = 'GEOMETRY'
+        vc.attribute_name = 'Col'
         if shading == 'emission':
             em = nt.nodes.new('ShaderNodeEmission')
             nt.links.new(vc.outputs['Color'], em.inputs['Color'])

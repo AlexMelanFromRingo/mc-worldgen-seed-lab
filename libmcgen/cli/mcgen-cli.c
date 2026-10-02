@@ -3,6 +3,8 @@
  *   mcgen-cli --pack run/pack-26.3 --version 26.3 --dim minecraft:overworld --preset normal --seed 12345 \
  *             [--seeds climate,terrain,structures,features] [--tweak id=value …] \
  *             --cx0 0 --cz0 0 --nx 8 --nz 8 --stages 0x3f --threads 0 --out region.mcr
+ *             [--pp-margin K]  растекание жидкостей только в чанках на расстоянии >= K от края (эмуляция загруженной
+ *                              игрой области: внешние кольца FULL/proto-чанков postProcessGeneration не проходят)
  *   mcgen-cli info  --pack … --version …                        измерения, пресеты, число состояний/биомов, настройки
  *   mcgen-cli df    --pack … --version … --dim … --preset … --seed S --id <df_id>   точки «x y z» из stdin →
  *                   «value hexbits» (float-биты для 26.3+, double-биты для 26.1/26.2)  [тест G1]
@@ -22,7 +24,7 @@ typedef struct {
     const char *cmd, *pack, *version, *dim, *preset, *out, *id;
     int64_t seed; int has_seeds; McSeeds seeds;
     McTweakValue tw[64]; int ntw;
-    int cx0, cz0, nx, nz, threads; unsigned stages;
+    int cx0, cz0, nx, nz, threads, pp_margin; unsigned stages;
     int x0, z0, step, y;
 } Args;
 
@@ -40,7 +42,7 @@ static void usage(void) {
 
 static int parse_args(int argc, char **argv, Args *a) {
     memset(a, 0, sizeof *a);
-    a->version = "26.3"; a->dim = "minecraft:overworld"; a->preset = "normal"; a->nx = a->nz = 1; a->stages = 1u; a->step = 4; a->y = 64;
+    a->version = "26.3"; a->dim = "minecraft:overworld"; a->preset = "normal"; a->nx = a->nz = 1; a->stages = 1u; a->step = 4; a->y = 64; a->pp_margin = -1;
     int i = 1;
     if (argc > 1 && argv[1][0] != '-') a->cmd = argv[i++];
     for (; i < argc; i++) {
@@ -69,6 +71,7 @@ static int parse_args(int argc, char **argv, Args *a) {
         else if (!strcmp(k, "--nz")) { NEXT(); a->nz = atoi(v); }
         else if (!strcmp(k, "--stages")) { NEXT(); a->stages = (unsigned)strtoul(v, NULL, 0); }
         else if (!strcmp(k, "--threads")) { NEXT(); a->threads = atoi(v); }
+        else if (!strcmp(k, "--pp-margin")) { NEXT(); a->pp_margin = atoi(v); }
         else if (!strcmp(k, "--out")) { NEXT(); a->out = v; }
         else if (!strcmp(k, "--id")) { NEXT(); a->id = v; }
         else if (!strcmp(k, "--x0")) { NEXT(); a->x0 = atoi(v); }
@@ -180,7 +183,9 @@ int main(int argc, char **argv) {
         }
     } else if (!a.cmd) {
         McRegion *r;
-        if (mcgen_generate_region(w, a.cx0, a.cz0, a.nx, a.nz, a.stages, a.threads, a.out ? progress : NULL, NULL, &r, err, sizeof err)) {
+        int grc = a.pp_margin >= 0 ? mcgen_x_generate_region_pp(w, a.cx0, a.cz0, a.nx, a.nz, a.stages, a.threads, a.pp_margin, &r, err, sizeof err)
+                                   : mcgen_generate_region(w, a.cx0, a.cz0, a.nx, a.nz, a.stages, a.threads, a.out ? progress : NULL, NULL, &r, err, sizeof err);
+        if (grc) {
             fprintf(stderr, "\nmcgen_generate_region: %s\n", err); rc = 1;
         } else {
             if (a.out) fprintf(stderr, "\n");

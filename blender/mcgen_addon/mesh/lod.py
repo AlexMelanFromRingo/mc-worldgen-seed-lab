@@ -15,13 +15,22 @@ SIDE_SHADE = 0.72
 WATER_TOP = 8.0 / 9.0
 
 
-def column_heights(table, blocks_flat, height):
-    """Карта высот чанка: (ytop int16 [16,16] — индекс верхнего блока поверхности (-1 нет), sid uint16 [16,16] — его состояние)."""
-    arr = np.asarray(blocks_flat).reshape(height, 16, 16)
-    surf = table.st_lod_kind[arr] > 0
-    anyv = surf.any(axis=0)
-    ytop = (height - 1 - surf[::-1].argmax(axis=0)).astype(np.int16)
+def column_heights(table, blocks_flat, height, y_lo=0, y_hi=None, hide_water=False):
+    """Карта высот чанка: (ytop int16 [16,16] — индекс верхнего блока поверхности (-1 нет), sid uint16 [16,16] — его состояние).
+    y_lo/y_hi — диапазон высот (локальные индексы, включительно); hide_water — вода не считается поверхностью."""
+    arr_all = np.asarray(blocks_flat).reshape(height, 16, 16)
+    y_hi = height - 1 if y_hi is None else min(y_hi, height - 1)
+    y_lo = max(0, y_lo)
+    arr = arr_all[y_lo:y_hi + 1]
+    kind = table.st_lod_kind[arr]
+    surf = kind > 0
+    if hide_water:
+        surf &= (table.st_flags[arr] & (1 << 4)) == 0
+    h = arr.shape[0]
+    anyv = surf.any(axis=0) if h else np.zeros((16, 16), bool)
+    ytop = (h - 1 - surf[::-1].argmax(axis=0) + y_lo).astype(np.int16) if h else np.zeros((16, 16), np.int16)
     ytop[~anyv] = -1
+    arr = arr_all
     yc = np.maximum(ytop, 0).astype(np.intp)
     sid = np.take_along_axis(arr, yc[None, :, :], axis=0)[0]
     sid = np.where(anyv, sid, 0).astype(np.uint16)
@@ -54,7 +63,7 @@ def _cell_colors(table, biome_colors, sid, ytop, biomes_flat, height, ox):
 
 
 def build_lod_group(table, biome_colors, blocks_by_chunk, biomes_by_chunk, chunk_keys, gk, n_per_obj, min_y, height, stride=2, scale=1.0,
-                    heights_cache=None):
+                    heights_cache=None, y_lo=0, y_hi=None, hide_water=False):
     """LOD-меш группы чанков `chunk_keys` (группа gk размером n_per_obj×n_per_obj). -> (pos float32 [n,4,3], col uint8 [n,4,4]).
 
     heights_cache — словарь ck -> (ytop, sid), общий для вызовов (чтобы не пересчитывать карты высот соседей)."""
@@ -71,7 +80,7 @@ def build_lod_group(table, biome_colors, blocks_by_chunk, biomes_by_chunk, chunk
             a = blocks_by_chunk.get(ck)
             if a is None:
                 return None
-            r = column_heights(table, a, height)
+            r = column_heights(table, a, height, y_lo, y_hi, hide_water)
             cache[ck] = r
         return r
 

@@ -121,6 +121,7 @@ struct McWorld {
     /* тонкие настройки (tweaks.c): подмена функций и масштабы шумов; при значениях по умолчанию пусто/1.0 */
     StrMap df_over;             /* id → изменённое дерево density-функции */
     Df *rf_over[RF__COUNT];     /* изменённые поля роутера */
+    Df *aq_over[AQ__COUNT];     /* изменённые поля Aquifer.Config (26.3+) */
     double noise_mxz, noise_my, cave_m;
 };
 
@@ -130,6 +131,7 @@ void world_noise_scale(const McWorld *w, const char *name, double *mxz, double *
 Df *df_clone(const Df *f);
 static inline const Df *world_df_ref(const McWorld *w, const char *id) { const Df *o = sm_get(&w->df_over, id); return o ? o : (const Df *)sm_get(&w->g->dfs, id); }
 static inline const Df *world_rf(const McWorld *w, int k) { return w->rf_over[k] ? w->rf_over[k] : w->ns->rf[k]; }
+static inline const Df *world_aq(const McWorld *w, int k) { return w->aq_over[k] ? w->aq_over[k] : w->ns->aq[k]; }
 
 /* noise.c уровня мира */
 const NStack *world_noise_new(McWorld *w, const char *name, char *err, size_t errlen);
@@ -140,6 +142,7 @@ Ival world_noise_range(McWorld *w, const char *name);
 int biome_params_build(McGen *g, char *err, size_t errlen);   /* OverworldBiomeBuilder + Nether (код игры) */
 void biome_params_free(McGen *g);
 int world_biome_noise(const McWorld *w, int qx, int qy, int qz);   /* «сырой» биом клетки (как BiomeSource.getNoiseBiome) */
+int world_biome_cell(const McWorld *w, int qx, int qy, int qz);    /* биом клетки, как его хранит чанк (ничьи R-дерева по порядку заполнения, y зажат) */
 int world_biome_from_climate(const McWorld *w, const float v[6]);   /* temperature…weirdness → биом */
 /* биомы чанка (26.3: пакетно через sampleVolume, как doCreateBiomes); out: (height/4)*16 */
 void world_chunk_biomes(const McWorld *w, SCtx *x, int cx, int cz, uint8_t *out);

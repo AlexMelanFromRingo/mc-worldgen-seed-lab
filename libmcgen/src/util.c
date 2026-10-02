@@ -7,6 +7,7 @@
 #include <time.h>
 #if defined(_WIN32)
 #  include <windows.h>
+#  include <locale.h>
 #else
 #  include <dirent.h>
 #  include <sys/stat.h>

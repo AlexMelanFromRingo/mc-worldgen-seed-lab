@@ -106,7 +106,10 @@ class SceneBuilder:
         self.stats = {}
         self._remap = None
         self._biome_names = None
+        self._tint_flag = True
+        self.biome_colors = None
         self._executor = None
+        self._gen = None
         self.edit = None
         self.region = None            # (cx0, cz0, nx, nz) либо None
         self.lod_center = None        # (cx, cz)
@@ -118,7 +121,39 @@ class SceneBuilder:
     def mesh_options(self):
         vs = self.vs
         return MeshOptions(cutout_leaves=vs.cutout_leaves, bake_shade=vs.bake_shade, blender_axes=True, blender_uv=True,
-                           blend_radius=int(vs.biome_blend), scale=float(vs.scale), merge=bool(vs.merge_flat))
+                           blend_radius=int(vs.biome_blend), scale=float(vs.scale), merge=bool(vs.merge_flat),
+                           no_water=(vs.water_style == 'HIDDEN'), y_min=vs.y_min, y_max=vs.y_max)
+
+    def _flat_biome_colors(self, bc):
+        """tint_biomes=False: все биомы получают цвета «равнин» (единый нейтральный оттенок трава/листва/вода), без шума болот."""
+        import copy
+        flat = copy.copy(bc)
+        names = list(bc.names)
+        row = names.index('minecraft:plains') if 'minecraft:plains' in names else 0
+        flat.rgb = np.repeat(bc.rgb[row:row + 1], bc.rgb.shape[0], axis=0).copy()
+        flat.mod = np.zeros_like(bc.mod)
+        return flat
+
+    def prepare(self, blocks_by_chunk, biomes_by_chunk, region_info, block_names, biome_names=None, progress=None):
+        """Публичная подготовка (без меширования): ресурсы (таблица состояний, атлас, материалы, цвета биомов), параметры области из
+        `region_info` и массивы чанков (без копий, если нумерация состояний совпадает). После неё работают update_chunk(s)/build_iter."""
+        self._ensure_resources(block_names, biome_names, progress)
+        self.min_y = int(_info_get(region_info, 'min_y', -64))
+        self.height = int(_info_get(region_info, 'height', 384))
+        self.edit = None
+        self._lod_heights = {}
+        self.set_chunks(blocks_by_chunk, biomes_by_chunk)
+        cx0, cz0, nx, nz = (_info_get(region_info, n) for n in ('cx0', 'cz0', 'nx', 'nz'))
+        if None not in (cx0, cz0, nx, nz):
+            self.region = (cx0, cz0, nx, nz)
+            if self.lod_center is None:
+                self.lod_center = (cx0 + nx // 2, cz0 + nz // 2)
+        else:
+            self.region = None
+            ks = list(self.blocks)
+            if ks and self.lod_center is None:
+                self.lod_center = (sum(k[0] for k in ks) // len(ks), sum(k[1] for k in ks) // len(ks))
+        return self
 
     def _ensure_resources(self, block_names, biome_names, progress=None):
         vs = self.vs
@@ -132,10 +167,13 @@ class SceneBuilder:
             bdir = os.path.join(vs.pack_dir, 'data', 'minecraft', 'worldgen', 'biome')
             biome_names = sorted('minecraft:' + f[:-5] for f in os.listdir(bdir) if f.endswith('.json')) if os.path.isdir(bdir) else ['minecraft:plains']
         biome_names = list(biome_names)
-        if biome_names != self._biome_names or self.mesher is None:
+        tint = bool(vs.tint_biomes)
+        if biome_names != self._biome_names or self.mesher is None or tint != self._tint_flag:
             self._biome_names = biome_names
+            self._tint_flag = tint
             t.set_biomes(biome_names, vs.assets_dir, vs.pack_dir)
-            self.mesher = Mesher(t, t.biome_colors, self.mesh_options())
+            self.biome_colors = t.biome_colors if tint else self._flat_biome_colors(t.biome_colors)
+            self.mesher = Mesher(t, self.biome_colors, self.mesh_options())
         else:
             self.mesher.opt = self.mesh_options()
         # перекодировка состояний, если нумерация вызывающей стороны отличается от blocks.json
@@ -155,8 +193,8 @@ class SceneBuilder:
                     rm[i] = j if j >= 0 else 0
                 self._remap = rm
         cd = vs.cache_dir or '.'
-        self.materials = materials_mod.ensure_materials(t, cd, vs.shading, vs.pixel_style)
-        self.materials_tiled = materials_mod.ensure_tiled_materials(t, cd, vs.shading, vs.pixel_style) if vs.merge_flat else None
+        self.materials = materials_mod.ensure_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style)
+        self.materials_tiled = materials_mod.ensure_tiled_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style) if vs.merge_flat else None
         self.material_lod = materials_mod.ensure_lod_material(vs.shading) if vs.lod else None
 
     def _get_collection(self):
@@ -175,6 +213,14 @@ class SceneBuilder:
     # ------------------------------------------------------------------------------------------------------------------
     #                                                 построение
     # ------------------------------------------------------------------------------------------------------------------
+    def _y_lo(self):
+        y = self.vs.y_min
+        return 0 if y is None else max(0, int(y) - self.min_y)
+
+    def _y_hi(self):
+        y = self.vs.y_max
+        return None if y is None else int(y) - self.min_y
+
     def _n(self):
         return max(1, int(self.vs.chunks_per_object))
 
@@ -201,25 +247,29 @@ class SceneBuilder:
         return n
 
     def build(self, blocks_by_chunk, biomes_by_chunk, region_info, block_names, biome_names=None, progress=None):
-        """Строит сцену целиком. Массивы блоков не копируются (кроме случая перекодировки состояний)."""
+        """Строит сцену целиком (блокирующий вызов; для неблокирующей формы — `build_iter`). Возвращает сводку."""
+        for f in self.build_iter(blocks_by_chunk, biomes_by_chunk, region_info, block_names, biome_names, progress):
+            if progress:
+                progress(f, 'меши')
+        return self.stats['build']
+
+    def abort(self):
+        """Прерывает начатый build_iter (освобождает потоки)."""
+        g, self._gen = self._gen, None
+        if g is not None:
+            g.close()
+
+    def build_iter(self, blocks_by_chunk, biomes_by_chunk, region_info, block_names, biome_names=None, progress=None):
+        """Итеративная сборка сцены: генератор, отдающий долю готовности (float 0..1) после каждого чанка/группы. Один шаг — не более
+        одного чанка меширования (в потоках) + создание одного объекта Blender, поэтому вызывающий может держать UI живым, вызывая
+        `next()` в модальном таймере с бюджетом времени. Сводка — в `self.stats['build']` после исчерпания. Прервать — `abort()`."""
         t_start = time.time()
         self.clear()
-        self._ensure_resources(block_names, biome_names, progress)
-        self.min_y = int(_info_get(region_info, 'min_y', -64))
-        self.height = int(_info_get(region_info, 'height', 384))
-        self.edit = None
-        self._lod_heights = {}
-        self.set_chunks(blocks_by_chunk, biomes_by_chunk)
+        self.prepare(blocks_by_chunk, biomes_by_chunk, region_info, block_names, biome_names, progress)
         keys = sorted(self.blocks.keys())
-        # region_info (McRegionInfo): если заданы cx0, cz0, nx, nz — мешим только эти чанки, остальные служат контекстом (соседи на границах)
-        cx0, cz0, nx, nz = (_info_get(region_info, n) for n in ('cx0', 'cz0', 'nx', 'nz'))
-        if None not in (cx0, cz0, nx, nz):
+        if self.region is not None:
+            cx0, cz0, nx, nz = self.region
             keys = [k for k in keys if cx0 <= k[0] < cx0 + nx and cz0 <= k[1] < cz0 + nz]
-            self.region = (cx0, cz0, nx, nz)
-            if self.lod_center is None:
-                self.lod_center = (cx0 + nx // 2, cz0 + nz // 2)
-        elif keys and self.lod_center is None:
-            self.lod_center = (sum(k[0] for k in keys) // len(keys), sum(k[1] for k in keys) // len(keys))
         N = self._n()
         by_group = {}
         for k in keys:
@@ -237,7 +287,10 @@ class SceneBuilder:
             for ck in by_group[gk]:
                 work.append((gk, ck))
         n_full = len(work)
+        n_lod = len(lod_groups)
+        steps_total = max(1, n_full + n_lod)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) if nthreads > 1 else None
+        self._gen = None
         try:
             pending = {}
             window = nthreads * 3
@@ -267,20 +320,20 @@ class SceneBuilder:
                     t1 = time.time()
                     self._make_group(gk, gm.pop(gk), col)
                     t_fill += time.time() - t1
-                if progress and (done % 16 == 0 or done == total):
-                    progress(0.1 + 0.9 * done / max(1, total), 'меши: %d/%d' % (done, total))
+                yield 0.02 + 0.93 * done / steps_total
+            t1 = time.time()
+            for j, gk in enumerate(sorted(lod_groups)):
+                self._make_group_lod(gk, by_group[gk], col)
+                yield 0.02 + 0.93 * (n_full + j + 1) / steps_total
+            t_lod = time.time() - t1
         finally:
-            if self._executor is not None:
-                self._executor.shutdown(wait=True)
-                self._executor = None
-        t1 = time.time()
-        for gk in sorted(lod_groups):
-            self._make_group_lod(gk, by_group[gk], col)
-        t_lod = time.time() - t1
+            ex, self._executor = self._executor, None
+            if ex is not None:
+                ex.shutdown(wait=True, cancel_futures=True)
         self.stats['build'] = {'chunks': total, 'full_chunks': n_full, 'lod_groups': len(lod_groups), 'groups': len(self.groups),
                                'seconds': time.time() - t_start, 'mesh_wait_seconds': t_mesh, 'blender_seconds': t_fill, 'lod_seconds': t_lod,
                                'quads': int(sum(g.n_quads for g in self.groups.values())), 'threads': nthreads}
-        return self.stats['build']
+        yield 1.0
 
     def set_chunks(self, blocks_by_chunk, biomes_by_chunk):
         """Запоминает массивы чанков (без копий, либо с перекодировкой состояний)."""
@@ -357,35 +410,74 @@ class SceneBuilder:
         return (np.concatenate(pos_l), np.concatenate(uv_l), np.concatenate(col_l), np.concatenate(mat_l), np.concatenate(rect_l),
                 np.concatenate(code_l).astype(np.int32))
 
-    @staticmethod
-    def _fill_mesh(mesh, pos, uv, col, mat, code, rect=None):
+    _IDX = {'cap': 0}
+
+    @classmethod
+    def _index_arrays(cls, n):
+        """Предвычисленные индексы для n четырёхугольников без общих вершин: (вершины/углы 0..4n-1, начала граней, рёбра (k, следующая в грани))."""
+        d = cls._IDX
+        if d['cap'] < n:
+            cap = max(n, 8192, d['cap'] * 2)
+            ar = np.arange(cap * 4, dtype=np.int32)
+            q = ar.reshape(cap, 4)
+            d.update(cap=cap, ar=ar, ls=np.arange(0, cap * 4, 4, dtype=np.int32),
+                     ev=np.ascontiguousarray(np.stack([q, np.roll(q, -1, axis=1)], axis=2).reshape(-1)))
+        return d['ar'][:4 * n], d['ls'][:n], d['ev'][:8 * n]
+
+    @classmethod
+    def _fill_mesh(cls, mesh, pos, uv, col, mat, code, rect=None):
+        """Заполняет меш n четырёхугольников (4 своих вершины на грань). Быстрый путь — через атрибуты (position, .corner_vert, .edge_verts,
+        .corner_edge, UVMap, material_index): на порядок быстрее RNA-доступа и mesh.update(calc_edges=True). Цвет граней — атрибут `Col`
+        (BYTE_COLOR, область FACE: цвет у грани один, 4× меньше данных)."""
         n = int(mat.shape[0])
         mesh.clear_geometry()
         if n == 0:
             return
+        ar, ls, ev = cls._index_arrays(n)
         mesh.vertices.add(n * 4)
-        mesh.vertices.foreach_set('co', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
         mesh.loops.add(n * 4)
-        mesh.loops.foreach_set('vertex_index', np.arange(n * 4, dtype=np.int32))
         mesh.polygons.add(n)
-        mesh.polygons.foreach_set('loop_start', np.arange(0, n * 4, 4, dtype=np.int32))
+        mesh.edges.add(n * 4)
+        a = mesh.attributes
         try:
-            mesh.polygons.foreach_set('loop_total', np.full(n, 4, dtype=np.int32))
-        except (RuntimeError, AttributeError, TypeError):
-            pass
-        mesh.update(calc_edges=True)
+            a['position'].data.foreach_set('vector', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+            a['.corner_vert'].data.foreach_set('value', ar)
+            a['.edge_verts'].data.foreach_set('value', ev)
+            a['.corner_edge'].data.foreach_set('value', ar)
+            mesh.polygons.foreach_set('loop_start', ls)
+            mesh.update()
+            fast = True
+        except (KeyError, RuntimeError, TypeError):
+            fast = False
+        if not fast:
+            mesh.clear_geometry()
+            mesh.vertices.add(n * 4)
+            mesh.vertices.foreach_set('co', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+            mesh.loops.add(n * 4)
+            mesh.loops.foreach_set('vertex_index', ar)
+            mesh.polygons.add(n)
+            mesh.polygons.foreach_set('loop_start', ls)
+            mesh.update(calc_edges=True)
         if uv is not None:
-            uvl = mesh.uv_layers.new(name='UVMap')
-            uvl.data.foreach_set('uv', np.ascontiguousarray(uv, dtype=np.float32).reshape(-1))
-        ca = mesh.color_attributes.new('Col', 'BYTE_COLOR', 'CORNER')
-        ca.data.foreach_set('color_srgb', col.reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0))
+            if fast:
+                ua = a.new('UVMap', 'FLOAT2', 'CORNER')
+                ua.data.foreach_set('vector', np.ascontiguousarray(uv, dtype=np.float32).reshape(-1))
+            else:
+                uvl = mesh.uv_layers.new(name='UVMap')
+                uvl.data.foreach_set('uv', np.ascontiguousarray(uv, dtype=np.float32).reshape(-1))
+        ca = a.new('Col', 'BYTE_COLOR', 'FACE')
+        ca.data.foreach_set('color_srgb', np.ascontiguousarray(col[:, 0, :]).reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0))
         if mat is not None:
-            mesh.polygons.foreach_set('material_index', mat.astype(np.int32))
+            if fast:
+                ma = a.get('material_index') or a.new('material_index', 'INT', 'FACE')
+                ma.data.foreach_set('value', mat.astype(np.int32))
+            else:
+                mesh.polygons.foreach_set('material_index', mat.astype(np.int32))
         if code is not None:
-            fa = mesh.attributes.new('mc_face', 'INT', 'FACE')
+            fa = a.new('mc_face', 'INT', 'FACE')
             fa.data.foreach_set('value', code.astype(np.int32))
         if rect is not None:
-            ra = mesh.attributes.new('Rect', 'FLOAT_COLOR', 'FACE')
+            ra = a.new('Rect', 'FLOAT_COLOR', 'FACE')
             ra.data.foreach_set('color', np.ascontiguousarray(rect, dtype=np.float32).reshape(-1))
 
     def _link_part(self, g, kind, name, mesh, materials, loc, col):
@@ -465,8 +557,9 @@ class SceneBuilder:
         g.chunks = list(chunks)
         g.lod = True
         vs = self.vs
-        pos, c = lod_mod.build_lod_group(self.table, self.table.biome_colors, self.blocks, self.biomes, chunks, gk, self._n(), self.min_y, self.height,
-                                         stride=int(vs.lod_stride), scale=float(vs.scale), heights_cache=self._lod_heights)
+        pos, c = lod_mod.build_lod_group(self.table, self.biome_colors or self.table.biome_colors, self.blocks, self.biomes, chunks, gk, self._n(), self.min_y, self.height,
+                                         stride=int(vs.lod_stride), scale=float(vs.scale), heights_cache=self._lod_heights,
+                                         y_lo=self._y_lo(), y_hi=self._y_hi(), hide_water=(vs.water_style == 'HIDDEN'))
         name = 'mc_lod_%d_%d' % gk
         mesh = bpy.data.meshes.new(name)
         p = self._link_part(g, 'lod', name, mesh, [self.material_lod or materials_mod.ensure_lod_material(vs.shading)], self._group_loc(gk), col)
@@ -494,6 +587,14 @@ class SceneBuilder:
         return self.update_chunks([(cx, cz)])
 
     def update_chunks(self, keys):
+        """Пересобирает меши группы(групп) заданных чанков (блокирующий вызов). Возвращает секунды."""
+        t0 = time.time()
+        for _ in self.update_chunks_iter(keys):
+            pass
+        return time.time() - t0
+
+    def update_chunks_iter(self, keys):
+        """То же, что update_chunks, но генератор: после каждой группы отдаёт долю 0..1 (для неблокирующего UI)."""
         t0 = time.time()
         N = self._n()
         col = self._get_collection()
@@ -506,7 +607,8 @@ class SceneBuilder:
             touched.setdefault(gk, []).append(ck)
         for ck in keys:
             self._lod_heights.pop(ck, None)
-        for gk, cks in touched.items():
+        for gi, (gk, cks) in enumerate(touched.items()):
+            yield gi / max(1, len(touched))
             g = self.groups.get(gk)
             if g is None:
                 self._rebuild_group(gk, cks, col)
@@ -527,9 +629,8 @@ class SceneBuilder:
                         g.chunks.append(ck)
                         self.chunk_group[ck] = gk
                 self._fill_group_parts(g, [(ck, g.cache[ck][0]) for ck in g.chunks], [(ck, g.cache[ck][1]) for ck in g.chunks], loc, col)
-        dt = time.time() - t0
-        self.stats['last_update'] = {'chunks': len(keys), 'seconds': dt}
-        return dt
+        self.stats['last_update'] = {'chunks': len(keys), 'seconds': time.time() - t0}
+        yield 1.0
 
     # ------------------------------------------------------------------------------------------------------------------
     #                                           выбор грани (используется picking.py)

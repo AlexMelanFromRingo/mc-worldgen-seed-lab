@@ -28,7 +28,7 @@ static const McTweakInfo MCGEN_TWEAK_TABLE[MCGEN_TWEAK_COUNT] = {
     { "terrain_amplitude", "Terrain amplitude", "terrain", "Multiplier of the vertical variation of the terrain (hills, mountains, ocean depth). 1 = vanilla", 1.0, 0.0, 8.0, 0.0, 3.0, 0 },
     { "terrain_steepness", "Terrain steepness", "terrain", "Multiplier of the terrain slope factor: >1 makes cliffs, <1 smooths the land. 1 = vanilla", 1.0, 0.05, 8.0, 0.25, 3.0, 0 },
     { "climate_scale_xz", "Climate scale XZ", "climate", "Horizontal scale of the climate noises (temperature, humidity, continentalness, erosion, weirdness). >1 stretches biomes and continents", 1.0, 0.05, 16.0, 0.25, 4.0, 0 },
-    { "climate_scale_y", "Climate scale Y", "climate", "Vertical scale of the climate noises (underground biome layers, Nether biome strata)", 1.0, 0.05, 16.0, 0.25, 4.0, 0 },
+    { "climate_scale_y", "Climate scale Y", "climate", "Vertical scale of the climate: the depth parameter of biome selection is divided by it, so >1 stretches the underground biome layers (lush and dripstone caves, deep dark) further down from the surface; the dry deep-dark zone of the aquifers follows. Also scales y of 3D climate noises (the vanilla ones are 2D)", 1.0, 0.05, 16.0, 0.25, 4.0, 0 },
     { "cave_density", "Cave density", "caves", "Multiplier of how much of the underground is hollow (cheese and spaghetti caves, classic carvers). 0 = no caves", 1.0, 0.0, 4.0, 0.0, 2.0, 0 },
     { "cave_size", "Cave size", "caves", "Multiplier of cave radius and chamber size", 1.0, 0.1, 4.0, 0.25, 2.5, 0 },
     { "canyon_frequency", "Canyon frequency", "caves", "Multiplier of the probability of canyon carvers", 1.0, 0.0, 8.0, 0.0, 4.0, 0 },
@@ -50,7 +50,7 @@ static const unsigned char MCGEN_TWEAK_STAGE[MCGEN_TWEAK_COUNT] = {
 
 /* измерения (бит 0 — overworld, 1 — nether, 2 — end), для которых настройка имеет смысл */
 static const unsigned char MCGEN_TWEAK_DIMS[MCGEN_TWEAK_COUNT] = {
-    7, 1, 7, 3, 3, 3, 3, 1, 3, 7, 7, 1, 7, 7, 7, 1, 7
+    7, 1, 7, 3, 1, 3, 3, 1, 3, 7, 7, 1, 7, 7, 7, 1, 7
 };
 
 #endif

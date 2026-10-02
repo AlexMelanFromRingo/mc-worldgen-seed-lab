@@ -45,6 +45,29 @@ class TestMesher(unittest.TestCase):
         for seed in range(3):
             self._cmp_random(200 + seed, self.m.opt, p_air=0.85, p_cube=0.05)
 
+    def test_y_range_and_no_water(self):
+        # диапазон высот и скрытая вода: ядро == эталон; блоки вне диапазона не видны и не закрывают соседей
+        for seed, opt in ((400, self.m.opt.copy(y_min=-50, y_max=-40)), (401, self.m.opt.copy(y_max=-45)), (402, self.m.opt.copy(y_min=-52)),
+                          (403, self.m.opt.copy(no_water=True)), (404, self.m.opt.copy(no_water=True, y_min=-60, y_max=-36, merge=True))):
+            c = self._cmp_random(seed, opt, p_air=0.5, p_cube=0.2) if not opt.merge else None
+            if opt.merge:
+                rng = np.random.default_rng(seed)
+                nb, nbio = common.random_world(self.t, rng, p_air=0.5, p_cube=0.2)
+                d = self.m.mesh_arrays(3, -2, nb, nbio, -64, 32, opt)
+                base = self.m.mesh_arrays(3, -2, nb, nbio, -64, 32, opt.copy(merge=False, no_variants=True))
+                self.assertEqual(_cmp.key_set_nob(_cmp.expand_merged(d)), _cmp.key_set_nob(base))
+                c = d
+            if opt.y_min is not None or opt.y_max is not None:
+                # все блоки граней в пределах диапазона
+                lo = 0 if opt.y_min is None else opt.y_min + 64
+                hi = 31 if opt.y_max is None else opt.y_max + 64
+                ys = c.block[c.merged == 0] >> 8
+                self.assertTrue(len(ys) == 0 or (ys.min() >= lo and ys.max() <= hi), (ys.min(), ys.max(), lo, hi))
+            if opt.no_water:
+                water = self.t.state_id('minecraft:water[level=0]')
+                # у воды-блоков нет граней: материал WATER (3) отсутствует
+                self.assertEqual(int((c.mat == 3).sum()), 0)
+
     def test_missing_neighbors(self):
         rng = np.random.default_rng(7)
         nb, nbio = common.random_world(self.t, rng)

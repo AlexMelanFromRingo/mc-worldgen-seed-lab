@@ -64,6 +64,7 @@ def parse():
     ap.add_argument('--cache', default=os.path.join(_boot.SCRATCH, 'cache'))
     ap.add_argument('--version', default=_boot.VERSION)
     ap.add_argument('--ring', type=int, default=1, help='ширина кольца соседних чанков-контекста')
+    ap.add_argument('--mcr', default=None, help='дамп региона MCR1 libmcgen (tools/gt/mcr.py) вместо .mca сервера')
     return ap.parse_args(argv)
 
 
@@ -93,7 +94,24 @@ def main():
     t_table = time.time() - t0
     biome_names = sorted('minecraft:' + f[:-5] for f in os.listdir(os.path.join(_boot.PACK_DIR, 'data', 'minecraft', 'worldgen', 'biome')) if f.endswith('.json'))
     t0 = time.time()
-    blocks, bio = load_world(a, table, biome_names, rd)
+    block_names = None
+    MCR_DIMS = None
+    if a.mcr:
+        sys.path.insert(0, os.path.join(_boot.REPO, 'tools', 'gt'))
+        import mcr as mcrmod
+        mm = mcrmod.Mcr(a.mcr)
+        biome_names = list(mm.biome_names)
+        block_names = list(mm.state_names)
+        DIMS['mcr'] = (mm.min_y, mm.height)
+        a.dim = 'mcr'
+        blocks, bio = {}, {}
+        for cz in range(a.cz0 - a.ring, a.cz0 + a.nz + a.ring):
+            for cx in range(a.cx0 - a.ring, a.cx0 + a.nx + a.ring):
+                if mm.has(cx, cz):
+                    blocks[(cx, cz)] = np.array(mm.blocks(cx, cz)).reshape(-1)
+                    bio[(cx, cz)] = np.array(mm.biomes(cx, cz)).reshape(-1)
+    else:
+        blocks, bio = load_world(a, table, biome_names, rd)
     t_load = time.time() - t0
     MINY, HGT = DIMS[a.dim]
     if a.ymax is not None or a.ymin is not None:
@@ -113,7 +131,7 @@ def main():
     if a.lod_center:
         sb.lod_center = tuple(int(v) for v in a.lod_center.split(','))
     info = {'cx0': a.cx0, 'cz0': a.cz0, 'nx': a.nx, 'nz': a.nz, 'min_y': MINY, 'height': HGT}
-    stats = sb.build(blocks, bio, info, None, biome_names)
+    stats = sb.build(blocks, bio, info, block_names, biome_names)
     # границы по высоте поверхности (по существующим блокам)
     ys = []
     for k, arr in blocks.items():

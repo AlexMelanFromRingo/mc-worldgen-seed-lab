@@ -20,7 +20,8 @@ F32 = np.float32
 class _World:
     """3×3 чанков вокруг центрального: состояния по локальным координатам (x, y, z) центра; вне — по соседям; y вне диапазона — None."""
 
-    def __init__(self, nb, nbio, height):
+    def __init__(self, nb, nbio, height, ylo=0, yhi=None):
+        self.ylo, self.yhi = ylo, (height - 1 if yhi is None else yhi)
         self.nb = nb
         self.nbio = nbio
         self.H = height
@@ -28,7 +29,7 @@ class _World:
         self.bio = [None if b is None else np.asarray(b).reshape(height // 4, 4, 4) for b in nbio]
 
     def state(self, x, y, z):
-        if y < 0 or y >= self.H:
+        if y < self.ylo or y > self.yhi:
             return -1
         cx = 0 if x < 0 else (2 if x >= 16 else 1)
         cz = 0 if z < 0 else (2 if z >= 16 else 1)
@@ -61,7 +62,9 @@ class _Ref:
         self.bc = biome_colors
         self.opt = opt
         self.cx, self.cz, self.min_y, self.H = cx, cz, min_y, height
-        self.w = _World(nb, nbio, height)
+        ylo = 0 if opt.y_min is None else max(0, opt.y_min - min_y)
+        yhi = height - 1 if opt.y_max is None else min(height - 1, opt.y_max - min_y)
+        self.w = _World(nb, nbio, height, ylo, yhi)
         self.flags = table.st_flags
         self.rows = []   # (block, mat, dir, pos(4,3), uv(4,2), rgb, shade)
         self.tint_maps = {}
@@ -448,9 +451,9 @@ class _Ref:
         if not self.opt.no_models:
             want |= F.GEOM
         if not self.opt.no_fluids:
-            want |= F.WATER | F.LAVA
+            want |= F.LAVA if self.opt.no_water else (F.WATER | F.LAVA)
         a = self.w.arr[4]
-        for y in range(self.H):
+        for y in range(self.w.ylo, self.w.yhi + 1):
             sl = a[y]
             ys, xs = np.nonzero((self.flags[np.minimum(sl, n_states - 1)] & want) != 0)
             for z, x in zip(ys.tolist(), xs.tolist()):

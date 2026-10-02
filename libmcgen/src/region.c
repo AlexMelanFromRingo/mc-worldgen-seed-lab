@@ -40,14 +40,36 @@ int mcgen_biome_at(const McWorld *w, int x, int y, int z) {
                                     xe ? fx : fx - 1.0, ye ? fy : fy - 1.0, ze ? fz : fz - 1.0);
         if (md > d) { mi = i; md = d; }
     }
-    return world_biome_noise(w, (mi & 4) == 0 ? px : px + 1, (mi & 2) == 0 ? py : py + 1, (mi & 1) == 0 ? pz : pz + 1);
+    return world_biome_cell(w, (mi & 4) == 0 ? px : px + 1, (mi & 2) == 0 ? py : py + 1, (mi & 1) == 0 ? pz : pz + 1);
+}
+/* сетка биомов: строки раздаются потокам (McWorld только читается, контексты шумов — свои у потока) */
+typedef struct { const McWorld *w; int x0, z0, nx, nz, step, y; uint8_t *out; McMutex *lock; int next; } GridJob;
+static void grid_rows(GridJob *j, int iz) {
+    for (int ix = 0; ix < j->nx; ix++) {
+        int b = mcgen_biome_at(j->w, j->x0 + ix * j->step, j->y, j->z0 + iz * j->step);
+        j->out[(size_t)iz * j->nx + ix] = (uint8_t)(b < 0 ? 0 : b);
+    }
+}
+static void grid_worker(void *arg) {
+    GridJob *j = arg;
+    for (;;) {
+        mutex_lock(j->lock); int iz = j->next++; mutex_unlock(j->lock);
+        if (iz >= j->nz) return;
+        grid_rows(j, iz);
+    }
 }
 int mcgen_biome_grid(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out) {
     if (!w || !out || nx <= 0 || nz <= 0 || step <= 0) return MCGEN_E_ARG;
-    for (int iz = 0; iz < nz; iz++) for (int ix = 0; ix < nx; ix++) {
-        int b = mcgen_biome_at(w, x0 + ix * step, y, z0 + iz * step);
-        out[iz * nx + ix] = (uint8_t)(b < 0 ? 0 : b);
-    }
+    GridJob j = { w, x0, z0, nx, nz, step, y, out, NULL, 0 };
+    int nt = cpu_count();
+    if ((long)nx * nz < 4096 || nt <= 1 || nz < 2) { for (int iz = 0; iz < nz; iz++) grid_rows(&j, iz); return MCGEN_OK; }
+    if (nt > nz) nt = nz;
+    if (nt > 64) nt = 64;
+    j.lock = mutex_new();
+    McThread *th[64];
+    for (int i = 0; i < nt; i++) th[i] = thread_start(grid_worker, &j);
+    for (int i = 0; i < nt; i++) thread_join(th[i]);
+    mutex_free(j.lock);
     return MCGEN_OK;
 }
 int mcgen_x_noise_biomes(const McWorld *w, int qx0, int qz0, int nx, int nz, int qy, uint8_t *out) {
@@ -140,8 +162,11 @@ static void worker(void *arg) {
         }
         mutex_lock(j->lock);
         j->done++;
-        if (j->cb && (j->done == j->total || j->done * 100 / j->total != (j->done - 1) * 100 / j->total) &&
-            j->cb(j->ud, 0.95 * j->done / j->total, "chunks")) j->cancel = 1;
+        if (j->cb && (j->done == j->total || j->done * 100 / j->total != (j->done - 1) * 100 / j->total)) {
+            /* what = "<стадия> <готово>/<всего>" (стадия — старшая из выполняемых в проходе по чанкам) */
+            char what[64]; snprintf(what, sizeof what, "%s %d/%d", (j->stages & MC_STAGE_TERRAIN) ? "terrain" : "biomes", j->done, j->total);
+            if (j->cb(j->ud, (j->stages & MC_STAGE_TERRAIN ? 0.9 : 0.99) * j->done / j->total, what)) j->cancel = 1;
+        }
         mutex_unlock(j->lock);
     }
     if (t) terrain_ctx_free(t);
@@ -183,32 +208,50 @@ static void view_set(void *ud, int x, int y, int z, int st) {
     uint16_t *b = view_chunk(v, x >> 4, z >> 4, NULL);
     b[((size_t)ly * 16 + (z & 15)) * 16 + (x & 15)] = (uint16_t)st;
 }
-static int region_postprocess(McWorld *w, McRegion *r, char *err, size_t errlen) {
+/* pp_margin < 0 — бесконечный мир: обрабатываются все чанки региона и пометки гало у границы (в игре все чанки рано или
+ * поздно становятся «тикающими»); pp_margin = K >= 0 — только чанки на расстоянии >= K от края региона, без гало.
+ * Так воспроизводится загруженная игрой область: postProcessGeneration вызывается в ChunkMap.prepareTickingChunk, т. е.
+ * только для чанков уровня BLOCK_TICKING (все 8 соседей — FULL); внешнее кольцо FULL-чанков его не проходит. */
+static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgressFn cb, void *ud, char *err, size_t errlen) {
     View v; memset(&v, 0, sizeof v); v.w = w; v.r = r;
     FluidWorld fw = { w->g, &v, view_get, view_set, w->preset->fast_lava, 1, 0 };
-    int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz;
-    for (int cz = cz0 - 1; cz <= cz0 + nz; cz++) for (int cx = cx0 - 1; cx <= cx0 + nx; cx++) {
-        int inside = cx >= cx0 && cx < cx0 + nx && cz >= cz0 && cz < cz0 + nz;
-        if (inside) { fluidpp_chunk(&fw, &r->marks[chunk_index(r, cx, cz)], cx, cz, w->min_y); continue; }
-        /* гало: только пометки в одном блоке от региона */
-        PPMarks *m = NULL; view_chunk(&v, cx, cz, &m);
-        for (int s = 0; s < m->nsec; s++) for (int k = 0; k < m->n[s]; k++) {
-            u16 p = m->pos[s][k];
-            int x = cx * 16 + (p & 15), z = cz * 16 + ((p >> 8) & 15);
-            int dx = x < cx0 * 16 ? cx0 * 16 - x : (x >= (cx0 + nx) * 16 ? x - (cx0 + nx) * 16 + 1 : 0);
-            int dz = z < cz0 * 16 ? cz0 * 16 - z : (z >= (cz0 + nz) * 16 ? z - (cz0 + nz) * 16 + 1 : 0);
-            if (dx > 1 || dz > 1) continue;
-            fluidpp_tick(&fw, x, w->min_y + s * 16 + ((p >> 4) & 15), z);
+    int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz, cancel = 0;
+    for (int cz = cz0 - 1; cz <= cz0 + nz && !cancel; cz++) {
+        if (cb) {
+            char what[64]; snprintf(what, sizeof what, "fluids %d/%d", cz - cz0 + 1, nz + 2);
+            if (cb(ud, 0.9 + 0.08 * (cz - cz0 + 1) / (nz + 2), what)) { cancel = 1; break; }
+        }
+        for (int cx = cx0 - 1; cx <= cx0 + nx; cx++) {
+            int inside = cx >= cx0 && cx < cx0 + nx && cz >= cz0 && cz < cz0 + nz;
+            if (pp_margin >= 0) {
+                if (!inside) continue;
+                int d = cx - cx0; if (cx0 + nx - 1 - cx < d) d = cx0 + nx - 1 - cx;
+                if (cz - cz0 < d) d = cz - cz0;
+                if (cz0 + nz - 1 - cz < d) d = cz0 + nz - 1 - cz;
+                if (d < pp_margin) continue;
+            }
+            if (inside) { fluidpp_chunk(&fw, &r->marks[chunk_index(r, cx, cz)], cx, cz, w->min_y); continue; }
+            /* гало: только пометки в одном блоке от региона */
+            PPMarks *m = NULL; view_chunk(&v, cx, cz, &m);
+            for (int s = 0; s < m->nsec; s++) for (int k = 0; k < m->n[s]; k++) {
+                u16 p = m->pos[s][k];
+                int x = cx * 16 + (p & 15), z = cz * 16 + ((p >> 8) & 15);
+                int dx = x < cx0 * 16 ? cx0 * 16 - x : (x >= (cx0 + nx) * 16 ? x - (cx0 + nx) * 16 + 1 : 0);
+                int dz = z < cz0 * 16 ? cz0 * 16 - z : (z >= (cz0 + nz) * 16 ? z - (cz0 + nz) * 16 + 1 : 0);
+                if (dx > 1 || dz > 1) continue;
+                fluidpp_tick(&fw, x, w->min_y + s * 16 + ((p >> 4) & 15), z);
+            }
         }
     }
     for (int b = 0; b < 256; b++) { HaloChunk *h = v.halo[b]; while (h) { HaloChunk *nx2 = h->next; free(h->blocks); ppmarks_free(&h->marks); free(h); h = nx2; } }
     if (v.t) terrain_ctx_free(v.t);
     if (v.fail) { set_err(err, errlen, "%s", v.err); return -1; }
+    if (cancel) { set_err(err, errlen, "отменено"); return 1; }
     return 0;
 }
 
-int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads,
-                          McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
+static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
+                    McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     if (!w || !out || nx <= 0 || nz <= 0 || (long)nx * nz > 1 << 20) { set_err(err, errlen, "mcgen_generate_region: аргументы"); return MCGEN_E_ARG; }
     *out = NULL;
     uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN;
@@ -247,7 +290,9 @@ int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t
     if (j.cancel) { set_err(err, errlen, "отменено"); mcgen_region_free(r); return MCGEN_E_CANCEL; }
     if (stages & MC_STAGE_TERRAIN) {
         /* fluid_flow = 0: «чистое» заполнение шумом (как чанк со статусом ниже full) — без растекания */
-        if (w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0 && region_postprocess(w, r, err, errlen)) { mcgen_region_free(r); return MCGEN_E_INTERNAL; }
+        int prc = w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0 ? region_postprocess(w, r, pp_margin, cb, ud, err, errlen) : 0;
+        if (prc) { mcgen_region_free(r); return prc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
+        if (cb) cb(ud, 0.99, "heightmaps");
         for (size_t i = 0; i < n; i++) compute_heightmaps(w->g, w->g->state_cls, r->blocks + (size_t)H * 256 * i, w->min_y, (int)H, r->hm + i * 1024);
     }
     if (cb) cb(ud, 1.0, "done");
@@ -255,6 +300,14 @@ int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t
     return MCGEN_OK;
 }
 
+int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads,
+                          McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
+    return generate(w, cx0, cz0, nx, nz, stages, threads, -1, cb, ud, out, err, errlen);
+}
+int mcgen_x_generate_region_pp(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
+                               McRegion **out, char *err, size_t errlen) {
+    return generate(w, cx0, cz0, nx, nz, stages, threads, pp_margin, NULL, NULL, out, err, errlen);
+}
 void mcgen_region_free(McRegion *r) {
     if (!r) return;
     if (r->marks) for (int i = 0; i < r->info.nx * r->info.nz; i++) ppmarks_free(&r->marks[i]);

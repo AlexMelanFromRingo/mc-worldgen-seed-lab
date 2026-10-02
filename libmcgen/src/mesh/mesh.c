@@ -110,6 +110,7 @@ typedef struct Ctx {
     const uint16_t *B[9];
     const uint8_t *Bio[9];
     int H, nqy;
+    int ylo, yhi;
     int ax0, az0; /* абсолютные координаты начала чанка */
     uint32_t opt;
     int blend;
@@ -135,7 +136,7 @@ typedef struct Cand {
 
 static inline int get_state(const Ctx *c, int x, int y, int z)
 {
-    if ((unsigned)y >= (unsigned)c->H) return -1;
+    if ((unsigned)y >= (unsigned)c->H || y < c->ylo || y > c->yhi) return -1;
     int dx = x < 0 ? 0 : (x >= 16 ? 2 : 1);
     int dz = z < 0 ? 0 : (z >= 16 ? 2 : 1);
     const uint16_t *b = c->B[dz * 3 + dx];
@@ -931,6 +932,12 @@ int mcmesh_chunk(const McMeshTables *t, const McMeshInput *in, const McMeshOptio
     memcpy(c->Bio, in->biomes, sizeof(c->Bio));
     c->H = o->n_sections * 16;
     c->nqy = o->n_sections * 4;
+    c->ylo = 0;
+    c->yhi = c->H - 1;
+    if ((o->flags & MCM_OPT_YRANGE) && o->y_hi >= o->y_lo) {
+        c->ylo = o->y_lo < 0 ? 0 : o->y_lo;
+        c->yhi = o->y_hi > c->H - 1 ? c->H - 1 : o->y_hi;
+    }
     c->ax0 = o->cx * 16;
     c->az0 = o->cz * 16;
     c->opt = o->flags;
@@ -944,11 +951,12 @@ int mcmesh_chunk(const McMeshTables *t, const McMeshInput *in, const McMeshOptio
     const uint32_t DRAW = MCM_F_GEOM | MCM_F_WATER | MCM_F_LAVA;
     uint32_t want = 0;
     if (!(o->flags & MCM_OPT_NO_MODELS)) want |= MCM_F_GEOM;
-    if (!(o->flags & MCM_OPT_NO_FLUIDS)) want |= MCM_F_WATER | MCM_F_LAVA;
+    if (!(o->flags & MCM_OPT_NO_FLUIDS)) want |= (o->flags & MCM_OPT_NO_WATER) ? MCM_F_LAVA : (MCM_F_WATER | MCM_F_LAVA);
     (void)DRAW;
     int ns = t->n_states;
     for (int sec = 0; sec < o->n_sections; sec++) {
         int y0 = sec * 16;
+        if (y0 + 15 < c->ylo || y0 > c->yhi) { out->n_sections_skipped++; continue; }
         const uint16_t *sb = blk + (size_t)y0 * 256;
         int any = 0;
         for (int i = 0; i < 4096; i++) {
@@ -958,6 +966,7 @@ int mcmesh_chunk(const McMeshTables *t, const McMeshInput *in, const McMeshOptio
         if (!any) { out->n_sections_skipped++; continue; }
         for (int yy = 0; yy < 16; yy++) {
             int y = y0 + yy;
+            if (y < c->ylo || y > c->yhi) continue;
             for (int z = 0; z < 16; z++) {
                 const uint16_t *row = blk + (((size_t)y << 4) + z) * 16;
                 for (int x = 0; x < 16; x++) {

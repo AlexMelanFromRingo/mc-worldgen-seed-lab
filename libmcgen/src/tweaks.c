@@ -6,7 +6,10 @@
  *   sea_level_offset, lava_level_offset — глобальный «выбор жидкости» (NoiseBasedChunkGenerator.createFluidPicker);
  *   aquifers, ore_veins                 — включение NoiseBasedAquifer и жил;
  *   climate_scale_xz/y                  — множители координат шумов климатического домена (растяжение биомов и
- *                                         континентов вместе с формой рельефа, которая от них зависит);
+ *                                         континентов вместе с формой рельефа, которая от них зависит); для Y ещё
+ *                                         параметр depth выбора биома делится на Y (ванильные шумы климата 2D, так что
+ *                                         «вертикальный масштаб» — это растяжение слоёв подземных биомов от поверхности
+ *                                         вниз); то же деление — в «исключении» водоносных слоёв (зона глубокой тьмы);
  *   cave_size                           — то же для шумов пещер (cave_*, spaghetti_*, noodle*, pillar*);
  *   terrain_amplitude                   — отклонение offset от уровня моря и jaggedness умножаются на A;
  *   terrain_steepness                   — factor умножается на S;
@@ -84,6 +87,23 @@ static int wrap_cheese(Df *f, double c, int kill) {
     }
     return ch;
 }
+/* замена узлов-ссылок на функцию name на mul(ссылка, m); 1 — что-то заменено */
+static int wrap_ref(Df *f, const char *name, double m) {
+    if (!f) return 0;
+    int ch = 0;
+    Df **kids[4] = { &f->a, &f->b, &f->c, &f->d };
+    for (int k = 0; k < 4; k++) {
+        Df *x = *kids[k];
+        if (x && x->t == DF_REF && x->name && !strcmp(x->name, name)) { *kids[k] = mk2(DF_MUL, x, mkc(m)); ch = 1; }
+        else ch |= wrap_ref(x, name, m);
+    }
+    for (int i = 0; i < f->nlist; i++) {
+        Df *x = f->list[i];
+        if (x && x->t == DF_REF && x->name && !strcmp(x->name, name)) { f->list[i] = mk2(DF_MUL, x, mkc(m)); ch = 1; }
+        else ch |= wrap_ref(x, name, m);
+    }
+    return ch;
+}
 static int ends_with(const char *s, const char *suf) { size_t a = strlen(s), b = strlen(suf); return a >= b && !strcmp(s + a - b, suf); }
 
 static void over_put(McWorld *w, const char *id, Df *f) { Df *old = sm_get(&w->df_over, id); if (old) df_free(old); sm_put(&w->df_over, id, f); }
@@ -98,6 +118,16 @@ void tweaks_prepare(McWorld *w) {
     w->noise_my = w->tweak[MCGEN_TWEAK_CLIMATE_SCALE_Y] != 1.0 ? 1.0 / w->tweak[MCGEN_TWEAK_CLIMATE_SCALE_Y] : 1.0;
     w->cave_m = w->tweak[MCGEN_TWEAK_CAVE_SIZE] != 1.0 ? 1.0 / w->tweak[MCGEN_TWEAK_CAVE_SIZE] : 1.0;
     int dim_ow = w->dim_kind == 0;
+    double Y = w->tweak[MCGEN_TWEAK_CLIMATE_SCALE_Y];
+    if (Y != 1.0 && w->ns->rf[RF_DEPTH]) {
+        /* depth климата (поле роутера) / Y; ссылки на ту же функцию в Aquifer.Config.exclusion — тоже */
+        w->rf_over[RF_DEPTH] = mk2(DF_MUL, df_clone(w->ns->rf[RF_DEPTH]), mkc(1.0 / Y));
+        const Df *dr = w->ns->rf[RF_DEPTH];
+        if (dr->t == DF_REF && dr->name && w->ns->has_aquifers && w->ns->aq[AQ_EXCLUSION]) {
+            Df *cl = df_clone(w->ns->aq[AQ_EXCLUSION]);
+            if (wrap_ref(cl, dr->name, 1.0 / Y)) w->aq_over[AQ_EXCLUSION] = cl; else df_free(cl);
+        }
+    }
     if (A == 1.0 && S == 1.0 && D == 1.0) return;
     double c = (1.0 - D) * 0.15; int kill = D == 0.0;
     for (int i = 0; i < g->dfs.cap; i++) {
@@ -115,13 +145,14 @@ void tweaks_prepare(McWorld *w) {
     }
     if (D != 1.0) for (int k = 0; k < RF__COUNT; k++) {
         if (!w->ns->rf[k]) continue;
-        Df *cl = df_clone(w->ns->rf[k]);
-        if (wrap_cheese(cl, c, kill)) w->rf_over[k] = cl; else df_free(cl);
+        Df *cl = df_clone(world_rf(w, k));
+        if (wrap_cheese(cl, c, kill)) { df_free(w->rf_over[k]); w->rf_over[k] = cl; } else df_free(cl);
     }
 }
 void tweaks_release(McWorld *w) {
     sm_free(&w->df_over, df_free_cb);
     for (int k = 0; k < RF__COUNT; k++) { df_free(w->rf_over[k]); w->rf_over[k] = NULL; }
+    for (int k = 0; k < AQ__COUNT; k++) { df_free(w->aq_over[k]); w->aq_over[k] = NULL; }
 }
 /* множители координат шума: климат (XZ/Y), пещеры (все оси); 1.0 — без изменений */
 void world_noise_scale(const McWorld *w, const char *name, double *mxz, double *my) {

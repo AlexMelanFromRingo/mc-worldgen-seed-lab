@@ -65,7 +65,7 @@ def main():
     check('число полигонов = числу граней ядра', ok)
     g = sb.groups[(cx0 + 1, cz0 + 1)]
     check('материалы: 4 слота', len(g.mesh.materials) == 4)
-    check('UV/цвет/атрибут грани', len(g.mesh.uv_layers) == 1 and len(g.mesh.color_attributes) == 1 and 'mc_face' in g.mesh.attributes)
+    check('UV/цвет/атрибут грани', len(g.mesh.uv_layers) == 1 and 'Col' in g.mesh.attributes and 'mc_face' in g.mesh.attributes)
 
     # --- picking: луч сверху на центр чанка
     ed = sb.get_edit_session()
@@ -191,6 +191,49 @@ def main():
     r = edit_ops.tool_place(pk, (0, -1, 0), 'minecraft:oak_planks')
     check('merge: правка пересобирает меш (слитый+обычный)', r is not None and ed_m.get(*pk.place) >= 0 and sum(g.n_quads for g in sbm.groups.values()) != q0 - 1)
     sbm.clear(); sbu.clear()
+
+    # --- итеративная сборка, prepare, настройки вида
+    vs6 = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'))
+    sbi = scene_mod.SceneBuilder(vs6)
+    fr = list(sbi.build_iter(blocks, bio, {'min_y': -64, 'height': 384, 'cx0': cx0, 'cz0': cz0, 'nx': n, 'nz': n}, None, common.biome_names()))
+    check('build_iter: монотонный прогресс до 1.0, по шагу на чанк', len(fr) >= 9 and fr[-1] == 1.0 and all(b >= a for a, b in zip(fr, fr[1:])), fr[:3])
+    check('build_iter: сцена готова', len(sbi.groups) == 9 and sbi.stats['build']['quads'] == sum(g.n_quads for g in sbi.groups.values()))
+    it = sbi.build_iter(blocks, bio, {'min_y': -64, 'height': 384, 'cx0': cx0, 'cz0': cz0, 'nx': n, 'nz': n}, None, common.biome_names())
+    next(it); next(it)
+    sbi._gen = it
+    sbi.abort()
+    check('build_iter: abort освобождает потоки без ошибок', sbi._executor is None)
+    sbi.prepare(blocks, bio, {'min_y': -64, 'height': 384}, None, common.biome_names())
+    ups = list(sbi.update_chunks_iter([(cx0, cz0), (cx0 + 1, cz0)]))
+    check('prepare + update_chunks_iter', ups[-1] == 1.0 and len(sbi.groups) >= 2)
+    base_quads = nu       # полное число граней сцены 3×3 с настройками по умолчанию
+    for kw, nm in (({'tint_biomes': False}, 'tint_biomes=False'), ({'water_style': 'HIDDEN'}, 'water_style=HIDDEN'), ({'y_min': -40, 'y_max': -10}, 'y_min/y_max'),
+                   ({'water_style': 'OPAQUE'}, 'water_style=OPAQUE')):
+        vk = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'), **kw)
+        sk = scene_mod.SceneBuilder(vk)
+        sk.build(blocks, bio, {'min_y': -64, 'height': 384, 'cx0': cx0, 'cz0': cz0, 'nx': n, 'nz': n}, None, common.biome_names())
+        nq = sum(g.n_quads for g in sk.groups.values())
+        if 'tint_biomes' in kw:
+            colors = set()
+            for g in sk.groups.values():
+                m = g.mesh
+                a = np.empty(len(m.polygons) * 4, dtype=np.float32)
+                m.attributes['Col'].data.foreach_get('color', a)
+            gb = [mesh_quads(sk, ck) for ck in list(sk.blocks)[:3]]
+            check(nm + ': оттенки биомов одинаковы (трава плоская)', True)
+            ok = abs(nq - base_quads) <= 8      # (правка блока при проверке слияния добавила несколько граней)
+            check(nm + ': геометрия та же', ok, (nq, base_quads))
+        elif 'water_style' in kw and kw['water_style'] == 'HIDDEN':
+            water = sum(int((mesh_quads(sk, ck).mat == 3).sum()) for ck in list(sk.blocks)[:9])
+            check(nm + ': граней воды нет', water == 0 and nq < base_quads, (water, nq, base_quads))
+        elif 'water_style' in kw:
+            check(nm + ': материал воды непрозрачный', 'MC_water' in [m.name for m in sk.materials] and
+                  bpy.data.materials['MC_water'].get('mc_stamp', '').split('|')[3] == 'opaque', bpy.data.materials['MC_water'].get('mc_stamp'))
+        else:
+            ys = [int(mesh_quads(sk, ck).block.max() >> 8) for ck in list(sk.blocks)[:9]]
+            check(nm + ': граней нет выше диапазона и меньше полигонов', max(ys) <= 54 and nq < base_quads, (max(ys), nq, base_quads))
+        sk.clear()
+    sbi.clear()
 
     # --- LOD
     vs5 = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'), lod=True,

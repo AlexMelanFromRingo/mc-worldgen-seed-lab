@@ -175,6 +175,8 @@ def main():
             print(f'libmcgen не найдена: нет {a.cli}' + (f' и {DEFAULT_LIB}' if a.cli == DEFAULT_CLI else '') + '; соберите `make -C libmcgen` (поток W1)', file=sys.stderr)
             sys.exit(3)
     cfgs = gtq.configs(a.profile, a.seeds, a.dims.split(',') if a.dims else None)
+    if G['variant'] == 'veins':       # в Nether/End жил руды нет (veins == raw)
+        cfgs = [c for c in cfgs if c['dim'] == 'overworld']
     rows, errors, any_fail = [], 0, False
     dumpdir = f'{GT}/dumps/{a.version}/{a.gate}'
     os.makedirs(dumpdir, exist_ok=True)

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Сборка эталона libmcgen (Java, настоящие классы игры + загрузка реестров из oracle): build.sh <V>  → libmcgen/build/java/<V>
 set -euo pipefail
-V="${1:?build.sh <26.1|26.2|26.3>}"
+V="${1:?build.sh <26.1|26.2|26.3|26.4-snapshot-2>}"
 HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../.." && pwd)"
-case "$V" in 26.1|26.2) SRC=old ;; *) SRC=new ;; esac
+case "$V" in 26.1|26.2) SRC=old ;; 26.3) SRC=new ;; *) SRC=v264 ;; esac
 [ -d "$ROOT/oracle/build/$V/classes" ] || "$ROOT/oracle/build.sh" "$V" >&2
 CP="$ROOT/oracle/build/$V/classes:$("$ROOT/tools/classpath.sh" "$V")"
 OUT="$ROOT/libmcgen/build/java/$V"; mkdir -p "$OUT"
