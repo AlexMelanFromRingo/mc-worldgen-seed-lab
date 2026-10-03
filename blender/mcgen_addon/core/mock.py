@@ -17,7 +17,7 @@ from . import paths
 from .lib import (ERROR_NAMES, MC_HM_MOTION_BLOCKING, MC_HM_MOTION_BLOCKING_NO_LEAVES, MC_HM_OCEAN_FLOOR, MC_HM_WORLD_SURFACE,  # noqa: F401
                   MC_STAGE_ALL, MC_STAGE_BIOMES, MC_STAGE_CARVERS, MC_STAGE_FEATURES, MC_STAGE_STRUCTURES, MC_STAGE_SURFACE,
                   MC_STAGE_TERRAIN, MCGEN_E_ARG, MCGEN_E_CANCEL, MCGEN_E_IO, MCGEN_E_VERSION, McCancelled, McError, RegionInfo,
-                  TweakInfo)
+                  StructureStart, TweakInfo)
 
 NAME = 'mock'
 SUPPORTED_VERSIONS = ('26.1', '26.2', '26.3', '26.4-snapshot-2')
@@ -611,20 +611,45 @@ class McWorld:
         m &= np.isin(sub, host_ids)
         sub[m] = ore
 
+    def _tower_chunk(self, gx, gz):
+        """Чанк-источник башни ячейки (gx, gz) 6×6 чанков или None (частота — structure_frequency, вероятность 70 %)."""
+        freq = self.tweaks['structure_frequency']
+        if freq <= 0 or self.dim != 0:
+            return None
+        cell = 6
+        s = self._s[2]
+        pick = (int((_h01(s ^ _U(51), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) * cell) + gx * cell,
+                int((_h01(s ^ _U(52), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) * cell) + gz * cell)
+        if (_h01(s ^ _U(53), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) > min(1.0, 0.7 * freq):
+            return None
+        return pick
+
+    @_quiet
+    def structure_starts(self, cx0, cz0, nx, nz):
+        """Старты «построек» макета (башни) в области: [StructureStart('minecraft:mock_tower', …)]; та же логика, что у стадии STRUCTURES."""
+        out = []
+        for gz in range(cz0 // 6, (cz0 + nz - 1) // 6 + 1):
+            for gx in range(cx0 // 6, (cx0 + nx - 1) // 6 + 1):
+                pick = self._tower_chunk(gx, gz)
+                if pick is None or not (cx0 <= pick[0] < cx0 + nx and cz0 <= pick[1] < cz0 + nz):
+                    continue
+                X, Z = np.asarray([pick[0] * 16 + 8], np.int64), np.asarray([pick[1] * 16 + 8], np.int64)
+                base = int(self._surface(X, Z)[0][0])
+                if base < self.sea_level:
+                    continue
+                x0, z0 = pick[0] * 16 + 5, pick[1] * 16 + 5
+                out.append(StructureStart('minecraft:mock_tower', pick[0], pick[1], (x0, base + 1, z0, x0 + 6, base + 9, z0 + 6), 1))
+        return out
+
+    def structure_piece_bb(self, chunk_x, chunk_z, index, piece):
+        st = [t for t in self.structure_starts(chunk_x, chunk_z, 1, 1)]
+        if index >= len(st) or piece != 0:
+            raise IndexError('no such structure piece')
+        return st[index].bb
+
     def _structures(self, blocks, ids, cx, cz, top):
         """«Постройки» макета: каменная башенка в одном из чанков каждой ячейки 6×6 чанков (частота — structure_frequency)."""
-        if self.dim != 0:
-            return
-        freq = self.tweaks['structure_frequency']
-        if freq <= 0:
-            return
-        cell = 6
-        gx, gz = cx // cell, cz // cell
-        s = self._s[2]
-        pick = (int((_h01(s ^ _U(51), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) * cell) + gx * cell, int((_h01(s ^ _U(52), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) * cell) + gz * cell)
-        if (cx, cz) != pick:
-            return
-        if (_h01(s ^ _U(53), np.int64(gx), np.int64(gz)) * 0.5 + 0.5) > min(1.0, 0.7 * freq):
+        if self.dim != 0 or self._tower_chunk(cx // 6, cz // 6) != (cx, cz):
             return
         base = int(top[8, 8])
         if base < self.sea_level:
@@ -658,8 +683,10 @@ class McWorld:
             raise McCancelled(MCGEN_E_CANCEL, 'cancelled', 'mcgen_generate_region')
         for done, cc in enumerate(coords, 1):
             chunks[cc] = self._gen_chunk(cc[0], cc[1], stages)
-            if progress and progress(done / total, 'terrain'):
+            if progress and progress(done / total, f'terrain {done}/{total}'):
                 raise McCancelled(MCGEN_E_CANCEL, 'cancelled', 'mcgen_generate_region')
+        if progress:
+            progress(1.0, 'done')
         return McRegion(self, RegionInfo(cx0, cz0, nx, nz, self.min_y, self.height), stages, chunks)
 
 

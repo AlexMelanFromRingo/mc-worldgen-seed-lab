@@ -296,6 +296,8 @@ class MCGEN_OT_clear(Operator):
                 sess.sink.clear(context.scene, s.collection_name)           # построитель W4 удаляет свои объекты/меши/материалы
             except Exception as e:      # noqa: BLE001
                 self.report({'WARNING'}, i18n.exc_text(e))
+        for o in [o for o in bpy.data.objects if o.get('mcgen_structure')]:
+            bpy.data.objects.remove(o, do_unlink=True)
         sess.sink = None
         sess.release()
         s.stats.has_data = False
@@ -577,6 +579,40 @@ class MCGEN_OT_random_seed(Operator):
         return {'CANCELLED'}
 
 
+class MCGEN_OT_structure_markers(Operator):
+    bl_idname = 'mcgen.structure_markers'
+    bl_label = 'Structure Markers'
+    bl_description = 'Add an Empty (box) at the bounding box of every structure found in the generated area'
+
+    def execute(self, context):
+        s = context.scene.mcgen
+        st = s.stats
+        n = len(st.structure_starts)
+        if n == 0:
+            self.report({'WARNING'}, rpt('No structures in the last result (enable the Structures layer and generate)'))
+            return {'CANCELLED'}
+        coll = bpy.data.collections.get(s.collection_name) or bpy.data.collections.new(s.collection_name)
+        if coll.name not in context.scene.collection.children:
+            context.scene.collection.children.link(coll)
+        sess = jobs.session(context.scene.name)
+        info = sess.region.info if sess.region is not None else None
+        ox, oz = ((info.cx0 * 16, info.cz0 * 16) if info else (st.structure_starts[0].chunk_x * 16, st.structure_starts[0].chunk_z * 16))
+        for o in [o for o in bpy.data.objects if o.get('mcgen_structure')]:
+            bpy.data.objects.remove(o, do_unlink=True)
+        for e in st.structure_starts:
+            x0, y0, z0, x1, y1, z1 = e.bb
+            o = bpy.data.objects.new(f'{e.name.split(":", 1)[-1]} {e.chunk_x},{e.chunk_z}', None)
+            o.empty_display_type = 'CUBE'
+            o.empty_display_size = 1.0
+            # куб Empty при размере 1 — от -1 до 1 (ребро 2): масштаб = размер bounding box / 2; Blender = (x, -z, y), начало — угол области
+            o.scale = ((x1 - x0 + 1) / 2.0, (z1 - z0 + 1) / 2.0, (y1 - y0 + 1) / 2.0)
+            o.location = ((x0 + x1 + 1) / 2.0 - ox, -((z0 + z1 + 1) / 2.0 - oz), (y0 + y1 + 1) / 2.0)
+            o['mcgen_structure'] = e.name
+            coll.objects.link(o)
+        self.report({'INFO'}, rpt('{n} structure markers added', n=n))
+        return {'FINISHED'}
+
+
 class MCGEN_OT_reset_tweaks(Operator):
     bl_idname = 'mcgen.reset_tweaks'
     bl_label = 'Reset to Vanilla'
@@ -591,7 +627,7 @@ class MCGEN_OT_reset_tweaks(Operator):
 
 classes = (MCGEN_OT_generate, MCGEN_OT_update_layers, MCGEN_OT_cancel, MCGEN_OT_clear, MCGEN_OT_biome_map, MCGEN_OT_prepare_resources,
            MCGEN_OT_detect_jars, MCGEN_OT_check_java, MCGEN_OT_refresh_versions, MCGEN_OT_download_jars, MCGEN_OT_open_cache,
-           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_reset_tweaks)
+           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_structure_markers, MCGEN_OT_reset_tweaks)
 
 
 def register():

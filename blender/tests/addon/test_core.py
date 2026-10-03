@@ -40,7 +40,7 @@ def stub_library():
     if _stub_path:
         return _stub_path
     out = os.path.join(SCRATCH, 'stub-build')
-    shutil.rmtree(out, ignore_errors=True)
+    shutil.rmtree(out, ignore_errors=True)       # всегда свежая сборка текущей заглушки
     subprocess.run([sys.executable, os.path.join(REPO, 'libmcgen', 'build.py'), '--stub', '--targets', 'linux-x64', '--out', out, '--no-install'],
                    check=True, capture_output=True)
     _stub_path = os.path.join(out, 'linux-x64', 'libmcgen.so')
@@ -163,6 +163,22 @@ class MockTests(unittest.TestCase):
             self.gen.world('minecraft:overworld', 'nope', 1)
         with self.assertRaises(lib.McError):
             self.gen.world('minecraft:overworld', 'normal', 1, {'no_such_tweak': 1})
+
+    def test_structure_starts_mock(self):
+        w = self.gen.world('minecraft:overworld', 'normal', 7)
+        st = w.structure_starts(-30, 10, 24, 24)
+        self.assertGreater(len(st), 0)
+        for s_ in st:
+            self.assertEqual(s_.id, 'minecraft:mock_tower')
+            self.assertTrue(-30 <= s_.chunk_x < -6 and 10 <= s_.chunk_z < 34)
+            self.assertEqual(w.structure_piece_bb(s_.chunk_x, s_.chunk_z, 0, 0), s_.bb)
+        self.assertEqual(len(w.structure_starts(-30, 10, 24, 24)), len(st))
+        none = self.gen.world('minecraft:overworld', 'normal', 7, {'structure_frequency': 0.0}).structure_starts(-30, 10, 24, 24)
+        self.assertEqual(none, [])
+        # башня в starts действительно есть в блоках области (стадия STRUCTURES)
+        r = w.generate_region(st[0].chunk_x, st[0].chunk_z, 1, 1, mock.MC_STAGE_ALL)
+        b = r.blocks(st[0].chunk_x, st[0].chunk_z)
+        self.assertGreater(int((b == self.gen.ids['stone_bricks']).sum()), 0)
 
     def test_region_shapes_and_determinism(self):
         w = self.gen.world('minecraft:overworld', 'normal', (1, 2, 3, 4))
@@ -372,7 +388,7 @@ class LibBridgeTests(unittest.TestCase):
         w = self.gen.world('minecraft:overworld', 'normal', 1)
         seen = []
         w.generate_region(0, 0, 3, 3, lib.MC_STAGE_ALL, 0, lambda f, s: seen.append((round(f, 3), s)) and False)
-        self.assertEqual(seen[0], (0.0, 'terrain'))
+        self.assertEqual(seen[0], (0.0, 'terrain 0/9'))
         self.assertEqual(seen[-1], (1.0, 'done'))
         with self.assertRaises(lib.McCancelled) as c:
             w.generate_region(0, 0, 4, 4, lib.MC_STAGE_ALL, 0, lambda f, s: f >= 0.5)
@@ -409,6 +425,18 @@ class LibBridgeTests(unittest.TestCase):
             self.assertGreater(counter['n'], 60, 'поток Python почти не работал: GIL не отпускается?')
         finally:
             os.environ.pop('MCGEN_STUB_DELAY_MS', None)
+
+    def test_structure_api(self):
+        w = self.gen.world('minecraft:overworld', 'normal', 1)
+        st = w.structure_starts(0, 0, 8, 8)
+        self.assertEqual([(s_.id, s_.chunk_x, s_.chunk_z, s_.piece_count) for s_ in st],
+                         [('minecraft:stub_hut', cx, cz, 2) for cz in (0, 4) for cx in (0, 4)])
+        self.assertEqual(st[0].bb, (2, 64, 2, 12, 70, 9))
+        self.assertEqual(w.structure_piece_bb(4, 0, 0, 1), (4 * 16 + 5, 64, 2, 4 * 16 + 9, 74, 9))
+        with self.assertRaises(IndexError):
+            w.structure_piece_bb(1, 1, 0, 0)
+        # область больше буфера по умолчанию (512): список полный
+        self.assertEqual(len(w.structure_starts(-256, -256, 512, 512)), 128 * 128)        # 16384 стартов > cap 512: повторный вызов с нужным буфером
 
     def test_mcr_dump_roundtrip(self):
         w = self.gen.world('minecraft:overworld', 'normal', 1)
@@ -548,7 +576,10 @@ class PackSyntheticTests(unittest.TestCase):
         self.assertIn('99.1', pack.available_versions())
         # повторный запуск — всё из кэша
         r2 = pack.prepare(self.srv, self.cli)
-        self.assertEqual(r2.steps, ['datapack: cached', 'reports: cached', 'assets: cached'])
+        self.assertEqual([x for x in r2.steps if not x.startswith('block_flags')], ['datapack: cached', 'reports: cached', 'assets: cached'])
+        self.assertTrue(any(x.startswith('block_flags: skipped') for x in r2.steps))       # у синтетических jar нет настоящего bundle — шаг пропущен, пакет готов
+        self.assertFalse(r2.flags_ok)
+        self.assertTrue(pack.resolve('99.1')['pack_ok'])
 
     def test_reports_folder_layouts(self):
         base = os.path.join(self.root, 'x')
@@ -733,10 +764,62 @@ class PackRealJarsTests(unittest.TestCase):
                 self.assertEqual(a.read(), b.read(), f)
         self._same_tree(os.path.join(ref_assets, 'assets'), os.path.join(r.assets_dir, 'assets'))
 
+    def test_block_flags_generated_by_our_class(self):
+        """reports/block_flags.json получен запуском НАШЕГО класса BlockFlags на classpath игры (нужна только JRE) и совпадает побайтно
+        с файлом, который строит libmcgen/tests/g5_blockflags.py через javac."""
+        r = self.res.result
+        self.assertTrue(r.flags_ok, r.steps)
+        self.assertIn('block_flags: generated', r.steps)
+        mine = os.path.join(r.pack_dir, 'reports', 'block_flags.json')
+        ref = os.path.join(REPO, 'run', 'pack-26.3', 'reports', 'block_flags.json')
+        if os.path.isfile(ref):
+            with open(mine, 'rb') as a, open(ref, 'rb') as b:
+                self.assertEqual(a.read(), b.read())
+        with open(mine, encoding='utf-8') as f:
+            d = json.load(f)
+        self.assertEqual(d['nstates'], 35723)
+        self.assertTrue(pack.flags_class_dir() is None or os.path.isfile(os.path.join(pack.flags_class_dir(), 'mcgenflags', 'BlockFlags.class')))
+        self.assertTrue(pack.resolve('26.3')['flags_ok'])
+
+    def test_block_flags_compiled_on_the_fly_without_prebuilt_class(self):
+        """Запуск из исходников без собранного класса: компиляция javac из BlockFlags.java (если JDK есть) даёт тот же файл."""
+        if not pack.flags_source() or not pack.find_javac(pack.find_java(25)[0]):
+            self.skipTest('нет исходника BlockFlags.java или javac')
+        orig = pack.flags_class_dir
+        pack.flags_class_dir = lambda: None
+        try:
+            out = os.path.join(SCRATCH, 'flags-onthefly.json')
+            if os.path.exists(out):
+                os.remove(out)
+            pack.run_block_flags(self.server, pack.find_java(25)[0], out)
+        finally:
+            pack.flags_class_dir = orig
+        with open(out, 'rb') as a, open(os.path.join(self.res.result.pack_dir, 'reports', 'block_flags.json'), 'rb') as b:
+            self.assertEqual(a.read(), b.read())
+
+    def test_block_flags_other_versions(self):
+        """Один и тот же класс (собран против 26.3) работает на 26.1, 26.2 и 26.4-snapshot-2: результат побайтно как у g5_blockflags.py."""
+        java = pack.find_java(25)[0]
+        if pack.flags_class_dir() is None:
+            self.skipTest('нет собранного java/mcgenflags/BlockFlags.class (tools/build_extension.py)')
+        orig = pack.find_javac
+        pack.find_javac = lambda *a: (_ for _ in ()).throw(AssertionError('у пользователя нет JDK: javac вызываться не должен'))
+        self.addCleanup(setattr, pack, 'find_javac', orig)
+        for v in ('26.1', '26.4-snapshot-2'):
+            jar = os.path.join(_boot.JARS, f'server-{v}.jar')
+            ref = os.path.join(REPO, 'run', f'pack-{v}', 'reports', 'block_flags.json')
+            if not (os.path.isfile(jar) and os.path.isfile(ref)):
+                continue
+            out = os.path.join(SCRATCH, f'flags-{v}.json')
+            pack.run_block_flags(jar, java, out)
+            with open(out, 'rb') as a, open(ref, 'rb') as b:
+                self.assertEqual(a.read(), b.read(), v)
+
     def test_cache_by_sha1(self):
         t0 = time.time()
         r = pack.prepare(self.server, self.client)
-        self.assertEqual(r.steps, ['datapack: cached', 'reports: cached', 'assets: cached'])
+        self.assertEqual(r.steps, ['datapack: cached', 'reports: cached', 'block_flags: cached', 'assets: cached'])
+        self.assertTrue(r.flags_ok)
         self.assertLess(time.time() - t0, 5.0)
         with open(self.server, 'rb') as f:
             self.assertIn(hashlib.sha1(f.read()).hexdigest()[:10], r.pack_dir)
@@ -972,6 +1055,85 @@ class RealLibraryTests(unittest.TestCase):
         b = self.region(self.gen.world('minecraft:overworld', 'normal', 12345, {'sea_level_offset': 10}), 0, 0, 2, 2, st, 1)
         if all(np.array_equal(a.blocks(*c), b.blocks(*c)) for c in a.chunks()):
             self.skipTest('sea_level_offset пока не меняет рельеф (настройка ещё не реализована в W1)')
+
+    def test_full_pipeline_progress_and_stages(self):
+        """Полная маска стадий: прогресс «<стадия> done/total», декорации и постройки меняют блоки, размеры/dtype те же."""
+        w = self.gen.world('minecraft:overworld', 'normal', 12345)
+        base_stages = lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN | lib.MC_STAGE_SURFACE | lib.MC_STAGE_CARVERS
+        a = self.region(w, 0, 0, 6, 6, base_stages, 0)
+        seen, fr = {}, []
+
+        def cb(f, what):
+            seen.setdefault((what or '').split(' ', 1)[0], []).append(what)
+            fr.append(f)
+            return False
+        b = self.region(w, 0, 0, 6, 6, lib.MC_STAGE_ALL, 0, cb)
+        self.assertTrue({'terrain', 'done'} <= set(seen), sorted(seen))
+        self.assertTrue(all(x <= y + 1e-9 for x, y in zip(fr, fr[1:])), 'прогресс не монотонен')
+        self.assertAlmostEqual(fr[-1], 1.0)
+        import re
+        for what in seen.get('terrain', []):
+            self.assertRegex(what, r'^terrain \d+/\d+$')
+        print('\n   [стадии в прогрессе]', sorted(seen))
+        diff = sum(not np.array_equal(a.blocks(*c), b.blocks(*c)) for c in a.chunks())
+        self.assertGreater(diff, 0, 'FEATURES/STRUCTURES не изменили ни одного чанка')
+        self.assertEqual(b.blocks(0, 0).shape, (384, 16, 16))
+
+    def test_structure_starts_contract(self):
+        w = self.gen.world('minecraft:overworld', 'normal', 12345)
+        st = w.structure_starts(-64, -64, 128, 128)
+        self.assertGreater(len(st), 5, 'в 128×128 чанках должны быть постройки')
+        for s_ in st:
+            self.assertTrue(s_.id.startswith('minecraft:'), s_.id)
+            self.assertTrue(-64 <= s_.chunk_x < 64 and -64 <= s_.chunk_z < 64)
+            x0, y0, z0, x1, y1, z1 = s_.bb
+            self.assertTrue(x0 <= x1 and y0 <= y1 and z0 <= z1, s_)
+            self.assertGreaterEqual(s_.piece_count, 1)
+        # детерминизм и согласованность вложенных областей
+        again = w.structure_starts(-64, -64, 128, 128)
+        self.assertEqual(st, again)
+        sub = w.structure_starts(0, 0, 32, 32)
+        self.assertEqual(sorted(sub), sorted(s_ for s_ in st if 0 <= s_.chunk_x < 32 and 0 <= s_.chunk_z < 32))
+        # cap: возвращается полное число, даже если буфер мал
+        import ctypes
+        small = (lib._McStructureStart * 2)()
+        total = self.L.mcgen_structure_starts(w._h, -64, -64, 128, 128, small, 2)
+        self.assertEqual(total, len(st))
+        # bounding box частей лежит внутри bb старта (с допуском: у части может выступать ограждение), индекс — в порядке чанка
+        first = st[0]
+        same = [s_ for s_ in st if (s_.chunk_x, s_.chunk_z) == (first.chunk_x, first.chunk_z)]
+        bb0 = w.structure_piece_bb(first.chunk_x, first.chunk_z, 0, 0)
+        self.assertEqual(len(bb0), 6)
+        with self.assertRaises(IndexError):
+            w.structure_piece_bb(first.chunk_x, first.chunk_z, len(same) + 5, 0)
+        # сид structures меняет расположение; terrain и features — нет (постройки зависят от биомов (climate) и сида structures)
+        other = self.gen.world('minecraft:overworld', 'normal', (12345, 12345, 999, 12345)).structure_starts(-64, -64, 128, 128)
+        self.assertNotEqual(sorted(other), sorted(st))
+        key = lambda l: sorted((s_.id, s_.chunk_x, s_.chunk_z) for s_ in l)       # noqa: E731
+        feat = self.gen.world('minecraft:overworld', 'normal', (12345, 12345, 12345, 555)).structure_starts(-64, -64, 128, 128)
+        self.assertEqual(key(feat), key(st))                                       # сид features постройки не меняет
+        terr = self.gen.world('minecraft:overworld', 'normal', (12345, 888, 12345, 12345)).structure_starts(-64, -64, 128, 128)
+        common = len(set(key(terr)) & set(key(st)))
+        self.assertGreater(common, 0.9 * len(st), 'сид terrain (высоты рельефа) должен менять лишь малую часть стартов')
+
+    def test_structures_all_dimensions(self):
+        for d in ('minecraft:the_nether', 'minecraft:the_end'):
+            w = self.gen.world(d, 'normal', 777)
+            st = w.structure_starts(-80, -80, 160, 160)
+            self.assertIsInstance(st, list)
+            print(f'\n   [{d}: {len(st)} стартов построек; типы {sorted({s_.id for s_ in st})[:4]}]')
+
+    def test_cancel_in_late_stage(self):
+        w = self.gen.world('minecraft:overworld', 'normal', 12345)
+        n = []
+
+        def cb(f, what):
+            n.append(what)
+            return f > 0.9                       # отмена уже после заполнения шумом (жидкости/декорации)
+        with self.assertRaises(lib.McCancelled):
+            w.generate_region(0, 0, 8, 8, lib.MC_STAGE_ALL, 0, cb)
+        r = self.region(w, 0, 0, 2, 2, lib.MC_STAGE_ALL, 0)          # после отмены библиотека работоспособна
+        self.assertEqual(r.blocks(0, 0).shape, (384, 16, 16))
 
     def test_write_mcr_roundtrip(self):
         if not self.L.exported('mcgen_region_write_mcr') or self.L.mcgen_region_write_mcr is None:

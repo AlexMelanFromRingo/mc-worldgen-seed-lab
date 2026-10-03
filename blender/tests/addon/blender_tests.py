@@ -45,6 +45,7 @@ import numpy as np  # noqa: E402
 import extract_strings  # noqa: E402
 
 TWEAKS = params_mod.tweaks_doc()['tweaks']
+REAL = os.environ.get('MCGEN_REAL') == '1'          # настоящая libmcgen (а не заглушка)
 mock_only = unittest.skipIf(BACKEND != 'mock', 'содержимое мира проверяется только на макете (заглушка библиотеки возвращает плоский мир)')
 
 
@@ -320,7 +321,9 @@ class T03_Panels(unittest.TestCase):
     def test_draw_with_stats_and_error(self):
         s = S()
         s.stats.fill({'backend': 'mock', 'sink': 'x', 'chunks': 4, 'objects': 4, 'faces': 12345, 't_generate': 1.0, 't_build': 0.5, 't_total': 1.6,
-                      'memory': 5e6, 'stage_times': {'terrain': 0.7, 'surface': 0.2}})
+                      'memory': 5e6, 'stage_times': {'terrain': 0.7, 'surface': 0.2}, 'peak_rss': 8e8, 'mode': 'update', 'rebuilt': 3,
+                      'structures_total': 3, 'structure_types': {'minecraft:village_plains': 2, 'minecraft:mineshaft': 1},
+                      'structure_starts': [('minecraft:village_plains', 1, 2, (16, 60, 32, 60, 80, 70), 12)]})
         s.stats.error = 'line1\nline2'
         for name in ('MCGEN_PT_stats', 'MCGEN_PT_main', 'MCGEN_PT_resources', 'MCGEN_PT_n_stats'):
             lay = RecordingLayout()
@@ -328,6 +331,10 @@ class T03_Panels(unittest.TestCase):
         lay = RecordingLayout()
         getattr(bpy.types, 'MCGEN_PT_stats').draw(FakePanel(lay), bpy.context)
         self.assertTrue(any('Faces' in x for x in lay.log['labels']))
+        self.assertTrue(any('Structures: 3' in x for x in lay.log['labels']), lay.log['labels'])
+        self.assertTrue(any(x.startswith('village_plains: 2') for x in lay.log['labels']))
+        self.assertIn('mcgen.structure_markers', lay.log['ops'])
+        self.assertTrue(lay.log['icons'] <= RecordingLayout.ICONS)
 
     def test_tweak_groups_cover_all_tweaks(self):
         shown = set()
@@ -562,6 +569,115 @@ class T04_Operators(unittest.TestCase):
         s.bm_step = '1'
         run_job('biome_map')
         self.assertEqual(tuple(bpy.data.images['MCGen Biomes overworld'].size), (64, 64))
+
+    def _layers(self, **kw):
+        s = S()
+        for k in ('terrain', 'surface', 'caves', 'features', 'structures'):
+            setattr(s, 'use_' + k, kw.get(k, False))
+
+    def test_layers_are_real_stage_masks(self):
+        """Terrain, Surface, Caves, Features, Structures -> реальные маски стадий библиотеки (BIOMES всегда)."""
+        bits = {'terrain': 2, 'surface': 4, 'caves': 8, 'features': 16, 'structures': 32}
+        sess = jobs.session(bpy.context.scene.name)
+        S().size_x = S().size_z = 2
+        for combo, mask in (({'terrain': True}, 3), ({'terrain': True, 'surface': True, 'caves': True}, 15), ({'terrain': True, 'features': True}, 19),
+                            ({'terrain': True, 'surface': True, 'caves': True, 'features': True, 'structures': True}, 63), ({'surface': True}, 1)):
+            self._layers(**combo)
+            self.assertEqual(ops.collect_params(bpy.context.scene, None).stages, mask, combo)
+            run_job('generate')
+            self.assertEqual(sess.region.stages, mask)
+
+    def test_full_pipeline_stats_and_structures(self):
+        s = S()
+        s.size_x = s.size_z = 16
+        self._layers(terrain=True, surface=True, caves=True, features=True, structures=True)
+        run_job('generate')
+        sess = jobs.session(bpy.context.scene.name)
+        st = s.stats
+        i = sess.region.info
+        starts = sess.world.structure_starts(i.cx0, i.cz0, i.nx, i.nz)
+        self.assertGreater(len(starts), 0, 'в области должны быть постройки')
+        self.assertEqual(st.structures_total, len(starts))
+        self.assertEqual({e.name: e.count for e in st.structure_types}, {k: sum(1 for x in starts if x.id == k) for k in {x.id for x in starts}})
+        self.assertEqual(len(st.structure_starts), min(len(starts), props.MAX_LISTED_STARTS))
+        e0, x0 = st.structure_starts[0], starts[0]
+        self.assertEqual((e0.name, e0.chunk_x, e0.chunk_z, tuple(e0.bb)), (x0.id, x0.chunk_x, x0.chunk_z, tuple(x0.bb)))
+        self.assertIn('structure starts', {e.name for e in st.stage_times})
+        if sys.platform.startswith('linux'):
+            self.assertGreater(st.peak_rss_mb, 50)
+        print('\n   [стадии]', {e.name: round(e.seconds, 3) for e in st.stage_times}, '[построек]', st.structures_total, dict(list({e.name: e.count for e in st.structure_types}.items())[:3]))
+        # слой Structures выключен -> списка нет
+        s.use_structures = False
+        run_job('generate')
+        self.assertEqual(S().stats.structures_total, 0)
+
+    def test_structure_markers_operator(self):
+        s = S()
+        s.size_x = s.size_z = 16
+        self._layers(terrain=True, structures=True)
+        run_job('generate')
+        n = len(s.stats.structure_starts)
+        self.assertGreater(n, 0)
+        self.assertEqual(bpy.ops.mcgen.structure_markers('EXEC_DEFAULT'), {'FINISHED'})
+        marks = [o for o in bpy.data.objects if o.get('mcgen_structure')]
+        self.assertEqual(len(marks), n)
+        e = s.stats.structure_starts[0]
+        m = next(o for o in marks if o.name == f'{e.name.split(":", 1)[-1]} {e.chunk_x},{e.chunk_z}' or o['mcgen_structure'] == e.name)
+        x0, y0, z0, x1, y1, z1 = e.bb
+        i = jobs.session(bpy.context.scene.name).region.info
+        self.assertAlmostEqual(m.location.x, (x0 + x1 + 1) / 2.0 - i.cx0 * 16, places=3)
+        self.assertAlmostEqual(m.location.y, -((z0 + z1 + 1) / 2.0 - i.cz0 * 16), places=3)
+        self.assertAlmostEqual(m.location.z, (y0 + y1 + 1) / 2.0, places=3)
+        bpy.ops.mcgen.clear()
+        self.assertEqual(len([o for o in bpy.data.objects if o.get('mcgen_structure')]), 0)
+
+    def test_cancel_midway_keeps_previous_scene(self):
+        s = S()
+        s.size_x = s.size_z = 2
+        run_job('generate')
+        sess = jobs.session(bpy.context.scene.name)
+        before = sess.region
+        stamps = {k: v['mcgen_stamp'] for k, v in self.objs().items()}
+        s.size_x = s.size_z = {'mock': 14}.get(BACKEND, 14) if not REAL else 24
+        s.seed = '424242'
+        if BACKEND == 'lib' and not REAL:
+            os.environ['MCGEN_STUB_DELAY_MS'] = '15'
+        try:
+            self._layers(terrain=True, surface=True, caves=True, features=REAL, structures=REAL)
+            params = ops.collect_params(bpy.context.scene, None)
+            job = jobs.GenerateJob(bpy.context.scene, params, mode='update', skey=bpy.context.scene.name, sink_pref='FALLBACK').start()
+            t0 = time.time()
+            while not job.finished and time.time() - t0 < 120:
+                job.poll(0.01)
+                if job.fraction > 0.12 and job.phase == 'generate':
+                    job.cancel()
+                time.sleep(0.005)
+        finally:
+            os.environ.pop('MCGEN_STUB_DELAY_MS', None)
+        self.assertEqual(job.state, 'cancelled')
+        self.assertIs(sess.region, before)                                   # прежний регион и сцена не тронуты
+        self.assertEqual({k: v['mcgen_stamp'] for k, v in self.objs().items()}, stamps)
+        run_job('generate')                                                  # после отмены всё работает
+        self.assertEqual(len(self.objs()), 14 * 14 if not REAL else 24 * 24)
+
+    @unittest.skipUnless(REAL, 'нужна настоящая библиотека: слои меняют содержимое чанков')
+    def test_update_after_enabling_features_and_structures(self):
+        s = S()
+        s.size_x = s.size_z = 6
+        s.seed = '12345'
+        self._layers(terrain=True, surface=True, caves=True)
+        run_job('generate')
+        stamps = {k: v['mcgen_stamp'] for k, v in self.objs().items()}
+        s.use_features = True
+        s.use_structures = True
+        bpy.ops.mcgen.update_layers('EXEC_DEFAULT')
+        sess = jobs.session(bpy.context.scene.name)
+        self.assertIn('layers', sess.stats['reasons'])
+        self.assertEqual(sess.region.stages, 63)
+        self.assertGreater(S().stats.objects, 0)
+        new = {k: v['mcgen_stamp'] for k, v in self.objs().items()}
+        self.assertTrue(any(new[k] != stamps[k] for k in stamps), 'Update Layers не пересобрал ни одного чанка')
+        self.assertEqual(S().stats.mode, 'update')
 
     def test_refuses_area_that_does_not_fit_in_ram(self):
         s = S()

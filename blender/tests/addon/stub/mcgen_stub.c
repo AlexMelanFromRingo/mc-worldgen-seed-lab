@@ -101,7 +101,8 @@ MCGEN_API int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz
     const char *dl = getenv("MCGEN_STUB_DELAY_MS"); int delay = dl ? atoi(dl) : 0;
     int total = nx * nz;
     for (int i = 0; i < total; i++) {
-        if (cb) { if (cb(ud, (double)i / total, (stages & MC_STAGE_TERRAIN) ? "terrain" : "biomes")) { mcgen_region_free(r); seterr(err, errlen, "cancelled"); return MCGEN_E_CANCEL; } }
+        char lab[48]; snprintf(lab, sizeof lab, (stages & MC_STAGE_TERRAIN) ? "terrain %d/%d" : "biomes %d/%d", i, total);
+        if (cb) { if (cb(ud, (double)i / total, lab)) { mcgen_region_free(r); seterr(err, errlen, "cancelled"); return MCGEN_E_CANCEL; } }
         if (delay) msleep(delay);
         Chunk *c = &r->ch[i]; int cx = cx0 + i % nx, cz = cz0 + i / nx;
         c->blocks = (uint16_t *)calloc((size_t)H * 256, 2); c->biomes = (uint8_t *)calloc((size_t)(H / 4) * 16, 1);
@@ -139,6 +140,27 @@ static Chunk *at(McRegion *r, int cx, int cz) {
 MCGEN_API uint16_t *mcgen_region_blocks(McRegion *r, int cx, int cz) { Chunk *c = at(r, cx, cz); return c ? c->blocks : NULL; }
 MCGEN_API uint8_t *mcgen_region_biomes(McRegion *r, int cx, int cz) { Chunk *c = at(r, cx, cz); return c ? c->biomes : NULL; }
 MCGEN_API int16_t *mcgen_region_heightmap(McRegion *r, int cx, int cz, int kind) { Chunk *c = at(r, cx, cz); return c && kind >= 0 && kind < 4 ? c->hm[kind] : NULL; }
+
+/* постройки заглушки: «хижина» в чанках с cx % 4 == 0 && cz % 4 == 0, две части */
+MCGEN_API int mcgen_structure_starts(McWorld *w, int cx0, int cz0, int nx, int nz, McStructureStart *out, int cap) {
+    (void)w; int total = 0;
+    for (int cz = cz0; cz < cz0 + nz; cz++) for (int cx = cx0; cx < cx0 + nx; cx++) {
+        if ((cx & 3) || (cz & 3)) continue;
+        if (total < cap) {
+            McStructureStart *s = &out[total]; s->id = "minecraft:stub_hut"; s->chunk_x = cx; s->chunk_z = cz; s->piece_count = 2;
+            s->bb[0] = cx * 16 + 2; s->bb[1] = 64; s->bb[2] = cz * 16 + 2; s->bb[3] = cx * 16 + 12; s->bb[4] = 70; s->bb[5] = cz * 16 + 9;
+        }
+        total++;
+    }
+    return total;
+}
+MCGEN_API int mcgen_structure_piece_bb(McWorld *w, int cx, int cz, int index, int piece, int bb[6]) {
+    (void)w; if ((cx & 3) || (cz & 3) || index != 0 || piece < 0 || piece > 1) return MCGEN_E_ARG;
+    int b[6] = { cx * 16 + 2, 64, cz * 16 + 2, cx * 16 + 12, 70, cz * 16 + 9 };
+    if (piece == 1) { b[0] += 3; b[3] -= 3; b[4] += 4; }
+    for (int i = 0; i < 6; i++) bb[i] = b[i];
+    return 0;
+}
 
 static void wstr(FILE *f, const char *s) { uint16_t n = (uint16_t)strlen(s); fwrite(&n, 2, 1, f); fwrite(s, 1, n, f); }
 MCGEN_API int mcgen_region_write_mcr(const McRegion *r, const McGen *g, const char *path, char *err, size_t errlen) {

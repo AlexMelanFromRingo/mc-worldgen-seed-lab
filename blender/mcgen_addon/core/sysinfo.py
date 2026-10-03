@@ -42,3 +42,35 @@ def check_fits(dimension, nx, nz, fraction=0.6):
     need = estimate_bytes(dimension, nx, nz)
     ram = total_ram_bytes()
     return (ram is None or need <= ram * fraction), need, (int(ram * fraction) if ram else None)
+
+
+def process_memory():
+    """(текущий RSS, пиковый RSS) процесса в байтах; (0, 0), если платформа не поддержана."""
+    try:
+        if sys.platform.startswith('linux'):
+            with open('/proc/self/statm') as f:
+                rss = int(f.read().split()[1]) * os.sysconf('SC_PAGE_SIZE')
+            peak = rss
+            with open('/proc/self/status') as f:
+                for ln in f:
+                    if ln.startswith('VmHWM:'):
+                        peak = int(ln.split()[1]) * 1024
+            return rss, peak
+        if sys.platform == 'darwin':
+            import resource
+            peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss          # на macOS — байты
+            return peak, peak
+        if sys.platform.startswith('win'):
+            class PMC(ctypes.Structure):
+                _fields_ = [('cb', ctypes.c_ulong), ('PageFaultCount', ctypes.c_ulong), ('PeakWorkingSetSize', ctypes.c_size_t),
+                            ('WorkingSetSize', ctypes.c_size_t), ('QuotaPeakPagedPoolUsage', ctypes.c_size_t), ('QuotaPagedPoolUsage', ctypes.c_size_t),
+                            ('QuotaPeakNonPagedPoolUsage', ctypes.c_size_t), ('QuotaNonPagedPoolUsage', ctypes.c_size_t),
+                            ('PagefileUsage', ctypes.c_size_t), ('PeakPagefileUsage', ctypes.c_size_t)]
+            pmc = PMC()
+            pmc.cb = ctypes.sizeof(PMC)
+            h = ctypes.windll.kernel32.GetCurrentProcess()
+            if ctypes.windll.psapi.GetProcessMemoryInfo(h, ctypes.byref(pmc), pmc.cb):
+                return int(pmc.WorkingSetSize), int(pmc.PeakWorkingSetSize)
+    except (OSError, ValueError, AttributeError, ImportError):
+        pass
+    return 0, 0

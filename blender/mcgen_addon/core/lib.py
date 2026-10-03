@@ -38,6 +38,7 @@ ERR_BUF = 1024
 
 TweakInfo = namedtuple('TweakInfo', 'id label group description default min max soft_min soft_max is_int')
 RegionInfo = namedtuple('RegionInfo', 'cx0 cz0 nx nz min_y height')
+StructureStart = namedtuple('StructureStart', 'id chunk_x chunk_z bb piece_count')     # bb = (x0, y0, z0, x1, y1, z1) в блоках мира
 
 
 class McError(RuntimeError):
@@ -74,6 +75,10 @@ class _McTweakValue(C.Structure):
 
 class _McRegionInfo(C.Structure):
     _fields_ = [('cx0', C.c_int), ('cz0', C.c_int), ('nx', C.c_int), ('nz', C.c_int), ('min_y', C.c_int), ('height', C.c_int)]
+
+
+class _McStructureStart(C.Structure):
+    _fields_ = [('id', C.c_char_p), ('chunk_x', C.c_int), ('chunk_z', C.c_int), ('bb', C.c_int * 6), ('piece_count', C.c_int)]
 
 
 _PROGRESS_FN = C.CFUNCTYPE(C.c_int, C.c_void_p, C.c_double, C.c_char_p)
@@ -126,6 +131,8 @@ class Library:
         'mcgen_region_biomes': (_P, [_P, C.c_int, C.c_int], True),
         'mcgen_region_heightmap': (_P, [_P, C.c_int, C.c_int, C.c_int], True),
         'mcgen_region_write_mcr': (C.c_int, [_P, _P, C.c_char_p, C.c_char_p, C.c_size_t], False),
+        'mcgen_structure_starts': (C.c_int, [_P, C.c_int, C.c_int, C.c_int, C.c_int, C.POINTER(_McStructureStart), C.c_int], False),
+        'mcgen_structure_piece_bb': (C.c_int, [_P, C.c_int, C.c_int, C.c_int, C.c_int, C.POINTER(C.c_int)], False),
     }
 
     def __init__(self, path):
@@ -384,6 +391,34 @@ class McWorld:
         if rc != MCGEN_OK:
             raise McError(rc, 'mcgen_biome_grid failed', 'mcgen_biome_grid')
         return out
+
+    def structure_starts(self, cx0, cz0, nx, nz):
+        """Старты построек, чей чанк-источник лежит в [cx0, cx0+nx)×[cz0, cz0+nz): список StructureStart (стадия STRUCTURES не нужна —
+        старты считаются лениво и потокобезопасно). Работает и до, и после generate_region."""
+        fn = self._lib.mcgen_structure_starts
+        if fn is None:
+            raise McError(MCGEN_E_UNSUPPORTED, 'The library has no mcgen_structure_starts')
+        cap = 512
+        while True:
+            buf = (_McStructureStart * cap)()
+            total = fn(self._need(), int(cx0), int(cz0), int(nx), int(nz), buf, cap)
+            if total < 0:
+                raise McError(MCGEN_E_INTERNAL, 'mcgen_structure_starts failed', 'mcgen_structure_starts')
+            if total <= cap:
+                break
+            cap = total + 16
+        return [StructureStart(_s(b.id), b.chunk_x, b.chunk_z, tuple(b.bb), b.piece_count) for b in buf[:total]]
+
+    def structure_piece_bb(self, chunk_x, chunk_z, index, piece):
+        """bounding box (x0,y0,z0,x1,y1,z1) части piece index-го старта чанка-источника (порядок — как в structure_starts для одного чанка)."""
+        fn = self._lib.mcgen_structure_piece_bb
+        if fn is None:
+            raise McError(MCGEN_E_UNSUPPORTED, 'The library has no mcgen_structure_piece_bb')
+        bb = (C.c_int * 6)()
+        rc = fn(self._need(), int(chunk_x), int(chunk_z), int(index), int(piece), bb)
+        if rc != 0:
+            raise IndexError('no such structure piece')
+        return tuple(bb)
 
     def generate_region(self, cx0, cz0, nx, nz, stages=MC_STAGE_ALL, threads=0, progress=None):
         """Генерирует чанки [cx0, cx0+nx) × [cz0, cz0+nz). progress(fraction, what) -> truthy = отмена. McCancelled при отмене."""

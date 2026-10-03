@@ -3,7 +3,11 @@
 #include "feature.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <alloca.h>
+#ifdef _WIN32
+#  include <malloc.h>      /* alloca в mingw/MSVC */
+#else
+#  include <alloca.h>
+#endif
 
 enum { SP_SIMPLE, SP_WEIGHTED, SP_RULE, SP_RANDINT, SP_ROTATED, SP_NOISE, SP_NOISE_THRESH, SP_DUAL, SP_RANDBLOCK };
 typedef struct NzGen { NStack ns; OldNormal on; } NzGen;       /* NormalNoise: 26.3+ (float, NStack) или 26.1/26.2 (double) */

@@ -13,8 +13,10 @@ wd = a.world.rstrip('/'); m = json.load(open(wd + '/manifest.json'))
 only = a.only or m['variant'][len('feature:'):]
 x0, z0, x1, z1 = m['area_chunks']
 D = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether'}
-r = subprocess.run([f'{ROOT}/libmcgen/build/mcgen-cli', '--pack', f'{ROOT}/run/pack-{a.version}', '--version', a.version, '--dim', D[m['dim'].replace('the_', '') if m['dim'] != 'the_nether' else 'nether'] if False else ('minecraft:the_nether' if 'nether' in m['dim'] else 'minecraft:overworld'),
-                    '--seed', str(m['seed']), '--cx0', str(x0), '--cz0', str(z0), '--nx', str(x1 - x0 + 1), '--nz', str(z1 - z0 + 1), '--stages', '0x17', '--pp-margin', '1', '--out', '/tmp/seq_tmp.mcr'],
+import tempfile
+out = tempfile.mktemp(suffix='.mcr')
+r = subprocess.run([f'{ROOT}/libmcgen/build/mcgen-cli', '--pack', f'{ROOT}/run/pack-{a.version}', '--version', a.version, '--dim', 'minecraft:the_nether' if 'nether' in m['dim'] else 'minecraft:overworld',
+                    '--seed', str(m['seed']), '--cx0', str(x0), '--cz0', str(z0), '--nx', str(x1 - x0 + 1), '--nz', str(z1 - z0 + 1), '--stages', '0x17', '--pp-margin', '1', '--out', out],
                    env=dict(os.environ, MCGEN_FEATURES_ONLY=only, MCGEN_TRACE_ATT='1'), capture_output=True, text=True)
 w = anvil.World(wd + '/world', 'nether' if 'nether' in m['dim'] else 'overworld', a.version)
 names = w.states.names
@@ -49,3 +51,4 @@ for cz in range(z0 + a.margin, z1 + 1 - a.margin):
 if a.chunk:
     for p, ok in seq.get(tuple(a.chunk), []): print(p, ok, 'H' if p in bases else '')
 print('итого попыток H/T/f:', dict(tot))
+if os.path.exists(out): os.remove(out)

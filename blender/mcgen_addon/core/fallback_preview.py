@@ -210,7 +210,7 @@ class PreviewSink(SceneSink):
                 groups.append((gx, gz, min(gx + k, info.nx), min(gz + k, info.nz)))
         self._groups = groups
         self._i = 0
-        self._stats = {'objects': 0, 'vertices': 0, 'faces': 0}
+        self._stats = {'objects': 0, 'vertices': 0, 'faces': 0, 'rebuilt': 0}
         self._step = 1
         cols = sum((g[2] - g[0]) * (g[3] - g[1]) * 256 for g in groups)
         if cols > 4_000_000:                                    # очень большие области: предпросмотр с прореживанием
@@ -282,6 +282,7 @@ class PreviewSink(SceneSink):
             name = f'MC Chunk {cx},{cz}'
             self._make_object(bpy, name, verts, quads, colors, (x0, -z0, 0.0))
             self._stats['objects'] += 1
+            self._stats['rebuilt'] += 1
             self._stats['vertices'] += len(verts)
             self._stats['faces'] += len(quads)
             if time.perf_counter() >= t_end:

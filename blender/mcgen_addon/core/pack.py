@@ -34,7 +34,8 @@ MANIFEST_URL = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
 SUPPORTED_VERSIONS = ('26.1', '26.2', '26.3', '26.4-snapshot-2')
 ASSET_PREFIXES = ('assets/minecraft/blockstates/', 'assets/minecraft/models/', 'assets/minecraft/textures/', 'assets/minecraft/atlases/',
                   'assets/minecraft/items/', 'assets/minecraft/lang/en_us')
-REPORT_FILES = ('blocks.json', 'registries.json', 'datapack.json')
+REPORT_FILES = ('blocks.json', 'registries.json', 'datapack.json', 'block_flags.json')
+FLAGS_CLASS = 'mcgenflags.BlockFlags'        # наш класс (java/mcgenflags/BlockFlags.class в расширении), без кода Mojang
 EULA_URL = 'https://aka.ms/MinecraftEULA'
 
 JarInfo = namedtuple('JarInfo', 'path kind version world_version java_version size')   # kind: 'server' | 'client'
@@ -320,6 +321,7 @@ def resolve(version, pack_override='', assets_override=''):
     return {
         'pack': pack,
         'assets': assets,
+        'flags_ok': bool(pack and os.path.isfile(os.path.join(pack, 'reports', 'block_flags.json'))),
         'pack_ok': bool(pack and os.path.isdir(os.path.join(pack, 'data', 'minecraft')) and os.path.isfile(os.path.join(pack, 'reports', 'blocks.json'))),
         'assets_ok': bool(assets and os.path.isdir(os.path.join(assets, 'assets', 'minecraft', 'blockstates'))),
     }
@@ -464,7 +466,88 @@ _NEED_JAVA = ('No Java {major}+ was found for the game data generator (reports/b
               'and select the folder out/reports (or out) in the "Reports folder" field.')
 
 
-PrepareResult = namedtuple('PrepareResult', 'version pack_dir assets_dir pack_ok assets_ok steps')
+def flags_class_dir():
+    """Каталог с классом mcgenflags/BlockFlags.class нашего расширения (собирается tools/build_extension.py) или None."""
+    d = os.path.join(paths.addon_dir(), 'java')
+    return d if os.path.isfile(os.path.join(d, 'mcgenflags', 'BlockFlags.class')) else None
+
+
+def flags_source():
+    """Исходник BlockFlags.java в репозитории (запуск из исходников) или None."""
+    root = paths.repo_root()
+    p = os.path.join(root, 'libmcgen', 'tests', 'g5_blockflags', 'BlockFlags.java') if root else None
+    return p if p and os.path.isfile(p) else None
+
+
+def find_javac(java):
+    """javac рядом с найденной java (тот же JDK) либо в PATH."""
+    exe = 'javac.exe' if sys.platform.startswith('win') else 'javac'
+    cand = os.path.join(os.path.dirname(os.path.realpath(java)), exe)
+    return cand if os.path.isfile(cand) else shutil.which('javac')
+
+
+def bundle_classpath(server_jar, java, work, task=None):
+    """Распаковывает библиотеки и внутренний jar игры bundler'ом в work (`--help` генератора данных: ~2 с, ничего не генерирует) и
+    возвращает classpath игры из META-INF/classpath-joined (пути относительно work)."""
+    try:
+        with zipfile.ZipFile(server_jar) as z:
+            joined = z.read('META-INF/classpath-joined').decode().strip()
+    except (KeyError, OSError, zipfile.BadZipFile):
+        raise PackError('Could not unpack the server bundle: {log}', log='no META-INF/classpath-joined')
+    r = subprocess.run([java, '-DbundlerMainClass=net.minecraft.data.Main', '-jar', os.fspath(server_jar), '--help'], cwd=work,
+                       capture_output=True, text=True, timeout=300)
+    if r.returncode != 0:
+        raise PackError('Could not unpack the server bundle: {log}', log=(r.stderr or r.stdout)[-400:])
+    parts = [os.path.join(work, *p.split('/')) for p in joined.split(';') if p]
+    return os.pathsep.join(parts)
+
+
+def run_block_flags(server_jar, java, out_path, task=None, timeout=900):
+    """reports/block_flags.json (свойства состояний блоков из Java-кода игры: solid, replaceable, жидкости … — нужны стадии FEATURES).
+
+    Запускает НАШ класс mcgenflags.BlockFlags на classpath игры пользователя (нужна только JRE той же версии, что для --reports). Класс лежит
+    в расширении (java/mcgenflags/BlockFlags.class, собран tools/build_extension.py); при запуске из исходников и наличии javac он
+    компилируется на лету из libmcgen/tests/g5_blockflags/BlockFlags.java в кэш."""
+    work = tempfile.mkdtemp(prefix='mcgen-flags-', dir=paths.cache_dir())
+    try:
+        cp = bundle_classpath(server_jar, java, work, task)
+        cls_dir = flags_class_dir()
+        if cls_dir is None:
+            src, javac = flags_source(), find_javac(java)
+            if not src or not javac:
+                raise PackError('The BlockFlags helper class is not part of this build and no JDK (javac) is available to compile it')
+            cls_dir = os.path.join(work, 'cls')
+            os.makedirs(cls_dir)
+            r = subprocess.run([javac, '-nowarn', '-Xlint:none', '-encoding', 'UTF-8', '-d', cls_dir, '-cp', cp, src], capture_output=True, text=True)
+            if r.returncode != 0:
+                raise PackError('javac failed on BlockFlags.java:\n{log}', log=r.stderr[-800:])
+        tmp = out_path + '.tmp'
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        cmd = [java, '-Xss8m', '--sun-misc-unsafe-memory-access=allow', '-cp', cls_dir + os.pathsep + cp, FLAGS_CLASS, tmp]
+        proc = subprocess.Popen(cmd, cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace')
+        t0 = time.time()
+        while proc.poll() is None:
+            if task and task.should_cancel():
+                proc.kill()
+                proc.wait()
+                raise Cancelled()
+            if time.time() - t0 > timeout:
+                proc.kill()
+                raise PackError('The game data generator did not finish in {timeout} s', timeout=timeout)
+            time.sleep(0.1)
+        if proc.returncode != 0 or not os.path.isfile(tmp):
+            raise PackError('BlockFlags exited with code {code}:\n{log}', code=proc.returncode, log=(proc.stderr.read() or '')[-600:])
+        with open(tmp, encoding='utf-8') as f:
+            d = json.load(f)
+        if not d.get('nstates'):
+            raise PackError('block_flags.json is damaged: {err}', err='no states')
+        os.replace(tmp, out_path)
+        return out_path
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+PrepareResult = namedtuple('PrepareResult', 'version pack_dir assets_dir pack_ok assets_ok steps flags_ok')
 
 
 def prepare(server_jar='', client_jar='', reports_folder='', java='', task=None, want_assets=True):
@@ -558,6 +641,26 @@ def prepare(server_jar='', client_jar='', reports_folder='', java='', task=None,
     _write_stamp(pack_dir, st)
     pack_ok = True
 
+    # --- block_flags.json: свойства состояний из Java-кода игры (без него стадия FEATURES использует эвристики по именам) ---
+    flags_path = os.path.join(pack_dir, 'reports', 'block_flags.json')
+    flags_ok = os.path.isfile(flags_path)
+    if flags_ok:
+        steps.append('block_flags: cached')
+    elif s_info:
+        found = find_java(java_needed, java or None)
+        if found:
+            rep(0.45, 'Extracting block flags')
+            try:
+                run_block_flags(s_info.path, found[0], flags_path, task)
+                flags_ok = True
+                steps.append('block_flags: generated')
+            except PackError as e:
+                steps.append('block_flags: skipped (' + str(e).split('\n')[0][:120] + ')')
+        else:
+            steps.append('block_flags: skipped (no Java)')
+    else:
+        steps.append('block_flags: skipped (no server jar)')
+
     # --- assets ---
     assets_dir = None
     assets_ok = False
@@ -581,7 +684,7 @@ def prepare(server_jar='', client_jar='', reports_folder='', java='', task=None,
             steps.append('assets: cached')
         assets_ok = True
     rep(1.0, 'Ready')
-    return PrepareResult(version, pack_dir, assets_dir, pack_ok, assets_ok, steps)
+    return PrepareResult(version, pack_dir, assets_dir, pack_ok, assets_ok, steps, flags_ok)
 
 
 def _write_stamp(d, st):

@@ -1,6 +1,7 @@
 """Свойства аддона: настройки сцены (Scene.mcgen), динамические «тонкие настройки» из tweaks.json, статистика, настройки аддона."""
 import bpy
-from bpy.props import (BoolProperty, CollectionProperty, EnumProperty, FloatProperty, IntProperty, PointerProperty, StringProperty)
+from bpy.props import (BoolProperty, CollectionProperty, EnumProperty, FloatProperty, IntProperty, IntVectorProperty, PointerProperty,
+                       StringProperty)
 from bpy.types import AddonPreferences, PropertyGroup
 
 from ..core import backend, catalog, pack, paths, seeds
@@ -165,6 +166,22 @@ class McGenStageTime(PropertyGroup):
     seconds: FloatProperty(name='Seconds', precision=3)
 
 
+class McGenStructureType(PropertyGroup):
+    name: StringProperty(name='Structure')
+    count: IntProperty(name='Count')
+
+
+class McGenStructureStart(PropertyGroup):
+    name: StringProperty(name='Structure')
+    chunk_x: IntProperty()
+    chunk_z: IntProperty()
+    bb: IntVectorProperty(size=6)               # x0, y0, z0, x1, y1, z1 в блоках мира
+    pieces: IntProperty()
+
+
+MAX_LISTED_STARTS = 200
+
+
 class McGenStats(PropertyGroup):
     has_data: BoolProperty(default=False)
     backend: StringProperty(name='Backend')
@@ -176,9 +193,14 @@ class McGenStats(PropertyGroup):
     t_total: FloatProperty(name='Total', precision=3, subtype='TIME_ABSOLUTE')
     chunks: IntProperty(name='Chunks')
     objects: IntProperty(name='Objects')
+    rebuilt: IntProperty(name='Rebuilt objects')
     vertices: IntProperty(name='Vertices')
     faces: IntProperty(name='Faces')
     memory_mb: FloatProperty(name='Voxel memory (MB)', precision=1)
+    peak_rss_mb: FloatProperty(name='Peak process memory (MB)', precision=0)
+    structures_total: IntProperty(name='Structures')
+    structure_types: CollectionProperty(type=McGenStructureType)
+    structure_starts: CollectionProperty(type=McGenStructureStart)
     stage_times: CollectionProperty(type=McGenStageTime)
 
     def fill(self, st):
@@ -188,13 +210,25 @@ class McGenStats(PropertyGroup):
         self.mode = st.get('mode', '')
         self.t_generate, self.t_build, self.t_total = st.get('t_generate', 0.0), st.get('t_build', 0.0), st.get('t_total', 0.0)
         self.chunks, self.objects = st.get('chunks', 0), st.get('objects', 0)
+        self.rebuilt = st.get('rebuilt', st.get('objects', 0))
         self.vertices, self.faces = st.get('vertices', 0), st.get('faces', 0)
         self.memory_mb = st.get('memory', 0) / 1048576.0
         self.error = ''
+        self.peak_rss_mb = st.get('peak_rss', 0) / 1048576.0
         self.stage_times.clear()
         for k, v in st.get('stage_times', {}).items():
             e = self.stage_times.add()
             e.name, e.seconds = k, v
+        self.structures_total = st.get('structures_total', 0)
+        self.structure_types.clear()
+        for k, n in st.get('structure_types', {}).items():
+            e = self.structure_types.add()
+            e.name, e.count = k, n
+        self.structure_starts.clear()
+        for (sid, cx, cz, bb, pieces) in st.get('structure_starts', [])[:MAX_LISTED_STARTS]:
+            e = self.structure_starts.add()
+            e.name, e.chunk_x, e.chunk_z, e.pieces = sid, cx, cz, pieces
+            e.bb = bb
 
 
 # ---- настройки сцены -----------------------------------------------------------------------------------------------------------
@@ -357,7 +391,7 @@ def settings(context=None):
     return ctx.scene.mcgen
 
 
-classes = (McGenStageTime, McGenStats, McGenTweaks, McGenSettings, McGenPreferences)
+classes = (McGenStageTime, McGenStructureType, McGenStructureStart, McGenStats, McGenTweaks, McGenSettings, McGenPreferences)
 
 
 def register():

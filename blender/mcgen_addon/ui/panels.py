@@ -248,7 +248,7 @@ def draw_resources(layout, context, prefs=None, in_prefs=False):
         box.label(text=st['message'][:100], icon='CHECKMARK')
     if s is not None:
         res = pack.resolve(s.version, *ops.resource_overrides(prefs))
-        for flag, label in ((res['pack_ok'], 'Datapack and reports'), (res['assets_ok'], 'Textures and models')):
+        for flag, label in ((res['pack_ok'], 'Datapack and reports'), (res['flags_ok'], 'Block flags (feature rules)'), (res['assets_ok'], 'Textures and models')):
             box.label(text=f'{iface_(label)}: ' + (iface_('ready') if flag else iface_('missing')), icon='CHECKMARK' if flag else 'X')
     col = layout.column(heading=iface_('Advanced'))
     col.prop(prefs, 'backend')
@@ -282,8 +282,24 @@ def draw_stats(layout, context):
     col = layout.column(align=True)
     col.label(text=iface_('Chunks: {n}').format(n=st.chunks))
     col.label(text=iface_('Objects: {n}').format(n=st.objects))
+    if st.mode == 'update':
+        col.label(text=iface_('Rebuilt objects: {n}').format(n=st.rebuilt))
     col.label(text=iface_('Faces: {n:,}').format(n=st.faces))
     col.label(text=iface_('Voxel memory: {m:.0f} MB').format(m=st.memory_mb))
+    if st.peak_rss_mb:
+        col.label(text=iface_('Peak process memory: {m:.0f} MB').format(m=st.peak_rss_mb))
+    if st.structures_total or len(st.structure_types):
+        box = layout.box()
+        box.label(text=iface_('Structures: {n}').format(n=st.structures_total), icon='HOME')
+        for e in list(st.structure_types)[:12]:
+            box.label(text=f'{e.name.split(":", 1)[-1]}: {e.count}')
+        if len(st.structure_types) > 12:
+            box.label(text=iface_('… and {n} more types').format(n=len(st.structure_types) - 12))
+        first = list(st.structure_starts)[:3]
+        for e in first:
+            b = e.bb
+            box.label(text=f'{e.name.split(":", 1)[-1]}  x {b[0]}..{b[3]}  y {b[1]}..{b[4]}  z {b[2]}..{b[5]}')
+        box.operator('mcgen.structure_markers', icon='EMPTY_AXIS')
 
 
 # ---- фабрика панелей ------------------------------------------------------------------------------------------------------------------

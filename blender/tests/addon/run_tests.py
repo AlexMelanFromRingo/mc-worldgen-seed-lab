@@ -40,7 +40,8 @@ def run_core(extra):
 def run_blender(ver, backend, stub_lib, cache, scratch, real_lib=None):
     exe = BLENDERS[ver]
     label = backend
-    if backend == 'real':                     # настоящая libmcgen потока W1 (бэкенд lib, но не заглушка)
+    real = backend == 'real'
+    if real:                                  # настоящая libmcgen потока W1 (бэкенд lib, но не заглушка)
         backend, stub_lib = 'lib', real_lib
     res_dir = os.path.join(scratch, f'blender-profile-{ver}-{backend}')
     shutil.rmtree(res_dir, ignore_errors=True)
@@ -50,6 +51,8 @@ def run_blender(ver, backend, stub_lib, cache, scratch, real_lib=None):
     if backend == 'lib':
         env['MCGEN_LIB'] = stub_lib
         env['MCGEN_STUB_LIB'] = stub_lib
+        if real:
+            env['MCGEN_REAL'] = '1'
     else:
         env.pop('MCGEN_LIB', None)
     out_json = os.path.join(scratch, f'blender-{ver}-{backend}.json')
@@ -69,11 +72,29 @@ def run_blender(ver, backend, stub_lib, cache, scratch, real_lib=None):
     return res
 
 
+def run_perf(ver, real_lib, cache, scratch, n):
+    res_dir = os.path.join(scratch, f'blender-profile-{ver}-perf')
+    shutil.rmtree(res_dir, ignore_errors=True)
+    os.makedirs(os.path.join(res_dir, 'extensions', 'user_default'))
+    os.symlink(_boot.ADDON_DIR, os.path.join(res_dir, 'extensions', 'user_default', 'mcgen'))
+    env = dict(os.environ, BLENDER_USER_RESOURCES=res_dir, MCGEN_BACKEND='lib', MCGEN_LIB=real_lib, MCGEN_CACHE=cache, N=str(n), PYTHONDONTWRITEBYTECODE='1')
+    r = subprocess.run([BLENDERS[ver], '-b', '--factory-startup', '--python', os.path.join(HERE, 'perf_pipeline.py')], capture_output=True, text=True, env=env)
+    line = next((ln for ln in (r.stdout + r.stderr).splitlines() if ln.startswith('RESULT ')), None)
+    res = {'what': f'perf Blender {ver} N={n}', 'ok': line is not None}
+    if line:
+        res['data'] = json.loads(line[7:])
+    else:
+        res['log'] = (r.stdout + r.stderr)[-3000:]
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--blender', default='4.5,5.2')
     ap.add_argument('--backend', default='mock,lib,real', help='mock — макет; lib — заглушка библиотеки; real — настоящая libmcgen (если собрана)')
     ap.add_argument('--skip-core', action='store_true')
+    ap.add_argument('--perf', action='store_true', help='замер полного конвейера 32×32 (все стадии) на настоящей libmcgen в Blender 4.5 и 5.2')
+    ap.add_argument('--perf-n', default='32')
     ap.add_argument('--json')
     ap.add_argument('-v', action='store_true')
     a = ap.parse_args()
@@ -87,13 +108,15 @@ def main():
             print(results[-1].get('log', ''))
     cache = os.path.join(scratch, 'real-cache')
     stub_dir = os.path.join(scratch, 'stub-build')
-    if not os.path.exists(os.path.join(stub_dir, 'linux-x64', 'libmcgen.so')):
+    stub_so = os.path.join(stub_dir, 'linux-x64', 'libmcgen.so')
+    stub_c = os.path.join(HERE, 'stub', 'mcgen_stub.c')
+    if not os.path.exists(stub_so) or os.path.getmtime(stub_c) > os.path.getmtime(stub_so):
         subprocess.run([sys.executable, os.path.join(_boot.REPO, 'libmcgen', 'build.py'), '--stub', '--targets', 'linux-x64', '--out', stub_dir, '--no-install'], check=True)
     stub_lib = os.path.join(stub_dir, 'linux-x64', 'libmcgen.so')
     import test_core
     real_lib = test_core.find_real_lib()
     for ver in a.blender.split(','):
-        for be in a.backend.split(','):
+        for be in [b for b in a.backend.split(',') if b and b != 'none']:
             if be == 'real' and not real_lib:
                 print(f'Blender {ver} / real: пропуск — нет собранной libmcgen')
                 continue
@@ -102,6 +125,11 @@ def main():
             print(r['what'], 'OK' if r['ok'] else 'FAIL', r.get('run'), 'тестов', 'пропущено', r.get('skipped'), r['seconds'], 'с', r.get('failed') or '')
             if not r['ok']:
                 print(r.get('log', ''))
+    if a.perf:
+        for ver in a.blender.split(','):
+            r = run_perf(ver, real_lib, cache, scratch, a.perf_n)
+            results.append(r)
+            print(r['what'], r.get('data') or r.get('log', '')[-1500:])
     if a.json:
         json.dump(results, open(a.json, 'w'), indent=1, ensure_ascii=False)
     sys.exit(0 if all(r['ok'] for r in results) else 1)

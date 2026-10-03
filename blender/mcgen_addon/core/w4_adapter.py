@@ -160,8 +160,10 @@ class W4Sink(SceneSink):
         st = getattr(sb, 'stats', None)
         st = st() if callable(st) else (st or {})
         build = st.get('build', {}) if isinstance(st, dict) else {}
-        self._stats = {'objects': len(groups) or st.get('objects', 0), 'faces': quads or build.get('quads', 0) or st.get('faces', 0),
-                       'vertices': (quads or build.get('quads', 0)) * 4}
+        total = len(groups) or st.get('objects', 0)
+        rebuilt = len(self._batches or []) if self._mode == 'update_chunks' else total       # одна пачка = одна группа (объект)
+        self._stats = {'objects': total, 'faces': quads or build.get('quads', 0) or st.get('faces', 0), 'vertices': (quads or build.get('quads', 0)) * 4,
+                       'rebuilt': rebuilt}
 
     @property
     def progress(self):

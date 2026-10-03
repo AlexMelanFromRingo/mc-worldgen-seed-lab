@@ -388,7 +388,8 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         c.min_y = w->min_y; c.height = w->height; c.sea_level = w->sea_level;
         c.gen_min_y = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
         c.gen_depth = w->ns->height < w->height ? w->ns->height : w->height;
-        c.lazy_wg = w->g->newf && !getenv("MCGEN_FEATURES_WGEAGER");     /* отладка: WG-карты 26.3 заранее, а не лениво */
+        c.lazy_wg = w->g->newf && getenv("MCGEN_FEATURES_WGLAZY") != NULL;     /* WG-карты — снимок сразу после TERRAIN (doFill + поверхность + карверы пишут в WG, пока статус ≤ BIOMES; потом не обновляются) —
+                                                                          * измерено W10/W9: «ленивое праймирование» (прежняя модель) даёт лишние расхождения; MCGEN_FEATURES_WGLAZY=1 включает старую модель для сравнения */
         c.st_air = w->g->st_air; c.st_cave_air = w->g->st_cave_air; c.st_void_air = bs0->st_void_air; c.st_water = w->g->st_water; c.st_lava = w->g->st_lava;
         c.bedrock_blk = bs_block_index(bs0, "minecraft:bedrock"); c.plains = gen_biome_id(w->g, "minecraft:plains");
         if (c.plains < 0) c.plains = 0;

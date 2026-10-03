@@ -887,6 +887,166 @@
    "cx": -10,
    "cz": 16,
    "structure": "minecraft:nether_fossil"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -95,
+   "cz": -29,
+   "structure": "minecraft:abandoned_camp_bamboo_jungle"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 307,
+   "cz": 101,
+   "structure": "minecraft:abandoned_camp_birch_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 9,
+   "cz": 444,
+   "structure": "minecraft:abandoned_camp_cherry_grove"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -343,
+   "cz": -17,
+   "structure": "minecraft:abandoned_camp_dappled_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -201,
+   "cz": -121,
+   "structure": "minecraft:abandoned_camp_flower_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 2,
+   "cz": -71,
+   "structure": "minecraft:abandoned_camp_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -214,
+   "cz": 151,
+   "structure": "minecraft:abandoned_camp_old_growth_birch_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 272,
+   "cz": 45,
+   "structure": "minecraft:abandoned_camp_old_growth_pine_taiga"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 57,
+   "cz": -471,
+   "structure": "minecraft:abandoned_camp_old_growth_spruce_taiga"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -549,
+   "cz": -568,
+   "structure": "minecraft:abandoned_camp_pale_garden"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 2,
+   "cz": 79,
+   "structure": "minecraft:abandoned_camp_snowy_taiga"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -61,
+   "cz": -55,
+   "structure": "minecraft:abandoned_camp_sparse_jungle"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -11,
+   "cz": 130,
+   "structure": "minecraft:abandoned_camp_swamp"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -271,
+   "cz": 481,
+   "structure": "minecraft:abandoned_camp_windswept_forest"
+  },
+  {
+   "set": "minecraft:abandoned_camp",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -67,
+   "cz": -101,
+   "structure": "minecraft:abandoned_camp_wooded_badlands"
+  },
+  {
+   "set": "minecraft:mineshafts",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -168,
+   "cz": 110,
+   "structure": "minecraft:mineshaft_mesa"
+  },
+  {
+   "set": "minecraft:shipwrecks",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 5,
+   "cz": 156,
+   "structure": "minecraft:shipwreck_beached"
+  },
+  {
+   "set": "minecraft:ruined_portals",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -150,
+   "cz": 51,
+   "structure": "minecraft:ruined_portal_desert"
+  },
+  {
+   "set": "minecraft:ruined_portals",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -74,
+   "cz": 17,
+   "structure": "minecraft:ruined_portal_jungle"
+  },
+  {
+   "set": "minecraft:ruined_portals",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -18,
+   "cz": 137,
+   "structure": "minecraft:ruined_portal_swamp"
   }
  ]
 }

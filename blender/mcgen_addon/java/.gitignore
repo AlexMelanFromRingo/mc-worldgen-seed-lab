@@ -1,0 +1,3 @@
+# класс BlockFlags собирает tools/build_extension.py; в git не попадает
+*
+!.gitignore

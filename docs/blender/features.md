@@ -418,6 +418,8 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 
 ## 8. Приоритетный список оставшихся типов (для групп фич)
 
+> Пункт 1 (деревья, грибы-деревья, фунги, корневые системы) выполнен потоком W11: см. `docs/blender/features-trees.md` (устройство, таблица placed_feature × статус, недетерминизм игры, воспроизведение).
+
 Число — размещённых `placed_feature` 26.3, использующих тип (прямо или во вложенных селекторах); порядок — по числу и по тому, что блокирует остальное.
 
 1. **Деревья** (`tree`: 46 placed, `fallen_tree` 6, `huge_fungus` 2, огромные грибы): TreeFeature (+`featuresize`, 10 trunk placers: straight, forking, giant, mega_jungle, dark_oak, bending, upwards_branching, fancy, cherry, poplar; 12 foliage placers; 8 decorators:

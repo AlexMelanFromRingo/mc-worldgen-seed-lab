@@ -18,9 +18,13 @@
 * **В сборе** (`features`, все декорации 0x1f, Overworld r=10, margin 2, маска rep1/rep2): деревья/грибы-деревья дают 0,042 % блоков расхождений (seed 12345) и 0,112 % (seed 8675309,
   густой лес), Nether (seed 12345) — 0,079 %; в общем балле G5 (99,59–99,63 %) доминируют не деревья, а лёд/снег/мох (W12).
 * Скорость: дерево — около 2700 деревьев/с на ядро (изолированный `trees_jungle`, 733 попытки: 0,27 с на 1156 чанков одним потоком); `features` целиком 25×25 чанков с рельефом — 1,9 с.
-* Версии: код деревьев в 26.1/26.2/26.3/26.4-snapshot-2 одинаков (различия: `radiusOffset`→`radiusOffsetXZ` + `foliageHeightOffset` = 0 везде, оболочки `Holder<…>`, формат JSON),
-  `root_system` — условия `level_test_distance` и «высота WORLD_SURFACE» только с 26.2. Проверено на 26.2 (`custom_spruce` 100 %, `dark_forest_vegetation` margin 2 — 0, `mushroom_island_vegetation` 100 %,
-  `trees_old_growth_pine_taiga` margin 2 — 6 блоков); остальные миры 26.1/26.2/26.4 — в очереди W6 (см. §9).
+* Версии (одиночные деревья `custom:`, поднабор из 21–23 файлов на версию, margin 0 / margin 1): **26.3** — 45 из 45 (7 poplar по 4 блока воды / 45 из 45);
+  **26.4-snapshot-2** — 23 из 23 по margin 1 (по margin 0 — poplar по 4 блока воды); **26.1** — 19 из 21 ровно 100,000000 % (`oak_leaf_litter` 23 блока, `birch_bees_0002_leaf_litter` 13 блоков — подстилка двух
+  соседних деревьев, §6.6); **26.2** — 17 из 21 (те же две подстилки 23 блока, `mega_spruce` 9 блоков расстояния листвы, `tall_mangrove` 235 блоков лоз — пересечение крон соседей, §6.6). Фичи из биомов
+  на 26.2 (без повторов игры): `mushroom_island_vegetation` 100,000000 %, `dark_forest_vegetation` margin 2 — 0, `trees_old_growth_pine_taiga` margin 0 — 702, margin 2 — 6 блоков; `trees_jungle` 99,33 % / margin 2 99,23 %
+  и `crimson_fungi` 99,68 % (шума игры нет в наличии). Различия кода между версиями учтены: `radiusOffset`→`radiusOffsetXZ` + `foliageHeightOffset` = 0 везде, `root_system` — проверки `level_test_distance`
+  и «высота WORLD_SURFACE» только с 26.2, **26.4-snapshot-2: `StraightTrunkPlacer` получил `trunk_width` (ствол шире 1, угол «северо-запад», `placeBelowTrunkBlock` убран)** — без этого 26.4 расходился на
+  36…3583 блока на дерево (`oak`, `birch`, `jungle_tree`, `pine`, `swamp_oak`), после — 0. Реализовано по `src/dec/26.4-snapshot-2`.
 
 ## 2. Где код
 
@@ -156,7 +160,11 @@ ABI `mcgen.h` не менялся.
    6 180 → 4 843 при N=3, стоимость — (n+2N)² чанков).
 4. `trees_mangrove`, `crimson_fungi`, `trees_dappled_forest`: наша ошибка в 1,0–1,6 раза от шума игры; `trees_jungle`: меньше шума (52 000 против 104 000).
 5. Блоки BlockEntity (улей: число пчёл `2 + nextInt(2)`, затем `nextInt(599)` на пчелу) в данные чанка не пишутся — расходуется только ГСЧ (число улья совпало: 8 из 8 в `trees_flower_forest`).
-6. `PaleMossDecorator`, зависящий от `pale_moss_patch`, работает только при реализованном `vegetation_patch` (W10).
+6. Порядок декорации соседних чанков в **26.1/26.2** (другой планировщик, чем в 26.3: шаги `noise → surface → carvers → features` вместо `terrain → features`): при разреженных деревьях у пары
+   соседних чанков порядок «z по убыванию» даёт 0 расхождений там, где «z по возрастанию» — 9…235 блоков (`mega_spruce` 9→0, `tall_mangrove` 235→0, подстилка 23→6…8); но на плотных лесах (`trees_old_growth_pine_taiga`
+   26.2: 702 против 26 373 блоков, `trees_jungle` 79 тыс. против 175 тыс.) лучше обычный «по возрастанию». Единого порядка нет — это тот же недетерминизм планировщика (§6.2). Остатки одиночных деревьев на 26.1/26.2 — только
+   такие пересечения соседних крон и подстилки.
+7. `PaleMossDecorator`, зависящий от `pale_moss_patch`, работает только при реализованном `vegetation_patch` (W10).
 
 ## 7. Скорость
 
@@ -183,7 +191,7 @@ python3 libmcgen/tests/g5_tree_probe.py <мир> <cx> <cz>                      
 ## 9. Что осталось
 
 * Вакуумные эталоны (§5) заменены областями `features_plan_trees2.json`; осталась `trees_water`.
-* Миры 26.1 / 26.2 / 26.4-snapshot-2 (`custom:` поднабор из 21 файла, `feature:` для 5 лесных фич на 26.2) генерирует W6 в фоне; на момент отчёта проверено на 26.2: `custom_spruce`, `trees_old_growth_pine_taiga`,
-  `dark_forest_vegetation`, `mushroom_island_vegetation`, `trees_jungle`, `crimson_fungi` (см. §1). Остальное прогнать командами §8 с `--version`/`V=`.
+* Для 26.1 и 26.4-snapshot-2 нет `feature:`-миров плотных лесов (только одиночные `custom:`), для 26.2 — пять (`trees_jungle`, `trees_old_growth_pine_taiga`, `dark_forest_vegetation`, `crimson_fungi`,
+  `mushroom_island_vegetation`) без повторов игры; запрос к W6: `gen_queue.py --version <V> --variants feature --plan-file tools/gt/features_plan_trees2.json` и `--tag rep1`.
 * Порядок декорации чанков игры (§6) — единственный крупный источник расхождений деревьев; без модели планировщика игры выше этих цифр не поднять.
 * Мир `rooted_sulfur_spring` (26.2+) — после `sulfur_spring` (W12).

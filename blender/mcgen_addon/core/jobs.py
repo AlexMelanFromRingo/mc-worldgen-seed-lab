@@ -8,7 +8,7 @@ import time
 
 import numpy as np
 
-from . import backend, pack, params as P
+from . import backend, pack, params as P, sysinfo
 from .scene_iface import BuildContext, pick_sink
 from .tasks import Task
 
@@ -78,10 +78,12 @@ def _generate_worker(task, params, pack_dir, reuse):
     last = [time.perf_counter(), None]
 
     def progress(frac, what):
+        # what: «terrain 12/256», «fluids 3/18», «features», «heightmaps», «done» — стадия = первое слово
         now = time.perf_counter()
+        stage = (what or '').split(' ', 1)[0] or 'generating'
         if last[1] is not None:
             stage_times[last[1]] = stage_times.get(last[1], 0.0) + (now - last[0])
-        last[0], last[1] = now, what
+        last[0], last[1] = now, stage
         task.report(0.05 + 0.95 * frac, what or 'Generating')
         return task.should_cancel()
 
@@ -91,7 +93,17 @@ def _generate_worker(task, params, pack_dir, reuse):
     if last[1] is not None:
         stage_times[last[1]] = stage_times.get(last[1], 0.0) + (now - last[0])
     t['generate'] = now - t0
-    return {'gen': gen, 'world': world, 'region': region, 'times': t, 'stage_times': stage_times}
+    stage_times.pop('done', None)
+    structs = None
+    if params.stages & 32:                                   # MC_STAGE_STRUCTURES: список стартов (типы, координаты) для панели Stats
+        t1 = time.perf_counter()
+        try:
+            structs = world.structure_starts(params.cx0, params.cz0, params.nx, params.nz)
+        except Exception:        # noqa: BLE001 - библиотека без mcgen_structure_starts: список просто пуст
+            structs = []
+        stage_times['structure starts'] = time.perf_counter() - t1
+    rss, peak = sysinfo.process_memory()
+    return {'gen': gen, 'world': world, 'region': region, 'times': t, 'stage_times': stage_times, 'structures': structs, 'rss': rss, 'peak_rss': peak}
 
 
 def changed_chunks(old_region, new_region, dilate=True):
@@ -263,7 +275,21 @@ class GenerateJob:
         r = self._gen_result or {}
         st.update(backend=backend.name(), sink=self.sink.name if self.sink else '', t_generate=self.t_gen, t_build=self.t_build,
                   t_total=time.perf_counter() - self._t0, chunks=reg.info.nx * reg.info.nz, memory=reg.memory_bytes(),
-                  stage_times=dict(r.get('stage_times', {})), mode=self.mode, reasons=list(self.plan.get('reasons', [])))
+                  stage_times=dict(r.get('stage_times', {})), mode=self.mode, reasons=list(self.plan.get('reasons', [])),
+                  rss=r.get('rss', 0), peak_rss=r.get('peak_rss', 0))
+        starts = r.get('structures')
+        if starts is None and self.mode == 'update' and self.sess.stats:
+            st['structures_total'] = self.sess.stats.get('structures_total', 0)
+            st['structure_types'] = self.sess.stats.get('structure_types', {})
+            st['structure_starts'] = self.sess.stats.get('structure_starts', [])
+        else:
+            starts = starts or []
+            types = {}
+            for sx in starts:
+                types[sx.id] = types.get(sx.id, 0) + 1
+            st['structures_total'] = len(starts)
+            st['structure_types'] = dict(sorted(types.items(), key=lambda kv: -kv[1]))
+            st['structure_starts'] = [(sx.id, sx.chunk_x, sx.chunk_z, tuple(sx.bb), sx.piece_count) for sx in starts[:1000]]
         self.sess.stats = self.stats = st
         self.state, self.phase, self.message = 'done', 'done', 'Done'
 

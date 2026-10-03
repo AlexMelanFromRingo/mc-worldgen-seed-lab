@@ -83,6 +83,60 @@ def stage(platform, dest, allow_missing_libs):
     return n, have
 
 
+FLAGS_SRC = os.path.join(ROOT, 'libmcgen', 'tests', 'g5_blockflags', 'BlockFlags.java')
+FLAGS_OUT = os.path.join(ADDON, 'java')
+
+
+def _find_tool(name):
+    jh = os.environ.get('JAVA_HOME')
+    for c in ([os.path.join(jh, 'bin', name)] if jh else []) + [shutil.which(name) or '']:
+        if c and os.path.isfile(c):
+            return c
+    return None
+
+
+def build_flags_class(game_jar=None, force=False, required=False):
+    """Компилирует НАШ класс mcgenflags.BlockFlags (libmcgen/tests/g5_blockflags/BlockFlags.java) в blender/mcgen_addon/java/.
+
+    Класс обращается к классам игры по имени и не содержит кода Mojang; на машине пользователя он запускается на classpath его jar
+    (`java -cp java:<classpath игры> mcgenflags.BlockFlags out.json`) — нужна только JRE 25, как для --reports. Компиляция идёт против
+    серверного jar из jars/ (класс совместим по байткоду со всеми версиями 26.x: проверено побайтным совпадением block_flags.json).
+    Возвращает путь к .class или None (если нет javac/jar и не required)."""
+    out = os.path.join(FLAGS_OUT, 'mcgenflags', 'BlockFlags.class')
+    if os.path.isfile(out) and not force and os.path.getmtime(out) >= os.path.getmtime(FLAGS_SRC):
+        return out
+    javac, java = _find_tool('javac'), _find_tool('java')
+    jar = game_jar or next((os.path.join(ROOT, 'jars', n) for n in ('server-26.3.jar', 'server-26.2.jar', 'server-26.1.jar')
+                            if os.path.isfile(os.path.join(ROOT, 'jars', n))), None)
+    if not (javac and java and jar and os.path.isfile(FLAGS_SRC)):
+        msg = 'BlockFlags не собран: нужны javac (JDK 25), серверный jar игры (jars/server-26.3.jar) и исходник ' + os.path.relpath(FLAGS_SRC, ROOT)
+        if required:
+            sys.exit(msg)
+        print('ПРЕДУПРЕЖДЕНИЕ:', msg)
+        return None
+    sys.path.insert(0, os.path.join(ADDON, '..'))
+    import types
+    pkg = types.ModuleType('mcgen_addon_build')
+    pkg.__path__ = [ADDON]
+    sys.modules['mcgen_addon_build'] = pkg
+    from importlib import import_module
+    pack = import_module('mcgen_addon_build.core.pack')
+    work = tempfile.mkdtemp(prefix='mcgen-javac-')
+    try:
+        cp = pack.bundle_classpath(jar, java, work)
+        shutil.rmtree(FLAGS_OUT, ignore_errors=True)
+        os.makedirs(FLAGS_OUT)
+        with open(os.path.join(FLAGS_OUT, '.gitignore'), 'w') as f:
+            f.write('# класс BlockFlags собирает tools/build_extension.py; в git не попадает\n*\n!.gitignore\n')
+        r = subprocess.run([javac, '--release', '25', '-nowarn', '-Xlint:none', '-encoding', 'UTF-8', '-d', FLAGS_OUT, '-cp', cp, FLAGS_SRC],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            sys.exit('javac не смог собрать BlockFlags.java:\n' + r.stderr[-1500:])
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    return out
+
+
 def run_blender(exe, args, env=None, timeout=600):
     r = subprocess.run([exe] + args, capture_output=True, text=True, env=env, timeout=timeout)
     return r.returncode, r.stdout + r.stderr
@@ -95,7 +149,8 @@ def zip_summary(path):
     return {'files': len(names), 'bytes': sum(i.file_size for i in info), 'zip_bytes': os.path.getsize(path),
             'has_manifest': 'blender_manifest.toml' in names,
             'libs': sorted(n for n in names if n.startswith('lib/') and not n.endswith('/')),
-            'mojang_files': [n for n in names if re.search(r'\.(jar|class)$|assets/minecraft|data/minecraft', n)]}
+            'java': sorted(n for n in names if n.startswith('java/') and not n.endswith('/')),
+            'mojang_files': [n for n in names if re.search(r'\.jar$|assets/minecraft|data/minecraft', n) or (n.endswith('.class') and not n.startswith('java/mcgenflags/'))]}
 
 
 def build_one(platform, out_dir, exe, allow_missing_libs, validate_with):
@@ -140,6 +195,8 @@ def install_and_test(ver, zip_path, platform_ok, backend, scratch):
     out_json = os.path.join(scratch, f'ext-tests-{ver}.json')
     env.update(MCGEN_BACKEND=backend, MCGEN_EXT_MODULE='bl_ext.user_default.mcgen', MCGEN_SCRATCH=scratch,
                MCGEN_CACHE=os.path.join(scratch, 'real-cache'), MCGEN_STUB_LIB=env.get('MCGEN_LIB', ''))
+    if backend == 'lib':
+        env['MCGEN_REAL'] = '1'                      # внутри расширения — настоящая libmcgen платформы
     code, log = run_blender(exe, ['-b', '--factory-startup', '--python', os.path.join(ROOT, 'blender', 'tests', 'addon', 'blender_tests.py'), '--', '--json', out_json],
                             env=env, timeout=900)
     res['tests_ok'] = code == 0
@@ -160,6 +217,9 @@ def main():
     ap.add_argument('--test', default='', help='версии Blender для установки и прогона тестов: 4.5,5.2')
     ap.add_argument('--backend', default='mock', help='mock | lib | auto — какой бэкенд проверять при тесте установленного расширения')
     ap.add_argument('--validate-with', default='4.5', help='версия Blender для extension build/validate (4.5 | 5.2)')
+    ap.add_argument('--game-jar', help='серверный jar Mojang для компиляции BlockFlags (по умолчанию jars/server-26.3.jar)')
+    ap.add_argument('--rebuild-flags', action='store_true', help='пересобрать java/mcgenflags/BlockFlags.class')
+    ap.add_argument('--require-flags', action='store_true', help='ошибка, если BlockFlags.class нельзя собрать')
     ap.add_argument('--json', help='записать отчёт в файл')
     a = ap.parse_args()
     plats = list(PLATFORMS) if a.platforms == 'all' else a.platforms.split(',')
@@ -167,6 +227,8 @@ def main():
         if p not in PLATFORMS:
             sys.exit(f'неизвестная платформа {p}; доступны {", ".join(PLATFORMS)}')
     subprocess.run([sys.executable, os.path.join(ROOT, 'libmcgen', 'gen_tweaks.py'), '--check'], check=True)
+    flags_cls = build_flags_class(a.game_jar, a.rebuild_flags, a.require_flags)
+    print('BlockFlags.class:', os.path.relpath(flags_cls, ROOT) if flags_cls else 'нет (аддон будет полагаться на javac пользователя или эвристики)')
     skipped = []
     if a.build_libs:
         rc = subprocess.run([sys.executable, os.path.join(ROOT, 'libmcgen', 'build.py'), '--targets', ','.join(plats)]).returncode
