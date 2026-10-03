@@ -5,6 +5,8 @@
 #include "carver.h"
 #include "surface.h"
 #include "feature.h"
+void structures_begin_region(McWorld *w);   /* structure.c */
+void structure_shape_update(void *fw, int x, int y, int z);   /* structure_post.c */
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -257,6 +259,7 @@ static void view_set(void *ud, int x, int y, int z, int st) {
 static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgressFn cb, void *ud, char *err, size_t errlen) {
     View v; memset(&v, 0, sizeof v); v.w = w; v.r = r;
     FluidWorld fw = { w->g, &v, view_get, view_set, w->preset->fast_lava, 1, 0 };
+    if (w->struct_on) fw.shape_update = structure_shape_update;      /* пометки построек: обновление форм заборов, факелов, лестниц */
     int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz, cancel = 0;
     for (int cz = cz0 - 1; cz <= cz0 + nz && !cancel; cz++) {
         if (cb) {
@@ -298,10 +301,13 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
                     McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     if (!w || !out || nx <= 0 || nz <= 0 || (long)nx * nz > 1 << 20) { set_err(err, errlen, "mcgen_generate_region: аргументы"); return MCGEN_E_ARG; }
     *out = NULL;
-    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS | MC_STAGE_FEATURES;
+    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS | MC_STAGE_FEATURES | MC_STAGE_STRUCTURES;
     if (stages & MC_STAGE_SURFACE) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* поверхность: заполненный чанк и биомы для правил */
     if (stages & MC_STAGE_CARVERS) stages |= MC_STAGE_TERRAIN;   /* карверы работают над заполненным чанком */
     if (stages & MC_STAGE_FEATURES) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* декорации: заполненные чанки и биомы (стадия features.c) */
+    if (stages & MC_STAGE_STRUCTURES) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* постройки: Beardifier в заполнении, части — в цикле декорации (structure.c) */
+    if (stages & MC_STAGE_STRUCTURES) structures_begin_region(w);                    /* части кэшированных стартов — в исходное состояние */
+    w->struct_on = (stages & MC_STAGE_STRUCTURES) != 0;                              /* Beardifier учитывается в terrain_fill_chunk при любом числе потоков */
     if (stages & ~sup & MC_STAGE_ALL) {
         /* стадии SURFACE и выше — другие потоки работ; пока считаем доступные */
         stages &= sup;
@@ -338,7 +344,7 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
     if (stages & MC_STAGE_TERRAIN) {
         /* Порядок конвейера: все стадии по чанкам (worker/view_chunk: TERRAIN → SURFACE → CARVERS → …) → растекание жидкостей
          * (в игре — при переходе чанка в FULL, т. е. после всех стадий генерации) → карты высот. Новые стадии вставлять до этого места. */
-        if (stages & MC_STAGE_FEATURES) {   /* декорации (feature*.c): после всех стадий чанков, до пост-обработки жидкостей */
+        if (stages & (MC_STAGE_FEATURES | MC_STAGE_STRUCTURES)) {   /* декорации и постройки (feature*.c + structure.c): после всех стадий чанков, до пост-обработки жидкостей */
             int frc = features_apply_region(w, r, threads, cb, ud, err, errlen);
             if (frc) { mcgen_region_free(r); return frc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
         }

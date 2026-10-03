@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <alloca.h>
 
-enum { SP_SIMPLE, SP_WEIGHTED, SP_RULE, SP_RANDINT, SP_ROTATED, SP_NOISE, SP_NOISE_THRESH, SP_DUAL };
+enum { SP_SIMPLE, SP_WEIGHTED, SP_RULE, SP_RANDINT, SP_ROTATED, SP_NOISE, SP_NOISE_THRESH, SP_DUAL, SP_RANDBLOCK };
 typedef struct NzGen { NStack ns; OldNormal on; } NzGen;       /* NormalNoise: 26.3+ (float, NStack) или 26.1/26.2 (double) */
 typedef struct SPRule { BPred *cond; BSProv *then; } SPRule;
 struct BSProv {
@@ -53,6 +53,7 @@ static int nz_pick(const FCtx *c, const int *st, int n, double nv) {
     double pv = jm_clamp((1.0 + nv) / 2.0, 0.0, 0.9999); return st[(int)(pv * (double)n)];
 }
 
+int veg_holderset_blocks(FParse *p, const Js *v, int **out);       /* feature_veg.c */
 BSProv *fp_bsprov(FParse *p, const Js *v) {
     if (!v) { fp_fail(p, "BlockStateProvider: нет значения"); return NULL; }
     if (js_is_str(v)) {
@@ -110,6 +111,12 @@ BSProv *fp_bsprov(FParse *p, const Js *v) {
         b->prop = fp_strdup(p, pr);
         b->values = fp_intprov(p, js_get(v, "values")); if (!b->values) return NULL;
     }
+    else if (!strcmp(nt, "random_block")) {         /* RandomBlockProvider (W10): блок из HolderSet в порядке набора, состояние по умолчанию */
+        int *bl = NULL, nb = veg_holderset_blocks(p, js_get(v, "blocks"), &bl);
+        if (nb < 0) { fp_fail(p, "random_block: плохие blocks"); return NULL; }
+        b->kind = SP_RANDBLOCK; b->n = nb; b->states = fp_alloc(p, sizeof(int) * (size_t)(nb ? nb : 1));
+        for (int i = 0; i < nb; i++) b->states[i] = bs_default(p->bs, bl[i]);
+    }
     else if (!strcmp(nt, "rotated")) {
         b->kind = SP_ROTATED; b->src = fp_bsprov(p, js_get(v, "state")); if (!b->src) return NULL;
         const char *d = js_str(js_get(v, "direction"), NULL); b->dir = d ? dir_from_name(d) : -1;
@@ -156,6 +163,7 @@ int bsprov_optional(FCtx *c, const BSProv *b, int x, int y, int z) {
         }
         return b->fallback ? bsprov_optional(c, b->fallback, x, y, z) : -1;
     }
+    case SP_RANDBLOCK: return b->n ? b->states[frnd_int_bound(c->rnd, b->n)] : -1;
     default: return bsprov_state(c, b, x, y, z);
     }
 }
@@ -178,7 +186,7 @@ static int noise_state(FCtx *c, const BSProv *b, int x, int y, int z) {
 }
 int bsprov_state(FCtx *c, const BSProv *b, int x, int y, int z) {
     switch (b->kind) {
-    case SP_RULE: { int s = bsprov_optional(c, b, x, y, z); return s >= 0 ? s : fc_get(c, x, y, z); }
+    case SP_RULE: case SP_RANDBLOCK: { int s = bsprov_optional(c, b, x, y, z); return s >= 0 ? s : fc_get(c, x, y, z); }
     case SP_RANDINT: {
         int st = bsprov_state(c, b->src, x, y, z);
         if (!bs_has_prop(c->bs, st, b->prop)) return st;

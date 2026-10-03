@@ -504,6 +504,8 @@ static float biome_temperature(const SurfWorld *S, int b, int x, int y, int z) {
     }
     return t;
 }
+/* Biome.getTemperature(pos, seaLevel) по id биома libmcgen — для стадии FEATURES (freeze_top_layer и др., поток W12) */
+float surface_biome_temperature(const McWorld *w, int b, int x, int y, int z) { return biome_temperature((const SurfWorld *)w->surface, b, x, y, z); }
 
 /* ---- состояние блока ---- */
 static inline int is_air(const SurfCtx *c, int st) { return c->w->g->state_cls[st] & SC_AIR; }

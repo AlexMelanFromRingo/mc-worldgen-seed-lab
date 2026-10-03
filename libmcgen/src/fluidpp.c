@@ -331,5 +331,6 @@ void fluidpp_chunk(FluidWorld *w, const PPMarks *m, int cx, int cz, int min_y) {
         u16 p = m->pos[s][i];
         int x = cx * 16 + (p & 15), y = min_y + s * 16 + ((p >> 4) & 15), z = cz * 16 + ((p >> 8) & 15);
         fluidpp_tick(w, x, y, z);
+        if (w->shape_update) w->shape_update(w, x, y, z);
     }
 }

@@ -32,6 +32,8 @@ int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks
  * Для 26.4 при SURFACE вызывающий НЕ вызывает carvers_apply_chunk (surface_carves_inside); для остальных версий t/carve игнорируются. */
 int surface_apply_chunk_ex(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks,
                            TerrainCtx *t, int carve, char *err, size_t errlen);
+/* Biome.getTemperature(pos, seaLevel) (с модификатором frozen и снижением выше уровня моря + 17) — для декораций */
+float surface_biome_temperature(const McWorld *w, int biome, int x, int y, int z);
 static inline int surface_carves_inside(const McWorld *w) { return w->g->version >= V26_4; }
 
 #endif

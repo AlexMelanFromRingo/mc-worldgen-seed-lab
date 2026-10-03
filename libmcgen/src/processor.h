@@ -31,6 +31,10 @@ const ProcList *proclist_empty(void);
 enum { PB_STRUCTURE_BLOCK = 0, PB_STRUCTURE_AND_AIR, PB_AIR, PB_JIGSAW_REPLACEMENT, PB__COUNT };
 const Proc *proc_builtin(McWorld *w, int which);
 const Proc *proc_gravity(McWorld *w, int heightmap_type, int offset);    /* Projection.TERRAIN_MATCHING */
+/* процессоры, которые постройки создают в коде (RuinedPortal, OceanRuin): */
+const Proc *proc_block_age(McWorld *w, float mossiness);                  /* BlockAgeProcessor */
+const Proc *proc_blackstone_replace(McWorld *w);                          /* BlackstoneReplaceProcessor */
+const Proc *proc_lava_submerged(McWorld *w);                              /* LavaSubmergedBlockProcessor */
 
 /* processBlock: 1 — блок остался (cur изменён на месте), 0 — убран (null) */
 int proc_block(const Proc *p, PEnv *e, const TInfo *orig, TInfo *cur);

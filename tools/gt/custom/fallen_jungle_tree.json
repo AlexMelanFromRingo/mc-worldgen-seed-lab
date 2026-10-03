@@ -1,0 +1,36 @@
+{
+ "doc": "W11: одиночное дерево, tools/gt/custom (libmcgen/tests/g5_tree_custom_gen.py)",
+ "feature": "minecraft:fallen_jungle_tree",
+ "placed_feature": {
+  "feature": "minecraft:fallen_jungle_tree",
+  "placement": [
+   {
+    "type": "minecraft:rarity_filter",
+    "chance": 2
+   },
+   {
+    "type": "minecraft:in_square"
+   },
+   {
+    "type": "minecraft:surface_water_depth_filter",
+    "max_water_depth": 0
+   },
+   {
+    "type": "minecraft:heightmap",
+    "heightmap": "OCEAN_FLOOR"
+   },
+   {
+    "type": "minecraft:block_predicate_filter",
+    "predicate": {
+     "type": "minecraft:would_survive",
+     "state": "minecraft:jungle_sapling"
+    }
+   }
+  ]
+ },
+ "dim": "overworld",
+ "seed": 12345,
+ "cx": -103,
+ "cz": 2,
+ "radius": 5
+}

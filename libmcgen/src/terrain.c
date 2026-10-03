@@ -298,6 +298,46 @@ void terrain_picker(const McWorld *w, int *lava_level, int *sea_level) {
     *lava_level = -54 + (int)w->tweak[MCGEN_TWEAK_LAVA_LEVEL_OFFSET];
 }
 
+/* Beardifier (structure.c): поле плотности чанка от построек с terrain_adaptation */
+typedef struct Beard Beard;
+Beard *beard_for_chunk(McWorld *w, int cx, int cz);
+void beard_free(Beard *b);
+float beard_value(const Beard *b, int x, int y, int z);
+void beard_volume(const Beard *b, float *out, const Vol *v);
+static float beard_cb_value(void *ud, int x, int y, int z) { return beard_value(ud, x, y, z); }
+static void beard_cb_volume(void *ud, float *out, const Vol *v) { beard_volume(ud, out, v); }
+
+/* NoiseBasedChunkGenerator.iterateNoiseColumn: «первая свободная высота» колонки (x, z) по предикату карты высот hm_type (HM_* из blockstate.h,
+ * битовая маска BsTab.hmcls); без Beardifier и без построек. Используется стадией STRUCTURES (старты, jigsaw). */
+#include "blockstate.h"
+int terrain_old_column_height(McWorld *w, void *octx, int bx, int bz, int hm_type);    /* terrain_old.c (26.1/26.2) */
+int terrain_column_height_ctx(McWorld *w, TerrainCtx *t, int bx, int bz, int hm_type) {
+    const BsTab *bs = bs_get(w->g);
+    if (!w->g->newf) return terrain_old_column_height(w, t->old, bx, bz, hm_type);
+    int nmin = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
+    int ntop = w->ns->min_y + w->ns->height; if (ntop > w->min_y + w->height) ntop = w->min_y + w->height;
+    int nh = ntop - nmin;
+    if (nh <= 0) return w->min_y;
+    SCtx *x = t->x;
+    sctx_reset_caches(x); sctx_set_beardifier(x, NULL);
+    Vol v = { 1, nh, 1, bx, nmin, bz, 1, 1, 1 };
+    Picker pk; terrain_picker(w, &pk.lava_level, &pk.sea_level);
+    pk.sea_type = w->def_fluid; pk.lava_type = w->g->st_lava;
+    Aq aq; aq_init(&aq, w, x, &v, &pk);
+    float *dens = sctx_acquire(x, vol_size(&v));
+    s_volume(x, w->s_rf[RF_FINAL_DENSITY], dens, &v);
+    int res = w->min_y;
+    for (int y = nh - 1; y >= 0; y--) {
+        int by = nmin + y;
+        int st = aq_substance(&aq, bx, by, bz, (double)dens[vol_idx(&v, 0, y, 0)]);
+        if (st < 0) st = w->def_block;
+        if ((bs->hmcls[st] >> hm_type) & 1) { res = by + 1; break; }
+    }
+    sctx_release(x, dens);
+    aq_free(&aq);
+    return res;
+}
+
 int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *blocks, char *err, size_t errlen) {
     const McGen *g = w->g;
     size_t tot = (size_t)w->height * 256;
@@ -317,7 +357,11 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
     pk.sea_type = w->def_fluid; pk.lava_type = g->st_lava;
     Aq aq; aq_init(&aq, w, x, &v, &pk);
     float *dens = sctx_acquire(x, vol_size(&v));
+    Beard *bd = w->struct_on ? beard_for_chunk(w, cx, cz) : NULL;       /* Beardifier.forStructuresInChunk (structure.c) */
+    SBeard sbd = { bd, beard_cb_value, beard_cb_volume };
+    sctx_set_beardifier(x, bd ? &sbd : NULL);
     s_volume(x, w->s_rf[RF_FINAL_DENSITY], dens, &v);
+    sctx_set_beardifier(x, NULL); beard_free(bd);
     int defb = w->def_block;
     for (int z = 0; z < 16; z++) for (int xx = 0; xx < 16; xx++) for (int y = nh - 1; y >= 0; y--) {
         int by = nmin + y;

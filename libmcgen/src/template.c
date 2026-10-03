@@ -223,12 +223,13 @@ const TPal *tpl_palette_at(const Template *t, int x, int y, int z) {
 
 /* ---------------------------------------------------------------- загрузка */
 static int pal_state(McWorld *w, const BsTab *bs, const Nbt *e) {
-    const char *name = nbt_str(nbt_get(e, "Name"), NULL);
+    const char *name = nbt_str(nbt_get(e, "Name"), NULL);       /* 26.1/26.2: Name/Properties; 26.3+: id/properties */
+    if (!name) name = nbt_str(nbt_get(e, "id"), NULL);
     if (!name) return w->g->st_air;
     int blk = bs_block_index(bs, name);
     if (blk < 0) return w->g->st_air;
     int st = bs->blk[blk].def;
-    const Nbt *pr = nbt_get(e, "Properties");
+    const Nbt *pr = nbt_get(e, "Properties"); if (!pr) pr = nbt_get(e, "properties");
     if (pr && pr->type == NBT_COMPOUND) {
         for (int i = 0; i < pr->n; i++) {
             const Nbt *kv = &pr->v.kids[i];

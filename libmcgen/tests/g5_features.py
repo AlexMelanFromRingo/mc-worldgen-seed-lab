@@ -36,11 +36,11 @@ def feature_type(v, fid):
     return '?'
 
 
-def run_one(v, wd, fid, pp_margin, threads, stages, keep=None):
+def run_one(v, wd, fid, pp_margin, threads, stages, keep=None, stable=False, env_extra=None):
     m = json.load(open(f'{wd}/manifest.json'))
     x0, z0, x1, z1 = m['area_chunks']
     out = keep or tempfile.mktemp(suffix='.mcr', dir='/tmp')
-    env = dict(os.environ, MCGEN_FEATURES_ONLY=fid)
+    env = dict(os.environ, MCGEN_FEATURES_ONLY=fid, **(env_extra or {}))
     cmd = [CLI, '--pack', f'{ROOT}/run/pack-{v}', '--version', v, '--dim', DIMS[m['dim']], '--seed', str(m['seed']),
            '--cx0', str(x0), '--cz0', str(z0), '--nx', str(x1 - x0 + 1), '--nz', str(z1 - z0 + 1), '--stages', stages, '--threads', str(threads),
            '--pp-margin', str(pp_margin), '--out', out]
@@ -48,7 +48,11 @@ def run_one(v, wd, fid, pp_margin, threads, stages, keep=None):
     if r.returncode:
         return {'error': r.stderr[-300:]}
     js = out + '.json'
-    subprocess.run([sys.executable, f'{ROOT}/tools/gt/diff.py', '--ref', wd, '--mcr', out, '--json', js, '--margin', '0', '--dim', m['dim'].replace('the_', ''), '--version', v], capture_output=True, text=True)
+    extra = []
+    if stable:   # повторные миры <мир>_rep1/_rep2 (gen_queue --tag rep1): клетки, где сама ваниль не повторяется, не сравниваются
+        for t in ('rep1', 'rep2'):
+            if os.path.isdir(f'{wd}_{t}'): extra += ['--stable-with', f'{wd}_{t}']
+    subprocess.run([sys.executable, f'{ROOT}/tools/gt/diff.py', '--ref', wd, '--mcr', out, '--json', js, '--margin', '0', '--dim', m['dim'].replace('the_', ''), '--version', v] + extra, capture_output=True, text=True)
     d = json.load(open(js)) if os.path.exists(js) else {'error': 'нет json'}
     for f in (out, js):
         if not keep and os.path.exists(f): os.remove(f)
@@ -58,7 +62,7 @@ def run_one(v, wd, fid, pp_margin, threads, stages, keep=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--version', default='26.3'); ap.add_argument('--only', default=''); ap.add_argument('--report', default='')
-    ap.add_argument('--pp-margin', type=int, default=1); ap.add_argument('--threads', type=int, default=0); ap.add_argument('--stages', default='0x17'); ap.add_argument('--control', type=int, default=1)
+    ap.add_argument('--pp-margin', type=int, default=1); ap.add_argument('--threads', type=int, default=0); ap.add_argument('--stages', default='0x17'); ap.add_argument('--control', type=int, default=1); ap.add_argument('--stable', action='store_true', help='маскировать недетерминизм ванили по повторным мирам _rep1/_rep2')
     a = ap.parse_args()
     global CLI
     import shutil
@@ -70,6 +74,7 @@ def main():
     for fdir in sorted(glob.glob(f'{ROOT}/run/gt/{a.version}/feature_*')):
         for wd in sorted(glob.glob(fdir + '/*/')):
             wd = wd.rstrip('/')
+            if '_rep' in os.path.basename(wd): continue
             mp = f'{wd}/manifest.json'
             if not os.path.exists(mp): continue
             m = json.load(open(mp))
@@ -77,7 +82,7 @@ def main():
             fid = m['variant'][len('feature:'):]
             if only and fid not in only: continue
             if not only and fid not in IMPL: continue
-            d = run_one(a.version, wd, fid, a.pp_margin, a.threads, a.stages)
+            d = run_one(a.version, wd, fid, a.pp_margin, a.threads, a.stages, stable=a.stable)
             ctl = run_one(a.version, wd, fid, a.pp_margin, a.threads, hex(int(a.stages, 16) & ~16)) if a.control else {}   # без FEATURES: сколько блоков фича меняет в эталоне
             if 'error' in d and 'blocks_compared' not in d:
                 print(f'{fid:45s} {m["dim"]:9s} ОШИБКА {d["error"]}'); bad += 1; continue

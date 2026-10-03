@@ -128,7 +128,11 @@ struct McWorld {
     void *carvers;              /* стадия CARVERS (carver.c): определения карверов, списки по биомам; строится лениво */
     void *surface;              /* стадия SURFACE (surface.c): дерево правил, шумы, полосы; строится в mcgen_world_new */
     void *features;             /* стадия FEATURES (feature*.c): скомпилированные фичи и порядок по шагам; строится лениво */
+    void *structures;           /* стадия STRUCTURES (structure*.c, jigsaw.c, template.c): реестры, кэш стартов; строится лениво */
+    long struct_run;            /* номер прогона региона со стадией STRUCTURES (сбрасывает состояния частей и ГСЧ региона) */
+    int struct_on;              /* Beardifier включён (region.c ставит перед генерацией, если запрошена стадия STRUCTURES) */
 };
+void structures_world_free(McWorld *w);  /* structure.c */
 void bs_free(void *tab);                 /* blockstate.c */
 void features_world_free(McWorld *w);    /* feature.c */
 

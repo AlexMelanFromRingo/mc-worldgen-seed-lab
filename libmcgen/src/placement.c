@@ -237,6 +237,7 @@ static void pm_run(FCtx *c, const PMod *m, int x, int y, int z, PlcVec *out, con
     case PM_RANDOMLY: { int k = frnd_int_bound(r, m->nsub); pm_run(c, m->sub[k], x, y, z, out, top, unused); break; }
     case PM_CUBOID: {
         int height = intprov_sample(m->iy, r); int width = intprov_sample(m->ix, r); int length = intprov_sample(m->ix, r);
+        if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "cuboid origin %d %d %d size %d %d %d chunk %d %d\n", x, y, z, width, height, length, c->ccx, c->ccz);/*DBG*/
         for (int dx = 0; dx <= width; dx++) for (int dy = 0; dy <= height; dy++) for (int dz = 0; dz <= length; dz++) {
             if ((m->inc_edges || (dx != 0 && dx != width) || (dy != 0 && dy != height)) &&
                 (m->inc_edges || (dz != 0 && dz != length) || (dy != 0 && dy != height)) &&

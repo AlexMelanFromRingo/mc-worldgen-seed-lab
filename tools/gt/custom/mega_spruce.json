@@ -1,0 +1,36 @@
+{
+ "doc": "W11: одиночное дерево, tools/gt/custom (libmcgen/tests/g5_tree_custom_gen.py)",
+ "feature": "minecraft:mega_spruce",
+ "placed_feature": {
+  "feature": "minecraft:mega_spruce",
+  "placement": [
+   {
+    "type": "minecraft:rarity_filter",
+    "chance": 2
+   },
+   {
+    "type": "minecraft:in_square"
+   },
+   {
+    "type": "minecraft:surface_water_depth_filter",
+    "max_water_depth": 0
+   },
+   {
+    "type": "minecraft:heightmap",
+    "heightmap": "OCEAN_FLOOR"
+   },
+   {
+    "type": "minecraft:block_predicate_filter",
+    "predicate": {
+     "type": "minecraft:would_survive",
+     "state": "minecraft:spruce_sapling"
+    }
+   }
+  ]
+ },
+ "dim": "overworld",
+ "seed": -7048155917072976836,
+ "cx": 19,
+ "cz": -30,
+ "radius": 5
+}

@@ -1,0 +1,11 @@
+{
+ "name": "custom:<имя>",
+ "title": "Своя placed_feature (изоляция одного дерева и т.п.)",
+ "doc": "Параметрический вариант: `custom:oak`. Файл tools/gt/custom/<имя>.json {feature, placed_feature{...}, dim, seed, cx, cz, radius}: пак добавляет worldgen/placed_feature/gt_custom_<имя>.json, у ВСЕХ биомов features = 11 пустых шагов, шаг 9 (VEGETAL_DECORATION) = [gt_custom_<имя>]. Surface включён, карверов и построек нет.",
+ "parametric": "custom",
+ "generate_structures": false,
+ "terrain_rule": "full",
+ "carvers": false,
+ "features": "custom",
+ "structures": false
+}

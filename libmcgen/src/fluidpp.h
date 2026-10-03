@@ -19,6 +19,7 @@ typedef struct FluidWorld {
     int fast_lava;            /* dimension_type: gameplay/fast_lava (Незер) */
     int water_conversion;     /* gamerule waterSourceConversion (по умолчанию да) */
     int lava_conversion;      /* gamerule lavaSourceConversion (по умолчанию нет) */
+    void (*shape_update)(void *fw, int x, int y, int z);   /* необязательно: Block.updateFromNeighbourShapes для помеченного не-жидкого блока (structure_post.c) */
 } FluidWorld;
 
 void fluidpp_tick(FluidWorld *w, int x, int y, int z);

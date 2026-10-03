@@ -34,7 +34,8 @@ static int simple_place(FCtx *c, const void *cfg, int x, int y, int z) {
         }
         fc_set(c, x, y, z, lo, 2); fc_set(c, x, y + 1, z, hi, 2);
     } else if (bs_is_a(bs, st, "MossyCarpetBlock")) {
-        return 0;     /* MossyCarpetBlock.placeAt — группа «подземные/мох» (не реализовано) */
+        extern int veg_mossy_carpet_place(FCtx *c, int x, int y, int z);      /* feature_veg.c (W10) */
+        veg_mossy_carpet_place(c, x, y, z);
     } else fc_set(c, x, y, z, st, 2);
     return 1;
 }
@@ -65,6 +66,7 @@ static int seq_place(FCtx *c, const void *cfg, int x, int y, int z) {
 static int simple_random_place(FCtx *c, const void *cfg, int x, int y, int z) {
     const SelCfg *s = cfg;
     int i = frnd_int_bound(c->rnd, s->n);
+    if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "simple_random n=%d pick=%d at %d %d %d\n", s->n, i, x, y, z);/*DBG*/
     return placed_place(c, s->pf[i], x, y, z, 0);
 }
 static void *random_sel_parse(FParse *p, const Js *cfg) {

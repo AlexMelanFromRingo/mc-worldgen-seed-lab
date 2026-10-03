@@ -89,8 +89,13 @@ struct FCtx {
     int lazy_wg;                               /* 26.3+: карты WORLD_SURFACE_WG/OCEAN_FLOOR_WG праймятся при первом запросе и не обновляются */
     int st_air, st_cave_air, st_void_air, st_water, st_lava, bedrock_blk, plains;
     int fail;
+    int no_features;                              /* стадия FEATURES не запрошена: только постройки (structures_decorate_step) */
     long n_chunks, n_calls, n_skipped;            /* счётчики потока */
+    Rnd region_rnd; int region_rnd_ready;         /* WorldGenRegion.getRandom() (см. fc_region_random): создаётся лениво, сбрасывается в начале чанка */
 };
+/* WorldGenRegion.getRandom(): XoroshiroRandomSource из RandomState.getOrCreateRandomFactory("minecraft:worldgen_region_random").at(мин. блок центрального чанка);
+ * один поток на чанк (все вызовы level.getRandom() в декорации чанка берут числа из него). Нативные методы Xoroshiro (rnd_next_*), не WorldgenRandom. */
+Rnd *fc_region_random(FCtx *c);
 
 static inline FChunk *fc_chunk(const FCtx *c, int x, int z) {
     int cx = x >> 4, cz = z >> 4;

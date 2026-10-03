@@ -291,14 +291,14 @@ static void jpiece_add_junction(JPiece *p, JJunction j) {
     if (p->nj == p->cj) { p->cj = p->cj ? p->cj * 2 : 4; p->junc = xrealloc(p->junc, (size_t)p->cj * sizeof(JJunction)); }
     p->junc[p->nj++] = j;
 }
-static void jpiece_move(StPiece *sp, int dx, int dy, int dz) { JPiece *p = sp->data; p->x += dx; p->y += dy; p->z += dz; }
+static void jpiece_move(StPiece *sp, int dx, int dy, int dz) { JPiece *p = sp->data; p->x += dx; p->y += dy; p->z += dz; p->bb0 = bb_moved(p->bb0, dx, dy, dz); }
 static void jpiece_free(void *d) { JPiece *p = d; if (!p) return; free(p->junc); free(p); }
 const JPiece *jigsaw_piece_data(const StPiece *p) { return p->vt == &PIECE_JIGSAW ? p->data : NULL; }
 int jigsaw_piece_projection(const StPiece *p) { const JPiece *j = jigsaw_piece_data(p); return j ? j->el->proj : 0; }
 
-static StPiece *make_piece(PoolElem *el, int x, int y, int z, int gld, int rot, BB bb, int liquid_apply) {
+static StPiece *make_piece(PoolElem *el, int x, int y, int z, int gld, int rot, BB bb, BB bb0, int liquid_apply) {
     JPiece *p = xcalloc(1, sizeof *p);
-    p->el = el; p->x = x; p->y = y; p->z = z; p->ground_delta = gld; p->rot = rot; p->liquid_apply = liquid_apply;
+    p->bb0 = bb0; p->el = el; p->x = x; p->y = y; p->z = z; p->ground_delta = gld; p->rot = rot; p->liquid_apply = liquid_apply;
     StPiece *sp = piece_new(&PIECE_JIGSAW, bb, -1, 0, p);
     sp->rot = rot;
     return sp;
@@ -321,22 +321,23 @@ static int elem_place(StCtx *c, PoolElem *e, int x, int y, int z, int rot, int r
             e->feat = fp_placed(&fp, e->feature_js);
         }
         if (!e->feat) return 1;
-        FRnd *save = c->fc->rnd; c->fc->rnd = &c->rs->f;
-        placed_place(c->fc, e->feat, x, y, z, 0);
-        c->fc->rnd = save;
+        FCtx fcc = *c->fc; fcc.fw = fw; fcc.rnd = &c->rs->f;          /* FeaturePoolElement: PlacedFeature.place(level, generator, random, pos) на ГСЧ структуры */
+        placed_place(&fcc, e->feat, x, y, z, 0);
+        c->fc->fail |= fcc.fail;
         return 1;
     }
     default: break;
     }
     const Template *t = elem_template(w, e);
     if (!t) return 0;
-    const Proc *procs[8]; int np = 0;
-    procs[np++] = proc_builtin(w, e->kind == PE_LEGACY ? PB_STRUCTURE_AND_AIR : PB_STRUCTURE_BLOCK);
+    const Proc *procs[16]; int np = 0;
+    /* SinglePoolElement.getSettings: [STRUCTURE_BLOCK, jigsaw_replacement, список элемента, проекция]; LegacySinglePoolElement убирает STRUCTURE_BLOCK
+     * из начала и добавляет STRUCTURE_AND_AIR В КОНЕЦ — поэтому jigsaw → final_state (воздух) уже обработан и затем отбрасывается */
+    if (e->kind != PE_LEGACY) procs[np++] = proc_builtin(w, PB_STRUCTURE_BLOCK);
     if (!keep_jigsaws) procs[np++] = proc_builtin(w, PB_JIGSAW_REPLACEMENT);
-    const Proc *plist[24];
-    if (e->procs) for (int i = 0; i < e->procs->n && np < 7; i++) procs[np++] = e->procs->p[i];
+    if (e->procs) for (int i = 0; i < e->procs->n && np < 14; i++) procs[np++] = e->procs->p[i];
     if (e->proj == 1) procs[np++] = proc_gravity(w, HM_WORLD_SURFACE_WG, -1);
-    (void)plist;
+    if (e->kind == PE_LEGACY) procs[np++] = proc_builtin(w, PB_STRUCTURE_AND_AIR);
     TSettings s; tsettings_init(&s);
     s.rot = rot; s.bounds = &c->chunk; s.procs = procs; s.nprocs = np;
     s.waterlog = e->liquid_override >= 0 ? e->liquid_override : liquid_apply;
@@ -350,15 +351,18 @@ static void jpiece_post(StCtx *c, StPiece *sp, int rx, int ry, int rz) {
 static const char *ROTN[4] = { "NONE", "CLOCKWISE_90", "CLOCKWISE_180", "COUNTERCLOCKWISE_90" };
 static void jpiece_dump(const StPiece *sp, StrBuf *o) {
     const JPiece *p = sp->data;
+    const char *loc = p->el->kind == PE_FEATURE ? (js_is_str(p->el->feature_js) ? p->el->feature_js->s : "feature") : (p->el->loc ? p->el->loc : (p->el->kind == PE_LIST ? "list" : "empty"));
     sb_printf(o, ",\"pos\":[%d,%d,%d],\"rot\":\"%s\",\"gld\":%d,\"loc\":\"%s\",\"proj\":\"%s\",\"junctions\":[", p->x, p->y, p->z, ROTN[p->rot], p->ground_delta,
-              p->el->kind == PE_FEATURE ? "feature" : (p->el->loc ? p->el->loc : (p->el->kind == PE_LIST ? "list" : "empty")), p->el->proj ? "terrain_matching" : "rigid");
+              loc, p->el->proj ? "terrain_matching" : "rigid");
     for (int i = 0; i < p->nj; i++) sb_printf(o, "%s[%d,%d,%d,%d,\"%s\"]", i ? "," : "", p->junc[i].sx, p->junc[i].sgy, p->junc[i].sz, p->junc[i].dy, p->junc[i].dest_proj ? "terrain_matching" : "rigid");
     sb_puts(o, "]");
+    /* bb0: bounding box элемента без «expansion hack» — в таком виде части восстанавливаются из NBT (так видны сохранённые старты эталона) */
+    sb_printf(o, ",\"bb0\":[%d,%d,%d,%d,%d,%d]", p->bb0.x0, p->bb0.y0, p->bb0.z0, p->bb0.x1, p->bb0.y1, p->bb0.z1);
 }
 const PieceVT PIECE_JIGSAW = { "minecraft:jigsaw", jpiece_post, jpiece_move, jpiece_free, jpiece_dump };
 
 /* ---------------------------------------------------------------- JigsawPlacement.addPieces */
-typedef struct JStub { StPiece *center; AliasMap alias; BB box; int cx, cy, cz; BB aabb_outer[1]; } JStub;
+typedef struct JStub { StPiece *center; AliasMap alias; int cx, cy, cz; } JStub;
 
 static int jig_find(GenCtx *c, const void *cfgp, Stub *out) {
     const JCfg *g = cfgp; McWorld *w = c->w; JStore *s = jstore(w);
@@ -387,7 +391,7 @@ static int jig_find(GenCtx *c, const void *cfgp, Stub *out) {
     int lax = ax - sx, lay = ay - sy, laz = az - sz;                              /* localAnchorPosition */
     int px = sx - lax, py = sy - lay, pz = sz - laz;                              /* adjustedPosition */
     BB box = elem_bb(w, center, px, py, pz, rot);
-    StPiece *cp = make_piece(center, px, py, pz, 1, rot, box, g->liquid_apply);   /* getGroundLevelDelta() = 1 */
+    StPiece *cp = make_piece(center, px, py, pz, 1, rot, box, box, g->liquid_apply);   /* getGroundLevelDelta() = 1 */
     int centerX = (box.x1 + box.x0) / 2, centerZ = (box.z1 + box.z0) / 2;
     int bottomY;
     if (g->proj_hm < 0) bottomY = py;
@@ -402,11 +406,9 @@ static int jig_find(GenCtx *c, const void *cfgp, Stub *out) {
         if (cp->bb.y0 < lo || cp->bb.y1 > hi) { piece_free(cp); free(am.key); free(am.val); return 0; }
     }
     JStub *st = xcalloc(1, sizeof *st);
-    st->center = cp; st->alias = am; st->box = box;               /* box — до перемещения (AABB.of(box) в игре — ИСХОДНЫЙ box center piece: getBoundingBox() вызван до move) */
-    st->box = cp->bb;                                              /* box = centerPiece.getBoundingBox() берётся ДО move в коде игры; см. примечание в build */
+    st->center = cp; st->alias = am;
     out->x = centerX; out->y = bottomY + lay; out->z = centerZ; out->state = st;
     st->cx = centerX; st->cy = out->y; st->cz = centerZ;
-    st->aabb_outer[0] = box;
     return 1;
 }
 
@@ -505,7 +507,7 @@ static void try_placing_children(Placer *P, StPiece *src, Free *context_free, in
                     free_occupy(children_free, tbb);
                     int sgld = sj->ground_delta;
                     int tgld = t_rigid ? sgld - delta_y : 1;
-                    StPiece *tp = make_piece(te, tbx, tby_pos, tbz, tgld, trot, tbb, P->g->liquid_apply);
+                    StPiece *tp = make_piece(te, tbx, tby_pos, tbz, tgld, trot, tbb, bb_moved(raw, 0, y_off, 0), P->g->liquid_apply);
                     int jyv;
                     if (src_rigid) jyv = src_box_y + src_local_y;
                     else if (t_rigid) jyv = tby + ly;
@@ -543,9 +545,9 @@ static int jig_build(GenCtx *c, const void *cfgp, Stub *stub, PieceVec *out) {
         f0->ox0 = st->cx - g->max_h; f0->oz0 = st->cz - g->max_h; f0->ox1 = st->cx + g->max_h + 1; f0->oz1 = st->cz + g->max_h + 1;
         int lo = st->cy - g->max_v, lo2 = c->min_y + g->pad_bottom; f0->oy0 = lo > lo2 ? lo : lo2;
         int hi = st->cy + g->max_v + 1, hi2 = c->min_y + c->height - g->pad_top; f0->oy1 = hi < hi2 ? hi : hi2;
-        free_occupy(f0, st->aabb_outer[0]);                 /* Shapes.join(aabb, AABB.of(box), ONLY_FIRST): box — bounding box центральной части ДО смещения по высоте */
-        /* Примечание: в коде игры box = centerPiece.getBoundingBox() вычисляется до centerPiece.move(...), но объект BoundingBox
-         * общий и move() меняет его на месте — т. е. фактически используется смещённый box. Проверено по эталону. */
+        /* Shapes.join(aabb, AABB.of(box), ONLY_FIRST): box — тот же объект BoundingBox, что у centerPiece; move() меняет его на месте,
+         * поэтому в игре используется bounding box центральной части ПОСЛЕ смещения по высоте */
+        free_occupy(f0, st->center->bb);
         try_placing_children(&P, st->center, f0, 0);
         for (;;) {
             int best = -1;

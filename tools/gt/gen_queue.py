@@ -56,6 +56,7 @@ def main():
     ap.add_argument('--xmx', default='5g')
     ap.add_argument('--force', action='store_true')
     ap.add_argument('--group', default='all', choices=['all', 'ores', 'veg'], help='с --plan features: ores = руды/диски/источники/блобы/геология, veg = растительность')
+    ap.add_argument('--sparse', type=int, default=12, help='variant featuresparse: rarity_filter chance K')
     ap.add_argument('--tag', default='', help='суффикс каталога (повторные прогоны для --stable-with: rep1, rep2)')
     ap.add_argument('--bg-threads', type=int, default=None)
     ap.add_argument('--timeout', type=int, default=7200)
@@ -79,8 +80,21 @@ def main():
             if a.group != 'all' and feature_group(e['feature']) != a.group:
                 continue
             for v in a.variants.split(','):
-                jobs.append((f'feature:{e["feature"]}' if v == 'feature' else v, c))
+                jobs.append((f'feature:{e["feature"]}' if v == 'feature' else f'featuresparse:{e["feature"]}@{a.sparse}' if v == 'featuresparse' else v, c))
         jobs.sort(key=lambda j: (feature_group(j[0].split(':', 1)[-1]) != 'ores', j[0]))      # сначала геология/руды, затем растительность
+    elif a.plan == 'custom':
+        names = a.sets.split(',') if a.sets else sorted(f[:-5] for f in os.listdir(f'{ROOT}/tools/gt/custom') if f.endswith('.json'))
+        jobs = []
+        for nm in names:
+            cf = json.load(open(f'{ROOT}/tools/gt/custom/{nm}.json'))
+            jobs.append((f'custom:{nm}', {'dim': cf['dim'], 'seed': cf['seed'], 'cx': cf['cx'], 'cz': cf['cz'], 'radius': a.plan_radius or cf.get('radius', 5), 'label': nm}))
+    elif a.plan == 'features_extra':
+        jobs = []
+        for e in json.load(open(f'{ROOT}/tools/gt/features_plan_extra.json'))['plan']:
+            if a.sets and e['feature'].split(':')[1] not in set(a.sets.split(',')):
+                continue
+            c = {'dim': e['dim'], 'seed': e['seed'], 'cx': e['cx'], 'cz': e['cz'], 'radius': e['radius'], 'label': e['feature'].split(':')[1]}
+            jobs.append((f'feature:{e["feature"]}', c))
     elif a.plan:
         plan = json.load(open(f'{ROOT}/tools/gt/structures_plan.json'))['plan']
         only = set(a.sets.split(',')) if a.sets else None

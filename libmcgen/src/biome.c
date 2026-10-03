@@ -59,6 +59,14 @@ int world_biome_noise(const McWorld *w, int qx, int qy, int qz) {
     default: { float v[6]; climate_point(w, qx * 4, qy * 4, qz * 4, v); return find_biome(w, v); }
     }
 }
+/* то же с историей поиска R-дерева (ThreadLocal lastResult): *last — лист предыдущего запроса последовательного обхода (−1 — нет) */
+int world_biome_noise_hist(const McWorld *w, int qx, int qy, int qz, int *last) {
+    switch (w->preset->biome_source) {
+    case BS_FIXED: return w->preset->fixed_biome;
+    case BS_THE_END: return end_biome(w, qx, qy, qz);
+    default: { float v[6]; climate_point(w, qx * 4, qy * 4, qz * 4, v); return find_biome_last(w, v, last); }
+    }
+}
 
 /* ---- биом клетки «как хранит чанк» (с учётом ничьих R-дерева) ----
  * Climate.RTree.search с кандидатом C возвращает C, если расстояние до C равно минимальному d*, иначе — первый лист

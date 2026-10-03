@@ -1,0 +1,11 @@
+{
+ "name": "featurecarve:<placed_feature_id>",
+ "title": "Одна фича + карверы",
+ "doc": "Как feature:<id>, но карверы биомов включены (фичи пещер: rooted_azalea_tree и т.п.).",
+ "parametric": "featurecarve",
+ "generate_structures": false,
+ "terrain_rule": "full",
+ "carvers": true,
+ "features": "only",
+ "structures": false
+}

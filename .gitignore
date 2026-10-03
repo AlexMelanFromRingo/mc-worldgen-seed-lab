@@ -42,3 +42,4 @@ target/
 /docs/blender/img/t_*.png
 /docs/blender/img/dbg_*.png
 /docs/blender/img/showcase_*.png
+/libmcgen/build*/

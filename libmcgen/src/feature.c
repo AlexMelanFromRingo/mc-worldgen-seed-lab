@@ -3,6 +3,7 @@
 #include "feature.h"
 #include "carver.h"
 #include "surface.h"
+void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int cx, int cz);   /* structure.c */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -23,6 +24,8 @@ void feature_register_blobs(void);      /* feature_disk.c: disk, block_blob, spr
 void feature_register_simple(void);     /* feature_misc.c: simple_block, random/weighted selectors … */
 void feature_register_misc_all(void);   /* feature_miscx.c (W12): подземные/ледяные/особые/Nether/End */
 void feature_register_veg(void);        /* feature_veg*.c (W10): растительность */
+void feature_register_trees(void);      /* feature_tree.c (W11): tree, fallen_tree */
+void feature_register_mushroom(void);   /* feature_mushroom.c (W11): huge_*_mushroom, huge_fungus, root_system */
 void feature_register_all(void) {
     if (g_registered) return;
     g_registered = 1;
@@ -32,6 +35,8 @@ void feature_register_all(void) {
     feature_register_simple();
     feature_register_misc_all();
     feature_register_veg();
+    feature_register_trees();
+    feature_register_mushroom();
 }
 
 /* ====================================================================== арена и разбор */
@@ -69,9 +74,14 @@ const Js *fp_load_json(FParse *p, const char *kind, const char *id) {
     char *key = xsprintf("%s/%s:%s", dir, ns, name);
     JsDoc *d = sm_get(&fw->docs, key);
     if (!d) {
-        char *path = xsprintf("%s/data/%s/worldgen/%s/%s.json", fw->g->pack, ns, dir, name);
-        d = js_parse_file(path, NULL, 0);
-        free(path);
+        d = NULL;
+        const char *ovl = getenv("MCGEN_PACK_OVERLAY");     /* отладка (W10): каталог датапака поверх pack (тот же макет data/<ns>/worldgen/…): подмена отдельных JSON */
+        if (ovl && *ovl) { char *op = xsprintf("%s/data/%s/worldgen/%s/%s.json", ovl, ns, dir, name); d = js_parse_file(op, NULL, 0); free(op); }
+        if (!d) {
+            char *path = xsprintf("%s/data/%s/worldgen/%s/%s.json", fw->g->pack, ns, dir, name);
+            d = js_parse_file(path, NULL, 0);
+            free(path);
+        }
         if (!d) { free(key); return NULL; }
         sm_put(&fw->docs, key, d);
     }
@@ -225,7 +235,7 @@ void features_get_stats(FeatStats *out) { *out = g_stats; }
 
 static void decorate_chunk(FCtx *c, int cx, int cz) {
     FWorld *fw = c->fw; McWorld *w = c->w;
-    c->ccx = cx; c->ccz = cz; c->n_chunks++;
+    c->ccx = cx; c->ccz = cz; c->n_chunks++; c->region_rnd_ready = 0;
     FRnd rnd; memset(&rnd, 0, sizeof rnd); c->rnd = &rnd;
     int ox = cx * 16, oz = cz * 16, oy = c->min_y;
     i64 seed = w->seeds.features;
@@ -234,6 +244,7 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
     u64 xs = (u64)frnd_long(&rnd) | 1ull, zs = (u64)frnd_long(&rnd) | 1ull;
     i64 dec = (i64)(((u64)(i64)ox * xs + (u64)(i64)oz * zs) ^ (u64)seed);
     frnd_seed(&rnd, dec);
+    if (c->no_features) { for (int step = 0; step < 11; step++) structures_decorate_step(c, &rnd, dec, step, cx, cz); return; }   /* только постройки (structure.c) */
     /* биомы в окне 3×3 чанков */
     u8 mask[32]; memset(mask, 0, sizeof mask);
     for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) {
@@ -244,7 +255,7 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
     for (int b = 0; b < fw->nbiomes; b++) if (((mask[b >> 3] >> (b & 7)) & 1) && fw->biome_step[b]) pb[npb++] = b;
     int nsteps_total = fw->nsteps > 11 ? fw->nsteps : 11;
     for (int step = 0; step < nsteps_total; step++) {
-        /* структуры шага — стадия STRUCTURES (не реализована) */
+        if (w->struct_on) structures_decorate_step(c, &rnd, dec, step, cx, cz);      /* постройки шага — до фич шага (structure.c) */
         if (step >= fw->nsteps) continue;
         int words = fw->step_words[step];
         u64 acc[16]; memset(acc, 0, sizeof acc);
@@ -261,7 +272,9 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
                 frnd_seed(&rnd, dec + (i64)gi + (i64)(10000 * step));       /* setFeatureSeed */
                 c->n_calls++;
                 if (!pf->feat || !pf->feat->t) { c->n_skipped++; continue; }
-                placed_place(c, pf, ox, oy, oz, 1);
+                int placed_any = placed_place(c, pf, ox, oy, oz, 1);
+                static int logc = -1; if (logc < 0) logc = getenv("MCGEN_FEATURES_LOGCHUNKS") != NULL;     /* отладка (W10): чанки, где фича что-то поставила → stderr */
+                if (logc && placed_any) fprintf(stderr, "FEATCHUNK %s %d %d\n", pf->id ? pf->id : "?", cx, cz);
             }
         }
     }
@@ -324,8 +337,10 @@ static void dec_worker(void *arg) {
 }
 
 int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb, void *ud, char *err, size_t errlen) {
-    FWorld *fw = features_world_get(w);
-    if (!fw) return 0;                              /* стадия недоступна: регион остаётся без декораций */
+    int want_feat = (region_stages(r) & MC_STAGE_FEATURES) != 0;
+    FWorld *fw = want_feat ? features_world_get(w) : NULL;
+    if (want_feat && !fw) return 0;                 /* стадия недоступна: регион остаётся без декораций */
+    const BsTab *bs0 = fw ? fw->bs : bs_get(w->g);
     double t0 = now_sec();
     McRegionInfo info; mcgen_region_info(r, &info);
     uint32_t stages = region_stages(r);
@@ -365,14 +380,14 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     }
     if (!rc) {
         FCtx c; memset(&c, 0, sizeof c);
-        c.w = w; c.g = w->g; c.bs = fw->bs; c.fw = fw;
+        c.w = w; c.g = w->g; c.bs = bs0; c.fw = fw; c.no_features = !want_feat;
         c.grid = grid; c.gx0 = gx0; c.gz0 = gz0; c.gnx = gnx; c.gnz = gnz;
         c.min_y = w->min_y; c.height = w->height; c.sea_level = w->sea_level;
         c.gen_min_y = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
         c.gen_depth = w->ns->height < w->height ? w->ns->height : w->height;
-        c.lazy_wg = w->g->newf;
-        c.st_air = w->g->st_air; c.st_cave_air = w->g->st_cave_air; c.st_void_air = fw->bs->st_void_air; c.st_water = w->g->st_water; c.st_lava = w->g->st_lava;
-        c.bedrock_blk = bs_block_index(fw->bs, "minecraft:bedrock"); c.plains = gen_biome_id(w->g, "minecraft:plains");
+        c.lazy_wg = w->g->newf && !getenv("MCGEN_FEATURES_WGEAGER");     /* отладка: WG-карты 26.3 заранее, а не лениво */
+        c.st_air = w->g->st_air; c.st_cave_air = w->g->st_cave_air; c.st_void_air = bs0->st_void_air; c.st_water = w->g->st_water; c.st_lava = w->g->st_lava;
+        c.bedrock_blk = bs_block_index(bs0, "minecraft:bedrock"); c.plains = gen_biome_id(w->g, "minecraft:plains");
         if (c.plains < 0) c.plains = 0;
         /* карты высот и биомы окна (параллельно) */
         PrimeJob pj; memset(&pj, 0, sizeof pj);
@@ -409,7 +424,25 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 }
             }
             else if (!strcmp(ord, "zx")) { for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) decorate_chunk(&c, cx, cz); }
-            else for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) decorate_chunk(&c, cx, cz);
+            else if (!strncmp(ord, "rand", 4)) {
+                /* случайный порядок обхода (эксперимент W12, rand<seed>): неустойчивые к порядку клетки — те, что различаются между разными порядками */
+                int n = dj.nx * dj.nz; int *perm = xmalloc(sizeof(int) * (size_t)n); for (int i = 0; i < n; i++) perm[i] = i;
+                u64 st = 0x9E3779B97F4A7C15ull * (u64)(atoi(ord + 4) + 1);
+                for (int i = n - 1; i > 0; i--) { st ^= st << 13; st ^= st >> 7; st ^= st << 17; int j = (int)(st % (u64)(i + 1)); int t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+                for (int i = 0; i < n; i++) decorate_chunk(&c, dj.cx0 + perm[i] / dj.nz, dj.cz0 + perm[i] % dj.nz);
+                free(perm);
+            }
+            else {
+                /* MCGEN_FEATURES_BEFORE="ax,az>bx,bz;…" — эксперимент W12: чанк A декорируется непосредственно перед B (а на своём месте пропускается):
+                 * проверка гипотезы «игра обработала пару соседних чанков в другом порядке» (недетерминизм игры у границ чанков) */
+                int mv[16][4], nmv = 0; const char *bf = getenv("MCGEN_FEATURES_BEFORE");
+                while (bf && *bf && nmv < 16) { int a, b, cc, d, n = 0; if (sscanf(bf, "%d,%d>%d,%d%n", &a, &b, &cc, &d, &n) < 4) break; mv[nmv][0] = a; mv[nmv][1] = b; mv[nmv][2] = cc; mv[nmv][3] = d; nmv++; bf += n; if (*bf == ';') bf++; }
+                for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) {
+                    int skip = 0;
+                    for (int i = 0; i < nmv; i++) { if (mv[i][0] == cx && mv[i][1] == cz) skip = 1; if (mv[i][2] == cx && mv[i][3] == cz) decorate_chunk(&c, mv[i][0], mv[i][1]); }
+                    if (!skip) decorate_chunk(&c, cx, cz);
+                }
+            }
             g_stats.chunks += c.n_chunks; g_stats.placed_calls += c.n_calls; g_stats.unimpl_skipped += c.n_skipped;
         } else {
             /* волновой фронт: чанки с равным t = iz + 3·ix не пересекаются окнами 3×3 (|dx| ≥ 3), а все пересекающиеся «более ранние» чанки
@@ -432,7 +465,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     for (int i = 0; i < gnx * gnz; i++) if (!chunks[i].marks) { free(chunks[i].blocks); free(chunks[i].biomes); }
     free(chunks); free(grid);
     g_stats.secs += now_sec() - t0;
-    if (fw->debug) fprintf(stderr, "\nlibmcgen: FEATURES: чанков декорировано %d, всего %.2f с (из них декорация %.2f с = %.0f чанков/с, остальное — кольца и карты высот), вызовов placed_feature %ld\n", (info.nx + 2) * (info.nz + 2), now_sec() - t0, g_dec_secs, (info.nx + 2) * (info.nz + 2) / (g_dec_secs > 0 ? g_dec_secs : 1e-9), g_stats.placed_calls);
+    if (fw && fw->debug) fprintf(stderr, "\nlibmcgen: FEATURES: чанков декорировано %d, всего %.2f с (из них декорация %.2f с = %.0f чанков/с, остальное — кольца и карты высот), вызовов placed_feature %ld\n", (info.nx + 2) * (info.nz + 2), now_sec() - t0, g_dec_secs, (info.nx + 2) * (info.nz + 2) / (g_dec_secs > 0 ? g_dec_secs : 1e-9), g_stats.placed_calls);
     if (rc) { set_err(err, errlen, "%s", e); return rc; }
     return 0;
 }

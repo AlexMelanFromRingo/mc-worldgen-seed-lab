@@ -1,0 +1,36 @@
+{
+ "doc": "W11: одиночное дерево, tools/gt/custom (libmcgen/tests/g5_tree_custom_gen.py)",
+ "feature": "minecraft:super_birch_bees_0002",
+ "placed_feature": {
+  "feature": "minecraft:super_birch_bees_0002",
+  "placement": [
+   {
+    "type": "minecraft:rarity_filter",
+    "chance": 2
+   },
+   {
+    "type": "minecraft:in_square"
+   },
+   {
+    "type": "minecraft:surface_water_depth_filter",
+    "max_water_depth": 0
+   },
+   {
+    "type": "minecraft:heightmap",
+    "heightmap": "OCEAN_FLOOR"
+   },
+   {
+    "type": "minecraft:block_predicate_filter",
+    "predicate": {
+     "type": "minecraft:would_survive",
+     "state": "minecraft:birch_sapling"
+    }
+   }
+  ]
+ },
+ "dim": "overworld",
+ "seed": 8675309,
+ "cx": 0,
+ "cz": 0,
+ "radius": 5
+}

@@ -1,0 +1,12 @@
+{
+ "name": "featuresparse:<placed_feature_id>@K",
+ "title": "Одна фича, разреженная",
+ "doc": "Как feature:<id>, но в начало placement placed_feature добавлен rarity_filter(chance=K): декорируется ~1/K чанков, соседние декорируемые чанки редки, поэтому недетерминизм порядка чанков почти не влияет (честные 100 % для плотных фич). Пример: `featuresparse:minecraft:lush_caves_vegetation@12`. Пак переопределяет placed_feature/<id>.json.",
+ "parametric": "featuresparse",
+ "sparse": true,
+ "generate_structures": false,
+ "terrain_rule": "full",
+ "carvers": false,
+ "features": "only",
+ "structures": false
+}

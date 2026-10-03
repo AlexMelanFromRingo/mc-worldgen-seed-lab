@@ -118,6 +118,19 @@ MCGEN_API int16_t *mcgen_region_heightmap(McRegion *r, int cx, int cz, int kind)
 /* ---- дамп региона (для тестов/эталонов): формат MCR1, см. libmcgen/README.md ---------------------------------------- */
 MCGEN_API int mcgen_region_write_mcr(const McRegion *r, const McGen *g, const char *path, char *err, size_t errlen);
 
+/* ---- постройки (стадия STRUCTURES): старты ----------------------------------------------------------------------------- */
+typedef struct McStructureStart {
+    const char *id;            /* "minecraft:village_plains" (строка живёт до mcgen_world_free) */
+    int chunk_x, chunk_z;      /* чанк-источник */
+    int bb[6];                 /* x0,y0,z0,x1,y1,z1 — общий bounding box частей */
+    int piece_count;
+} McStructureStart;
+/* Старты построек, чей чанк-источник лежит в [cx0, cx0+nx)×[cz0, cz0+nz) (по умолчанию все наборы измерения; считается лениво, потокобезопасно).
+ * Возвращает общее число найденных стартов (может быть больше cap; в out пишется не более cap). */
+MCGEN_API int mcgen_structure_starts(McWorld *w, int cx0, int cz0, int nx, int nz, McStructureStart *out, int cap);
+/* bounding box piece-й части index-го старта чанка-источника (порядок как в mcgen_structure_starts для одного чанка); 0 — успех */
+MCGEN_API int mcgen_structure_piece_bb(McWorld *w, int chunk_x, int chunk_z, int index, int piece, int bb[6]);
+
 #ifdef __cplusplus
 }
 #endif

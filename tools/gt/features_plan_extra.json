@@ -1,0 +1,239 @@
+{
+ "doc": "tools/gt/feature_regions.py",
+ "plan": [
+  {
+   "feature": "minecraft:blue_ice",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -39,
+   "cz": -28,
+   "radius": 5,
+   "group": "frozen",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:iceberg_packed",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -39,
+   "cz": -28,
+   "radius": 5,
+   "group": "frozen",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:iceberg_blue",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -39,
+   "cz": -28,
+   "radius": 5,
+   "group": "frozen",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:freeze_top_layer",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 54,
+   "cz": -28,
+   "radius": 5,
+   "group": "snow",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:underwater_magma",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -1,
+   "cz": 5,
+   "radius": 5,
+   "group": "ocean_magma",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:desert_well",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -147,
+   "cz": -44,
+   "radius": 20,
+   "group": "desert",
+   "cells": 23397
+  },
+  {
+   "feature": "minecraft:sculk_vein",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 16,
+   "cz": -6,
+   "radius": 5,
+   "group": "deep_dark",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:sculk_patch_deep_dark",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 16,
+   "cz": -6,
+   "radius": 5,
+   "group": "deep_dark",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:sulfur_pool",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 93,
+   "cz": -28,
+   "radius": 5,
+   "group": "sulfur",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:sulfur_spike",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 93,
+   "cz": -28,
+   "radius": 5,
+   "group": "sulfur",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:sulfur_spike_cluster",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 93,
+   "cz": -28,
+   "radius": 5,
+   "group": "sulfur",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:rooted_sulfur_spring",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 93,
+   "cz": -28,
+   "radius": 5,
+   "group": "sulfur",
+   "cells": 1936
+  },
+  {
+   "feature": "minecraft:basalt_pillar",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:delta",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:small_basalt_columns",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:large_basalt_columns",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:basalt_blobs",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:blackstone_blobs",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": -48,
+   "cz": 26,
+   "radius": 10,
+   "group": "basalt",
+   "cells": 7056
+  },
+  {
+   "feature": "minecraft:glowstone",
+   "dim": "nether",
+   "seed": 12345,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "group": "nether_center"
+  },
+  {
+   "feature": "minecraft:glowstone",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "group": "nether_center"
+  },
+  {
+   "feature": "minecraft:glowstone_extra",
+   "dim": "nether",
+   "seed": 12345,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "group": "nether_center"
+  },
+  {
+   "feature": "minecraft:glowstone_extra",
+   "dim": "nether",
+   "seed": 8675309,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "group": "nether_center"
+  },
+  {
+   "feature": "minecraft:end_gateway_return",
+   "dim": "end",
+   "seed": 12345,
+   "cx": 90,
+   "cz": 0,
+   "radius": 20,
+   "group": "end_outer"
+  },
+  {
+   "feature": "minecraft:end_platform",
+   "dim": "end",
+   "seed": 12345,
+   "cx": 6,
+   "cz": 0,
+   "radius": 4,
+   "group": "end_platform"
+  }
+ ]
+}

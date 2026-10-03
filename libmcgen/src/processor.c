@@ -14,7 +14,7 @@ enum { PT_ALWAYS, PT_LINEAR, PT_AXIS };
 typedef struct { int type; float min_chance, max_chance; int min_dist, max_dist, axis; } PosTestN;
 typedef struct { RuleTestN *in, *loc; PosTestN pos; int out_state; } RuleN;
 
-enum { PK_NOP, PK_RULE, PK_PROTECTED, PK_BLOCK_ROT, PK_CAPPED, PK_BLOCK_IGNORE, PK_JIGSAW_REPL, PK_GRAVITY, PK_UNIMPL };
+enum { PK_NOP, PK_RULE, PK_PROTECTED, PK_BLOCK_ROT, PK_CAPPED, PK_BLOCK_IGNORE, PK_JIGSAW_REPL, PK_GRAVITY, PK_UNIMPL, PK_BLOCK_AGE, PK_BLACKSTONE, PK_LAVA_SUB };
 struct Proc {
     int kind;
     int nrules; RuleN *rules;           /* rule */
@@ -22,6 +22,7 @@ struct Proc {
     float integrity;                    /* block_rot */
     Proc *delegate; int lim_min, lim_max;   /* capped: IntProvider constant/uniform */
     int hm, offset;                     /* gravity */
+    float mossiness;                    /* block_age */
 };
 
 typedef struct ProcStore { McMutex *lock; StrMap lists; PtrVec all_lists; Proc *builtin[PB__COUNT]; PtrVec gravity; PtrVec procs; } ProcStore;
@@ -44,6 +45,7 @@ void processors_world_free(McWorld *w, void *procs) {
     sm_free(&s->lists, list_free);
     for (int i = 0; i < PB__COUNT; i++) proc_free(s->builtin[i]);
     for (int i = 0; i < s->gravity.n; i++) proc_free(s->gravity.v[i]);
+    for (int i = 0; i < s->procs.n; i++) proc_free(s->procs.v[i]);
     pv_free(&s->gravity); pv_free(&s->all_lists); pv_free(&s->procs);
     mutex_free(s->lock); free(s);
 }
@@ -193,6 +195,17 @@ const Proc *proc_builtin(McWorld *w, int which) {
     mutex_unlock(s->lock);
     return r;
 }
+static const Proc *simple_proc(McWorld *w, int kind, float moss) {
+    ProcStore *s = store_of(w); if (!s) return NULL;
+    mutex_lock(s->lock);
+    for (int i = 0; i < s->procs.n; i++) { Proc *p = s->procs.v[i]; if (p->kind == kind && p->mossiness == moss) { mutex_unlock(s->lock); return p; } }
+    Proc *p = xcalloc(1, sizeof *p); p->kind = kind; p->mossiness = moss; pv_push(&s->procs, p);
+    mutex_unlock(s->lock);
+    return p;
+}
+const Proc *proc_block_age(McWorld *w, float mossiness) { return simple_proc(w, PK_BLOCK_AGE, mossiness); }
+const Proc *proc_blackstone_replace(McWorld *w) { return simple_proc(w, PK_BLACKSTONE, 0.0f); }
+const Proc *proc_lava_submerged(McWorld *w) { return simple_proc(w, PK_LAVA_SUB, 0.0f); }
 const Proc *proc_gravity(McWorld *w, int hm, int offset) {
     ProcStore *s = store_of(w); if (!s) return NULL;
     mutex_lock(s->lock);
@@ -239,6 +252,69 @@ static int pos_test(const PosTestN *p, const TInfo *cur, PEnv *e, RS *rnd) {
     }
 }
 
+
+/* BlockState.withPropertiesOf: свойства old, которые есть у нового блока */
+static int with_props_of(const BsTab *bs, int new_blk, int old_state) {
+    int st = bs->blk[new_blk].def;
+    const BsBlock *ob = &bs->blk[bs->g->state_block[old_state]];
+    for (int i = 0; i < ob->nprops; i++) {
+        const char *v; if (!bs_get_prop(bs, old_state, ob->pname[i], &v)) continue;
+        int ns = bs_with(bs, st, ob->pname[i], v); if (ns >= 0) st = ns;
+    }
+    return st;
+}
+static int blk_idx(PEnv *e, const char *n) { return bs_block_index(e->bs, n); }
+static int tag_has(const McGen *g, const char *tag, int blk) { const u8 *t = gen_block_tag(g, tag); return t && t[blk]; }
+static int random_facing_stairs(PEnv *e, RS *r, const char *blk) {
+    static const char *HD[4] = { "north", "east", "south", "west" };
+    int st = e->bs->blk[blk_idx(e, blk)].def;
+    st = bs_with(e->bs, st, "facing", HD[rs_bound(r, 4)]);
+    return bs_with(e->bs, st, "half", rs_bound(r, 2) == 0 ? "top" : "bottom");       /* Half.values(): TOP, BOTTOM */
+}
+static int block_age(const Proc *p, PEnv *e, const TInfo *cur) {
+    const McGen *g = e->w->g; const BsTab *bs = e->bs;
+    RS r; rs_seed_lcg(&r, mth_get_seed(cur->x, cur->y, cur->z));
+    int st = cur->state, b = g->state_block[st], ns = -1;
+    if (b == blk_idx(e, "minecraft:stone_bricks") || b == blk_idx(e, "minecraft:stone") || b == blk_idx(e, "minecraft:chiseled_stone_bricks")) {
+        if (rs_float(&r) >= 0.5f) return -1;
+        int non[2] = { bs->blk[blk_idx(e, "minecraft:cracked_stone_bricks")].def, 0 }; non[1] = random_facing_stairs(e, &r, "minecraft:stone_brick_stairs");
+        int mos[2] = { bs->blk[blk_idx(e, "minecraft:mossy_stone_bricks")].def, 0 }; mos[1] = random_facing_stairs(e, &r, "minecraft:mossy_stone_brick_stairs");
+        const int *arr = rs_float(&r) < p->mossiness ? mos : non;
+        return arr[rs_bound(&r, 2)];
+    } else if (tag_has(g, "minecraft:stairs", b)) {
+        if (rs_float(&r) >= 0.5f) return -1;
+        int mos[2] = { with_props_of(bs, blk_idx(e, "minecraft:mossy_stone_brick_stairs"), st), bs->blk[blk_idx(e, "minecraft:mossy_stone_brick_slab")].def };
+        int non[2] = { bs->blk[blk_idx(e, "minecraft:stone_slab")].def, bs->blk[blk_idx(e, "minecraft:stone_brick_slab")].def };
+        const int *arr = rs_float(&r) < p->mossiness ? mos : non;
+        return arr[rs_bound(&r, 2)];
+    } else if (tag_has(g, "minecraft:slabs", b)) { if (rs_float(&r) < p->mossiness) ns = with_props_of(bs, blk_idx(e, "minecraft:mossy_stone_brick_slab"), st); }
+    else if (tag_has(g, "minecraft:walls", b)) { if (rs_float(&r) < p->mossiness) ns = with_props_of(bs, blk_idx(e, "minecraft:mossy_stone_brick_wall"), st); }
+    else if (b == blk_idx(e, "minecraft:obsidian")) { if (rs_float(&r) < 0.15f) ns = bs->blk[blk_idx(e, "minecraft:crying_obsidian")].def; }
+    return ns;
+}
+static int blackstone_state(PEnv *e, int st) {
+    static const char *M[][2] = {
+        {"cobblestone","blackstone"},{"mossy_cobblestone","blackstone"},{"stone","polished_blackstone"},{"stone_bricks","polished_blackstone_bricks"},{"mossy_stone_bricks","polished_blackstone_bricks"},
+        {"cobblestone_stairs","blackstone_stairs"},{"mossy_cobblestone_stairs","blackstone_stairs"},{"stone_stairs","polished_blackstone_stairs"},{"stone_brick_stairs","polished_blackstone_brick_stairs"},
+        {"mossy_stone_brick_stairs","polished_blackstone_brick_stairs"},{"cobblestone_slab","blackstone_slab"},{"mossy_cobblestone_slab","blackstone_slab"},{"smooth_stone_slab","polished_blackstone_slab"},
+        {"stone_slab","polished_blackstone_slab"},{"stone_brick_slab","polished_blackstone_brick_slab"},{"mossy_stone_brick_slab","polished_blackstone_brick_slab"},{"stone_brick_wall","polished_blackstone_brick_wall"},
+        {"mossy_stone_brick_wall","polished_blackstone_brick_wall"},{"cobblestone_wall","blackstone_wall"},{"mossy_cobblestone_wall","blackstone_wall"},{"chiseled_stone_bricks","chiseled_polished_blackstone"},
+        {"cracked_stone_bricks","cracked_polished_blackstone_bricks"},{"iron_bars","iron_chain"},{NULL,NULL} };
+    int b = e->w->g->state_block[st];
+    for (int i = 0; M[i][0]; i++) {
+        char a[64]; snprintf(a, sizeof a, "minecraft:%s", M[i][0]);
+        if (b != blk_idx(e, a)) continue;
+        snprintf(a, sizeof a, "minecraft:%s", M[i][1]);
+        int nb = blk_idx(e, a); if (nb < 0) return -1;
+        int ns = e->bs->blk[nb].def; const char *v;
+        if (bs_get_prop(e->bs, st, "facing", &v)) { int r = bs_with(e->bs, ns, "facing", v); if (r >= 0) ns = r; }
+        if (bs_get_prop(e->bs, st, "half", &v)) { int r = bs_with(e->bs, ns, "half", v); if (r >= 0) ns = r; }
+        if (bs_get_prop(e->bs, st, "type", &v)) { int r = bs_with(e->bs, ns, "type", v); if (r >= 0) ns = r; }
+        return ns;
+    }
+    return -1;
+}
+
 int proc_whole_piece(const Proc *p) { return p->kind == PK_CAPPED; }
 
 int proc_block(const Proc *p, PEnv *e, const TInfo *orig, TInfo *cur) {
@@ -276,8 +352,17 @@ int proc_block(const Proc *p, PEnv *e, const TInfo *orig, TInfo *cur) {
         cur->state = st; cur->nbt = NULL; return 1;
     }
     case PK_GRAVITY: {
-        int h = e->fc ? fc_height(e->fc, p->hm, cur->x, cur->z) + p->offset : p->offset;
+        int h;
+        if (e->w->g->newf && (p->hm == HM_WORLD_SURFACE_WG || p->hm == HM_OCEAN_FLOOR_WG)) h = structure_height_wg(e->w, p->hm, cur->x, cur->z) + p->offset;   /* карты WG: результат заполнения шумом */
+        else h = e->fc ? fc_height(e->fc, p->hm, cur->x, cur->z) + p->offset : p->offset;
         cur->y = h + orig->y;
+        return 1;
+    }
+    case PK_BLOCK_AGE: { int ns = block_age(p, e, cur); if (ns >= 0) cur->state = ns; return 1; }
+    case PK_BLACKSTONE: { int ns = blackstone_state(e, cur->state); if (ns >= 0) cur->state = ns; return 1; }
+    case PK_LAVA_SUB: {
+        int was_lava = e->bs->g->state_block[world_state(e, cur->x, cur->y, cur->z)] == e->w->g->blk_lava;
+        if (was_lava && !(e->bs->flags[cur->state] & BSF_FULL_COLL)) { int lava = bs_block_index(e->bs, "minecraft:lava"); cur->state = e->bs->blk[lava].def; }
         return 1;
     }
     default: return 1;

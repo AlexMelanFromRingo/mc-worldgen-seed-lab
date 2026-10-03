@@ -11,6 +11,7 @@ typedef struct JPiece {                                                         
     int ground_delta;
     int rot;                                                                         /* ROT_* */
     int liquid_apply;                                                                /* LiquidSettings.APPLY_WATERLOGGING */
+    BB bb0;                                                                          /* bounding box элемента без «expansion hack» (так часть восстанавливается из NBT) */
     JJunction *junc; int nj, cj;
 } JPiece;
 

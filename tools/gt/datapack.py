@@ -38,7 +38,7 @@ def parse_variant(name):
     if spec.get('parametric'):
         if not param:
             raise SystemExit(f'вариант {base} параметрический: {base}:<id>')
-        if ':' not in param and spec['parametric'] != 'featureset':
+        if ':' not in param and spec['parametric'] not in ('featureset', 'custom'):
             param = 'minecraft:' + param
     elif param:
         raise SystemExit(f'вариант {base} без параметров')
@@ -86,6 +86,10 @@ def build(version, variant, out_dir):
     spec, param = parse_variant(variant)
     if spec.get('vanilla'):
         return None
+    sparse = None
+    if spec.get('sparse'):
+        param, _, k = param.partition('@')
+        sparse = int(k)
     pk = pack_dir(version)
     wg = f'{pk}/data/minecraft/worldgen'
     if not os.path.isdir(wg):
@@ -129,6 +133,10 @@ def build(version, variant, out_dir):
         ov['noise_settings'] = n_ns
 
     fset = set(json.load(open(f'{ROOT}/tools/gt/featuresets/{param}.json'))) if spec['features'] == 'only_list' else set()
+    if spec['features'] == 'custom':
+        cf = json.load(open(f'{ROOT}/tools/gt/custom/{param}.json'))
+        _dump(f'{dp}/placed_feature/gt_custom_{param}.json', cf['placed_feature'])
+        summary['overrides']['custom'] = param
     # --- биомы: карверы и фичи ----------------------------------------------------------------------------------------------
     n_biomes = 0
     if not spec['carvers'] or spec['features'] is not True:
@@ -146,6 +154,11 @@ def build(version, variant, out_dir):
             elif spec['features'] == 'only':
                 b['features'] = [[x for x in step if x == param] for step in b.get('features', [])]
                 ch = True
+            elif spec['features'] == 'custom':
+                n_st = max(len(b.get('features', [])), 11)
+                b['features'] = [[] for _ in range(n_st)]
+                b['features'][9] = [f'minecraft:gt_custom_{param}']
+                ch = True
             elif spec['features'] == 'only_list':
                 b['features'] = [[x for x in step if x in fset] for step in b.get('features', [])]
                 ch = True
@@ -162,6 +175,11 @@ def build(version, variant, out_dir):
             summary['biomes_with_feature'] = sum(
                 1 for f in glob.glob(f'{wg}/biome/*.json') if any(param in s for s in _load(f).get('features', [])))
 
+    if sparse:      # разреженная фича: rarity_filter первым элементом placement (формат 26.1–26.4 одинаков)
+        pf = _load(f'{wg}/placed_feature/{_rid(param)}.json')
+        pf['placement'] = [{'type': 'minecraft:rarity_filter', 'chance': sparse}] + pf.get('placement', [])
+        _dump(f'{dp}/placed_feature/{_rid(param)}.json', pf)
+        ov['sparse_rarity'] = sparse
     # --- наборы структур ----------------------------------------------------------------------------------------------------
     if spec['structures'] == 'only':
         keep = _rid(param)

@@ -227,6 +227,8 @@ done:
     #undef INSIDE
 }
 
+static int tree_trace(void) { static int v = -1; if (v < 0) v = getenv("MCGEN_TREE_TRACE") != NULL; return v; }
+
 /* ====================================================================== TreeFeature.place */
 static int tree_max_free_height(TreeRun *tr, int max_h, int tx, int ty, int tz) {
     const TreeCfg *t = tr->t; FCtx *c = tr->c;
@@ -240,7 +242,9 @@ static int tree_max_free_height(TreeRun *tr, int max_h, int tx, int ty, int tz) 
     }
     return max_h;
 }
+static _Thread_local int g_why;
 static int tree_do_place(TreeRun *tr, int ox, int oy, int oz) {
+    g_why = 0;
     const TreeCfg *t = tr->t; FCtx *c = tr->c; FRnd *r = tr->r;
     int tree_h = tp_tree_height(&t->tp, r);
     int fol_h = fp_foliage_height(&t->fp, r, tree_h);
@@ -249,10 +253,10 @@ static int tree_do_place(TreeRun *tr, int ox, int oy, int oz) {
     int tox = ox, toy = oy, toz = oz;
     if (t->root) toy = oy + intprov_sample(t->root->trunk_offset_y, r);
     int miny = oy < toy ? oy : toy, maxy = (oy > toy ? oy : toy) + tree_h + 1;
-    if (!(miny >= c->min_y + 1 && maxy <= c->min_y + c->height)) return 0;
+    if (!(miny >= c->min_y + 1 && maxy <= c->min_y + c->height)) { g_why = 1; return 0; }
     int clipped = tree_max_free_height(tr, tree_h, tox, toy, toz);
-    if (!(clipped >= tree_h || (t->size.min_clipped >= 0 && clipped >= t->size.min_clipped))) return 0;
-    if (t->root && !root_place(tr, ox, oy, oz, tox, toy, toz)) return 0;
+    if (!(clipped >= tree_h || (t->size.min_clipped >= 0 && clipped >= t->size.min_clipped))) { g_why = 2; return 0; }
+    if (t->root && !root_place(tr, ox, oy, oz, tox, toy, toz)) { g_why = 3; return 0; }
     AttList al; att_init(&al);
     tp_place_trunk(tr, clipped, tox, toy, toz, &al);
     for (int i = 0; i < al.n; i++) fp_create_foliage(tr, clipped, &al.a[i], fol_h, leaf_r);
@@ -290,6 +294,8 @@ static int tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
         }
         if (any) { update_leaves(&tr, ts, mnx, mny, mnz, mxx - mnx + 1, mxy - mny + 1, mxz - mnz + 1); res = 1; }
     }
+    if (tree_trace()) fprintf(stderr, "TREE chunk(%d,%d) at (%d,%d,%d) ok=%d res=%d trunks=%d foliage=%d decor=%d why=%d rnd=%llx\n", c->ccx, c->ccz, ox, oy, oz, ok, res, ts->trunks.size,
+                              ts->foliage.size, ts->decor.size, g_why, (unsigned long long)c->rnd->x.lo);
     ts_release(ts);
     return res;
 }
@@ -333,7 +339,7 @@ static void *tree_parse(FParse *p, const Js *cfg) {
 }
 
 /* ====================================================================== TrunkPlacer.isFree / validTreePos (виртуальные: у upwards_branching свой can_grow_through) */
-static int tp_valid_pos(const TreeRun *tr, int x, int y, int z) {
+int tp_valid_pos(const TreeRun *tr, int x, int y, int z) {
     if (tr_valid_pos(tr, x, y, z)) return 1;
     if (tr->t->tp.type == TP_UPWARDS) return tr->t->tp.can_grow_through[blk_of(tr->c, fc_get(tr->c, x, y, z))] != 0;
     return 0;

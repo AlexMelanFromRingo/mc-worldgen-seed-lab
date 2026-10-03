@@ -101,6 +101,7 @@ static inline int dir_opp(int d) { static const int O[6] = { DIR_UP, DIR_DOWN, D
 static inline int dir_rotate(int d, int rot) { for (int i = 0; i < rot; i++) d = dir_cw(d); return d; }   /* Rotation.rotate(Direction): ROT_* = число поворотов по часовой */
 
 /* ====================================================================== типы */
+typedef struct TerrainCtx TerrainCtx;
 typedef struct StructWorld StructWorld;
 typedef struct StructDef StructDef;
 typedef struct StructSet StructSet;
@@ -122,6 +123,8 @@ typedef struct PieceVT {
     void (*move)(StPiece *p, int dx, int dy, int dz);                            /* StructurePiece.move (NULL — только bb) */
     void (*free_data)(void *data);
     void (*dump)(const StPiece *p, StrBuf *out);                                 /* отладочная строка JSON (тесты); NULL — только общее */
+    void (*reset)(StPiece *p);                                                   /* вернуть изменяемое состояние (heightPosition…) к исходному перед новым прогоном региона */
+    int (*can_replace)(StCtx *c, const StPiece *p, int x, int y, int z);         /* StructurePiece.canBeReplaced(level, x, y, z, chunkBB); NULL — всегда да */
 } PieceVT;
 
 struct StPiece {
@@ -130,6 +133,7 @@ struct StPiece {
     int orient;               /* StructurePiece.orientation: −1 (null) или 2D-индекс 0..3 (S, W, N, E) */
     int rot, mir;             /* Rotation/Mirror части (StructurePiece.rotation/mirror) */
     int depth;                /* genDepth */
+    BB bb_init;               /* bounding box после создания старта (восстанавливается перед каждым прогоном региона) */
     void *data;
 };
 StPiece *piece_new(const PieceVT *vt, BB bb, int orient, int depth, void *data);
@@ -140,6 +144,9 @@ typedef struct PieceVec { StPiece **v; int n, cap; } PieceVec;
 void pvec_push(PieceVec *a, StPiece *p);
 BB pvec_bb(const PieceVec *a);                                                   /* StructurePiece.createBoundingBox */
 StPiece *pvec_collision(const PieceVec *a, const BB *box);                       /* findCollisionPiece */
+void pvec_offset_vertically(PieceVec *a, int dy);                                /* StructurePiecesBuilder.offsetPiecesVertically */
+int pvec_move_below_sea_level(PieceVec *a, int sea_level, int min_y, RS *r, int offset);   /* moveBelowSeaLevel: возвращает dy */
+void pvec_move_inside_heights(PieceVec *a, RS *r, int lowest, int highest);      /* moveInsideHeights */
 
 struct StStart {
     const StructDef *def;
@@ -183,6 +190,7 @@ typedef struct StructType {
     int (*build)(GenCtx *c, const void *cfg, Stub *stub, PieceVec *out);         /* GenerationStub.getPiecesBuilder */
     void (*after_place)(StCtx *c, const StStart *s);                             /* Structure.afterPlace (NULL — нет) */
     void (*free_cfg)(void *cfg);
+    void (*free_stub)(Stub *stub);                                               /* освободить состояние stub, если build не вызван (биом не подошёл) */
 } StructType;
 void structure_register_type(const StructType *t);
 void piece_register_type(const PieceVT *vt);
@@ -207,7 +215,7 @@ struct StructSet {
     int distance, spread, count; u8 *preferred;   /* кольца */
     int n; StructEntry *e;
     int possible;             /* ChunkGeneratorStructureState.possibleStructureSets: у набора есть структура с биомом источника */
-    int *ring_x, *ring_z, nring;             /* позиции колец (лениво, под замком) */
+    int *ring_x, *ring_z, nring; i64 *ring_seed; u8 *ring_done; int ring_init;   /* кольца: сырые позиции, зерно ГСЧ поиска биома, готовность (лениво) */
 };
 
 struct StructWorld {
@@ -220,6 +228,9 @@ struct StructWorld {
     McMutex *lock;                           /* кэш стартов и высот */
     void *start_cache;                       /* хэш (cx,cz) → набор стартов чанка */
     void *height_cache;
+    void *wg_cache;                          /* карты WORLD_SURFACE_WG/OCEAN_FLOOR_WG чанков (по заполнению шумом) */
+    TerrainCtx **tcv; int ntc, ctc;          /* пул контекстов заполнения для колонок высот */
+    u8 *shape_chk; StrMap st_cache;          /* structure_piece.c: блоки SHAPE_CHECK_BLOCKS и кэш состояний по имени */
     void *templates;                         /* template.c: StructureTemplateManager */
     void *pools;                             /* jigsaw.c: реестр пулов элементов */
     void *procs;                             /* processor.c: реестр списков процессоров */
@@ -239,6 +250,12 @@ int structure_refs_for_chunk(StructWorld *sw, int cx, int cz, StStart ***out);  
 int structure_refs_for_chunk_def(StructWorld *sw, int cx, int cz, const StructDef *def, const StStart ***out);
 void structure_free_refs(StStart **a);
 
+/* WorldGenRegion.getHeight(WORLD_SURFACE_WG | OCEAN_FLOOR_WG, x, z) 26.3+: «первая свободная» y по результату заполнения шумом чанка (кэшируется) */
+int structure_height_wg(McWorld *w, int type, int x, int z);
+
+/* перед каждым прогоном региона: вернуть части кэшированных стартов к исходному состоянию (ScatteredFeaturePiece.heightPosition и т. п.) */
+void structures_begin_region(McWorld *w);
+
 /* стадия: рисование построек шага в чанке (вызывается из цикла декорации чанка; ГСЧ rs уже засеян под шаг) */
 void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int cx, int cz);
 
@@ -252,7 +269,5 @@ double beard_value_d(const Beard *b, int x, int y, int z);      /* 26.1/26.2: в
 int beard_active(const Beard *b);
 
 /* ====================================================================== общее для jigsaw/шаблонов */
-/* terrain.c (общий файл, минимальная правка): ChunkGenerator.getBaseHeight для колонки; hm_type — HM_* из blockstate.h (WG-типы и обычные) */
-int terrain_column_height(McWorld *w, int x, int z, int hm_type);
 
 #endif
