@@ -1,0 +1,197 @@
+{
+ "version": "26.3",
+ "rows": [
+  {
+   "set": "veg_overworld",
+   "world": "overworld-s12345-c-103_2-r10",
+   "blocks": 43352008,
+   "mismatch": 58696,
+   "match_pct": 99.86460604085514,
+   "stable_mismatch": null,
+   "stable_pct": null,
+   "vanilla_vs_vanilla": null,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 15788
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 15228
+    },
+    {
+     "ours": "minecraft:fern",
+     "ref": "minecraft:air",
+     "count": 5054
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:fern",
+     "count": 5035
+    }
+   ]
+  },
+  {
+   "set": "veg_overworld",
+   "world": "overworld-s12345-c0_0-r10",
+   "blocks": 43352007,
+   "mismatch": 16885,
+   "match_pct": 99.96105139953498,
+   "stable_mismatch": 10563,
+   "stable_pct": 99.97561428320121,
+   "vanilla_vs_vanilla": 35667,
+   "top": [
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:clay",
+     "count": 1815
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:moss_block",
+     "count": 1671
+    },
+    {
+     "ours": "minecraft:moss_block",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 1486
+    },
+    {
+     "ours": "minecraft:cave_vines_plant[berries=false]",
+     "ref": "minecraft:air",
+     "count": 1102
+    }
+   ]
+  },
+  {
+   "set": "veg_overworld",
+   "world": "overworld-s8675309-c-30_-187-r10",
+   "blocks": 43352041,
+   "mismatch": 69206,
+   "match_pct": 99.84036276400458,
+   "stable_mismatch": null,
+   "stable_pct": null,
+   "vanilla_vs_vanilla": null,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 13642
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 13059
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:bamboo[age=1,leaves=none,stage=0]",
+     "count": 8363
+    },
+    {
+     "ours": "minecraft:bamboo[age=1,leaves=none,stage=0]",
+     "ref": "minecraft:air",
+     "count": 8211
+    }
+   ]
+  },
+  {
+   "set": "veg_overworld",
+   "world": "overworld-s8675309-c0_0-r10",
+   "blocks": 43352024,
+   "mismatch": 734,
+   "match_pct": 99.99830688412611,
+   "stable_mismatch": null,
+   "stable_pct": null,
+   "vanilla_vs_vanilla": null,
+   "top": [
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:seagrass",
+     "count": 126
+    },
+    {
+     "ours": "minecraft:seagrass",
+     "ref": "minecraft:water[level=0]",
+     "count": 102
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 93
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 91
+    }
+   ]
+  },
+  {
+   "set": "veg_the_nether",
+   "world": "nether-s12345-c0_0-r10",
+   "blocks": 28901376,
+   "mismatch": 61452,
+   "match_pct": 99.78737344547194,
+   "stable_mismatch": null,
+   "stable_pct": null,
+   "vanilla_vs_vanilla": null,
+   "top": [
+    {
+     "ours": "minecraft:nether_wart_block",
+     "ref": "minecraft:air",
+     "count": 14996
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:nether_wart_block",
+     "count": 13579
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:warped_wart_block",
+     "count": 7210
+    },
+    {
+     "ours": "minecraft:warped_wart_block",
+     "ref": "minecraft:air",
+     "count": 6612
+    }
+   ]
+  },
+  {
+   "set": "veg_the_nether",
+   "world": "nether-s8675309-c0_0-r10",
+   "blocks": 28901376,
+   "mismatch": 27550,
+   "match_pct": 99.90467581889527,
+   "stable_mismatch": null,
+   "stable_pct": null,
+   "vanilla_vs_vanilla": null,
+   "top": [
+    {
+     "ours": "minecraft:nether_wart_block",
+     "ref": "minecraft:air",
+     "count": 9431
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:nether_wart_block",
+     "count": 8905
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:crimson_roots",
+     "count": 1429
+    },
+    {
+     "ours": "minecraft:crimson_roots",
+     "ref": "minecraft:air",
+     "count": 1379
+    }
+   ]
+  }
+ ]
+}

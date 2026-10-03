@@ -22,7 +22,10 @@ int tree_parse_trunk(FParse *p, const Js *v, TrunkCfg *tp) {
     t = tname(t);
     memset(tp, 0, sizeof *tp);
     tp->base_height = js_int(js_get(v, "base_height"), 0); tp->rand_a = js_int(js_get(v, "height_rand_a"), 0); tp->rand_b = js_int(js_get(v, "height_rand_b"), 0);
-    if (!strcmp(t, "straight_trunk_placer")) tp->type = TP_STRAIGHT;
+    if (!strcmp(t, "straight_trunk_placer")) {
+        tp->type = TP_STRAIGHT;
+        if (js_get(v, "trunk_width")) { if (!(tp->trunk_width = ip(p, v, "trunk_width"))) return 0; }       /* 26.4-snapshot-2+ */
+    }
     else if (!strcmp(t, "forking_trunk_placer")) tp->type = TP_FORKING;
     else if (!strcmp(t, "giant_trunk_placer")) tp->type = TP_GIANT;
     else if (!strcmp(t, "mega_jungle_trunk_placer")) tp->type = TP_MEGA_JUNGLE;
@@ -122,9 +125,19 @@ static void place_log_if_free(TreeRun *tr, int x, int y, int z) { if (tr_is_free
 
 /* ---- straight ---- */
 static void trunk_straight(TreeRun *tr, int h, int ox, int oy, int oz, AttList *out) {
-    place_below(tr, ox, oy - 1, oz);
-    for (int y = 0; y < h; y++) place_log(tr, ox, oy + y, oz, -1);
-    att_push(out, ox, oy + h, oz, 0, 0, 1, 1);
+    if (tr->c->g->version < V26_4) {            /* 26.4-snapshot-2: placeBelowTrunkBlock из StraightTrunkPlacer убран, добавлен trunk_width */
+        place_below(tr, ox, oy - 1, oz);
+        for (int y = 0; y < h; y++) place_log(tr, ox, oy + y, oz, -1);
+        att_push(out, ox, oy + h, oz, 0, 0, 1, 1);
+        return;
+    }
+    const TrunkCfg *tp = &tr->t->tp;
+    int w = tp->trunk_width ? intprov_sample(tp->trunk_width, tr->r) : 1;
+    int d_nw = (w - 1) / 2, d_se = w / 2;
+    int x0 = ox - d_nw, z0 = oz - d_nw, x1 = ox + d_se, z1 = oz + d_se;       /* северо-западный угол: NORTH = −z, WEST = −x */
+    for (int y = 0; y < h; y++)
+        for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++) place_log(tr, x, oy + y, z, -1);      /* BlockPos.betweenClosed: x быстрее всех, затем y, затем z */
+    att_push(out, x0, oy + h, z0, 0, 0, w, w);
 }
 /* ---- forking ---- */
 static void trunk_forking(TreeRun *tr, int h, int ox, int oy, int oz, AttList *out) {

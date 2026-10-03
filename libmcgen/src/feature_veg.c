@@ -6,8 +6,8 @@
 
 /* ====================================================================== утилиты */
 const u8 *veg_tag(const FCtx *c, const char *tag) {
-    static _Thread_local const McGen *cg; static _Thread_local const char *ck[48]; static _Thread_local const u8 *cv[48]; static _Thread_local int cn;
-    if (cg != c->g) { cg = c->g; cn = 0; }
+    static _Thread_local const McGen *cg; static _Thread_local int cver, cnb; static _Thread_local const char *ck[48]; static _Thread_local const u8 *cv[48]; static _Thread_local int cn;
+    if (cg != c->g || cver != c->g->version || cnb != c->g->nblocks) { cg = c->g; cver = c->g->version; cnb = c->g->nblocks; cn = 0; }     /* адрес McGen может быть переиспользован после mcgen_close */
     for (int i = 0; i < cn; i++) if (ck[i] == tag) return cv[i];
     const u8 *t = gen_block_tag(c->g, tag);
     if (cn < 48) { ck[cn] = tag; cv[cn++] = t; }
@@ -709,9 +709,9 @@ static int veg_kind_of(const BsBlock *bb) {
 }
 
 int veg_survive(FCtx *c, int st, int x, int y, int z, int *res) {
-    static _Thread_local const McGen *cg; static _Thread_local u8 *kinds;
+    static _Thread_local const McGen *cg; static _Thread_local int cver, cnb; static _Thread_local u8 *kinds;
     const BsTab *bs = c->bs;
-    if (cg != c->g || !kinds) { free(kinds); kinds = calloc((size_t)bs->nblocks, 1); cg = c->g; }
+    if (cg != c->g || cver != c->g->version || cnb != bs->nblocks || !kinds) { free(kinds); kinds = calloc((size_t)bs->nblocks, 1); cg = c->g; cver = c->g->version; cnb = bs->nblocks; }
     int blk = c->g->state_block[st];
     int k = kinds[blk];
     if (!k) { k = veg_kind_of(&bs->blk[blk]); kinds[blk] = (u8)k; }

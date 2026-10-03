@@ -1,0 +1,1369 @@
+{
+ "version": "26.3",
+ "rows": [
+  {
+   "feature": "minecraft:bamboo",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c107_170-r5",
+   "blocks": 11894781,
+   "mismatch": 4,
+   "match_pct": 99.99996637180625,
+   "chunks": 121,
+   "effect": 15830,
+   "top": [
+    {
+     "ours": "minecraft:podzol[snowy=false]",
+     "ref": "minecraft:grass_block[snowy=false]",
+     "count": 4
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:bamboo_light",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-103_2-r5",
+   "blocks": 11894783,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 352,
+   "top": []
+  },
+  {
+   "feature": "minecraft:brown_mushroom_dappled_forest",
+   "dim": "overworld",
+   "world": "overworld-s12345-c41_-69-r5",
+   "blocks": 11894775,
+   "mismatch": 4,
+   "match_pct": 99.9999663717893,
+   "chunks": 121,
+   "effect": 4,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 4
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:brown_mushroom_normal",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r10",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:brown_mushroom_old_growth",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c19_-30-r5",
+   "blocks": 11894761,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 710,
+   "top": []
+  },
+  {
+   "feature": "minecraft:brown_mushroom_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:brown_mushroom_taiga",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c0_0-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:cave_vines",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1188,
+   "top": []
+  },
+  {
+   "feature": "minecraft:classic_vines_cave_feature",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 137,
+   "top": []
+  },
+  {
+   "feature": "minecraft:crimson_forest_vegetation",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c0_0-r5",
+   "blocks": 7929856,
+   "mismatch": 286,
+   "match_pct": 99.99639337713069,
+   "chunks": 121,
+   "effect": 5277,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:crimson_roots",
+     "count": 124
+    },
+    {
+     "ours": "minecraft:crimson_roots",
+     "ref": "minecraft:air",
+     "count": 124
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:crimson_fungus",
+     "count": 15
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:crimson_fungi",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c0_0-r5",
+   "blocks": 7929856,
+   "mismatch": 24698,
+   "match_pct": 99.68854415515237,
+   "chunks": 121,
+   "effect": 50473,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:nether_wart_block",
+     "count": 9715
+    },
+    {
+     "ours": "minecraft:nether_wart_block",
+     "ref": "minecraft:air",
+     "count": 9444
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:crimson_stem[axis=y]",
+     "count": 751
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:flower_cherry",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_default",
+   "dim": "overworld",
+   "world": "overworld-s12345-c2_212-r5",
+   "blocks": 11894768,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_flower_forest",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-179_-135-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 3323,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_forest_flowers",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-179_-135-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 464,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_meadow",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_pale_garden",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-118_-157-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_plains",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 23,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:flower_warm",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-30_-187-r5",
+   "blocks": 11894777,
+   "mismatch": 1,
+   "match_pct": 99.99999159294873,
+   "chunks": 121,
+   "effect": 125,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:forest_flowers",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 73,
+   "top": []
+  },
+  {
+   "feature": "minecraft:kelp_cold",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 14930,
+   "top": []
+  },
+  {
+   "feature": "minecraft:kelp_warm",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c12_-19-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 2031,
+   "top": []
+  },
+  {
+   "feature": "minecraft:lush_caves_ceiling_vegetation",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 4666,
+   "match_pct": 99.9607726658286,
+   "chunks": 121,
+   "effect": 21104,
+   "top": [
+    {
+     "ours": "minecraft:moss_block",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 830
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:moss_block",
+     "count": 724
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:cave_vines_plant[berries=false]",
+     "count": 642
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:lush_caves_clay",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 1030,
+   "match_pct": 99.9913407299193,
+   "chunks": 121,
+   "effect": 25739,
+   "top": [
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:clay",
+     "count": 464
+    },
+    {
+     "ours": "minecraft:clay",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 428
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:water[level=0]",
+     "count": 35
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:lush_caves_vegetation",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894764,
+   "mismatch": 4324,
+   "match_pct": 99.9636478706093,
+   "chunks": 121,
+   "effect": 17349,
+   "top": [
+    {
+     "ours": "minecraft:moss_block",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 764
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 470
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:moss_block",
+     "count": 433
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:nether_sprouts",
+   "dim": "the_nether",
+   "world": "nether-s12345-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 3223,
+   "top": []
+  },
+  {
+   "feature": "minecraft:pale_garden_flowers",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-118_-157-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 198,
+   "top": []
+  },
+  {
+   "feature": "minecraft:pale_moss_patch",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-118_-157-r5",
+   "blocks": 11894784,
+   "mismatch": 77,
+   "match_pct": 99.99935265743372,
+   "chunks": 121,
+   "effect": 7288,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 9
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:tall_grass[half=upper]",
+     "count": 9
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 9
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_berry_common",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c0_0-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 73,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_berry_rare",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c-61_-208-r10",
+   "blocks": 43352036,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_bush",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 70,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_cactus_decorated",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-173_223-r5",
+   "blocks": 11894741,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 4,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_cactus_desert",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 36,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_crimson_roots",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c-7_26-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 22,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_dead_bush",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c107_-8-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 56,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_dead_bush_2",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 180,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_dead_bush_badlands",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-173_223-r5",
+   "blocks": 11894741,
+   "mismatch": 25,
+   "match_pct": 99.99978982308232,
+   "chunks": 121,
+   "effect": 1334,
+   "top": [
+    {
+     "ours": "minecraft:dead_bush",
+     "ref": "minecraft:air",
+     "count": 14
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:dead_bush",
+     "count": 11
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_dry_grass_badlands",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-173_223-r5",
+   "blocks": 11894741,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 138,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_dry_grass_desert",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 451,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_fire",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 89,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_firefly_bush_near_water",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_firefly_bush_near_water_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_firefly_bush_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_grass_badlands",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c201_-145-r5",
+   "blocks": 11894744,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_grass_forest",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 3,
+   "match_pct": 99.99997477879744,
+   "chunks": 121,
+   "effect": 1021,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 3
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_jungle",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-30_-187-r5",
+   "blocks": 11894777,
+   "mismatch": 12295,
+   "match_pct": 99.8966353047224,
+   "chunks": 121,
+   "effect": 13013,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 4002
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 3976
+    },
+    {
+     "ours": "minecraft:fern",
+     "ref": "minecraft:air",
+     "count": 1415
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_meadow",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_grass_normal",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c107_-8-r5",
+   "blocks": 11894767,
+   "mismatch": 91,
+   "match_pct": 99.9992349576919,
+   "chunks": 121,
+   "effect": 2606,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 54
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 37
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_plain",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 33,
+   "match_pct": 99.99972256733164,
+   "chunks": 121,
+   "effect": 883,
+   "top": [
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 18
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:short_grass",
+     "count": 15
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_savanna",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 96,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_grass_taiga",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c19_-30-r5",
+   "blocks": 11894761,
+   "mismatch": 671,
+   "match_pct": 99.99435886101453,
+   "chunks": 121,
+   "effect": 4834,
+   "top": [
+    {
+     "ours": "minecraft:fern",
+     "ref": "minecraft:air",
+     "count": 261
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:fern",
+     "count": 260
+    },
+    {
+     "ours": "minecraft:short_grass",
+     "ref": "minecraft:air",
+     "count": 75
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_taiga_2",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c0_0-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 390,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_large_fern",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c0_0-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 348,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_leaf_litter",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 2,
+   "match_pct": 99.99998318588334,
+   "chunks": 121,
+   "effect": 50,
+   "top": [
+    {
+     "ours": "minecraft:leaf_litter[facing=north,segment_amount=3]",
+     "ref": "minecraft:air",
+     "count": 1
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:leaf_litter[facing=east,segment_amount=2]",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:patch_melon",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-103_2-r5",
+   "blocks": 11894783,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 181,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_melon_sparse",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-30_-187-r10",
+   "blocks": 43352041,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 75,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_pumpkin",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r10",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_soul_fire",
+   "dim": "the_nether",
+   "world": "nether-s12345-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_sugar_cane",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_sugar_cane_badlands",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-173_223-r5",
+   "blocks": 11894741,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_sugar_cane_desert",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_sugar_cane_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_sunflower",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_tall_grass",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_tall_grass_2",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 184,
+   "top": []
+  },
+  {
+   "feature": "minecraft:patch_waterlily",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c107_-8-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 329,
+   "top": []
+  },
+  {
+   "feature": "minecraft:red_mushroom_normal",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r10",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:red_mushroom_old_growth",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c19_-30-r10",
+   "blocks": 43352032,
+   "mismatch": 1,
+   "match_pct": 99.99999769330304,
+   "chunks": 441,
+   "effect": 11,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:red_mushroom_swamp",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r10",
+   "blocks": 43352043,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:red_mushroom_taiga",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c0_0-r10",
+   "blocks": 43352038,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 441,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:rooted_azalea_tree",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:sea_pickle",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-74_-52-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 170,
+   "top": []
+  },
+  {
+   "feature": "minecraft:seagrass_cold",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c-19_-25-r5",
+   "blocks": 11894780,
+   "mismatch": 79,
+   "match_pct": 99.99933584311773,
+   "chunks": 121,
+   "effect": 1198,
+   "top": [
+    {
+     "ours": "minecraft:seagrass",
+     "ref": "minecraft:water[level=0]",
+     "count": 24
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:seagrass",
+     "count": 21
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=upper]",
+     "count": 10
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_deep",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c138_-208-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 6501,
+   "top": []
+  },
+  {
+   "feature": "minecraft:seagrass_deep_cold",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c-19_-25-r5",
+   "blocks": 11894780,
+   "mismatch": 459,
+   "match_pct": 99.99614116444356,
+   "chunks": 121,
+   "effect": 5427,
+   "top": [
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 115
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=lower]",
+     "ref": "minecraft:water[level=0]",
+     "count": 108
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=upper]",
+     "count": 89
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_deep_warm",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c30_124-r5",
+   "blocks": 11894782,
+   "mismatch": 574,
+   "match_pct": 99.99517435460356,
+   "chunks": 121,
+   "effect": 12759,
+   "top": [
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=upper]",
+     "count": 132
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 128
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=lower]",
+     "count": 120
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_normal",
+   "dim": "overworld",
+   "world": "overworld-s12345-c2_212-r5",
+   "blocks": 11894768,
+   "mismatch": 233,
+   "match_pct": 99.99804115557362,
+   "chunks": 121,
+   "effect": 6314,
+   "top": [
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:seagrass",
+     "count": 58
+    },
+    {
+     "ours": "minecraft:seagrass",
+     "ref": "minecraft:water[level=0]",
+     "count": 53
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 35
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_river",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-177_86-r5",
+   "blocks": 11894755,
+   "mismatch": 19,
+   "match_pct": 99.99984026573057,
+   "chunks": 121,
+   "effect": 1653,
+   "top": [
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:seagrass",
+     "count": 7
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=upper]",
+     "count": 3
+    },
+    {
+     "ours": "minecraft:seagrass",
+     "ref": "minecraft:water[level=0]",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_swamp",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c107_-8-r5",
+   "blocks": 11894767,
+   "mismatch": 124,
+   "match_pct": 99.99895752476698,
+   "chunks": 121,
+   "effect": 2496,
+   "top": [
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:tall_seagrass[half=upper]",
+     "count": 24
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 22
+    },
+    {
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:seagrass",
+     "count": 20
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_warm",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c12_-19-r5",
+   "blocks": 11894767,
+   "mismatch": 2,
+   "match_pct": 99.99998318588334,
+   "chunks": 121,
+   "effect": 2333,
+   "top": [
+    {
+     "ours": "minecraft:tall_seagrass[half=upper]",
+     "ref": "minecraft:water[level=0]",
+     "count": 1
+    },
+    {
+     "ours": "minecraft:tall_seagrass[half=lower]",
+     "ref": "minecraft:water[level=0]",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:spore_blossom",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 43,
+   "top": []
+  },
+  {
+   "feature": "minecraft:twisting_vines",
+   "dim": "the_nether",
+   "world": "nether-s12345-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 647,
+   "top": []
+  },
+  {
+   "feature": "minecraft:vines",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-30_-187-r5",
+   "blocks": 11894777,
+   "mismatch": 1,
+   "match_pct": 99.99999159294873,
+   "chunks": 121,
+   "effect": 250,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:warm_ocean_vegetation",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-74_-52-r5",
+   "blocks": 11894784,
+   "mismatch": 22813,
+   "match_pct": 99.80821005240617,
+   "chunks": 121,
+   "effect": 22128,
+   "top": [
+    {
+     "ours": "minecraft:horn_coral_block",
+     "ref": "minecraft:water[level=0]",
+     "count": 1395
+    },
+    {
+     "ours": "minecraft:tube_coral_block",
+     "ref": "minecraft:water[level=0]",
+     "count": 1196
+    },
+    {
+     "ours": "minecraft:bubble_coral_block",
+     "ref": "minecraft:water[level=0]",
+     "count": 1140
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:warped_forest_vegetation",
+   "dim": "the_nether",
+   "world": "nether-s12345-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 92,
+   "match_pct": 99.99883982760848,
+   "chunks": 121,
+   "effect": 3806,
+   "top": [
+    {
+     "ours": "minecraft:warped_roots",
+     "ref": "minecraft:air",
+     "count": 36
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:warped_roots",
+     "count": 35
+    },
+    {
+     "ours": "minecraft:warped_fungus",
+     "ref": "minecraft:air",
+     "count": 9
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:warped_fungi",
+   "dim": "the_nether",
+   "world": "nether-s12345-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 16416,
+   "match_pct": 99.79298489152893,
+   "chunks": 121,
+   "effect": 42565,
+   "top": [
+    {
+     "ours": "minecraft:warped_wart_block",
+     "ref": "minecraft:air",
+     "count": 7628
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:warped_wart_block",
+     "count": 6825
+    },
+    {
+     "ours": "minecraft:warped_stem[axis=y]",
+     "ref": "minecraft:air",
+     "count": 472
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:wildflowers_birch_forest",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 273,
+   "top": []
+  },
+  {
+   "feature": "minecraft:wildflowers_meadow",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c0_0-r5",
+   "blocks": 11894754,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:brown_mushroom_nether",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 52,
+   "top": []
+  },
+  {
+   "feature": "minecraft:red_mushroom_nether",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 52,
+   "top": []
+  }
+ ]
+}

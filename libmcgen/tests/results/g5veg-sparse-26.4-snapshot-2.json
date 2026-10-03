@@ -1,0 +1,90 @@
+{
+ "version": "26.4-snapshot-2",
+ "rows": [
+  {
+   "iso": [
+    45,
+    0,
+    228,
+    0,
+    5,
+    45
+   ],
+   "variant": "featuresparse:minecraft:crimson_fungi@12",
+   "feature": "minecraft:crimson_fungi",
+   "dim": "the_nether",
+   "blocks": 28901376,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 19893
+  },
+  {
+   "iso": [
+    63,
+    0,
+    71,
+    0,
+    7,
+    19
+   ],
+   "variant": "featuresparse:minecraft:lush_caves_vegetation@12",
+   "feature": "minecraft:lush_caves_vegetation",
+   "dim": "overworld",
+   "blocks": 43352008,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 5039
+  },
+  {
+   "iso": [
+    0,
+    0,
+    421,
+    7,
+    0,
+    101
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_normal@4",
+   "feature": "minecraft:patch_grass_normal",
+   "dim": "overworld",
+   "blocks": 43352037,
+   "mismatch": 7,
+   "match_pct": 99.99998385312321,
+   "effect": 1887
+  },
+  {
+   "iso": [
+    27,
+    0,
+    0,
+    0,
+    3,
+    3
+   ],
+   "variant": "featuresparse:minecraft:rooted_azalea_tree@4",
+   "feature": "minecraft:rooted_azalea_tree",
+   "dim": "overworld",
+   "blocks": 43352008,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 0
+  },
+  {
+   "iso": [
+    27,
+    0,
+    428,
+    0,
+    3,
+    95
+   ],
+   "variant": "featuresparse:minecraft:seagrass_normal@4",
+   "feature": "minecraft:seagrass_normal",
+   "dim": "overworld",
+   "blocks": 43352035,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 3979
+  }
+ ]
+}

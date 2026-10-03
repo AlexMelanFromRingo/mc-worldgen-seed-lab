@@ -138,7 +138,14 @@ def build(version, variant, out_dir):
         cfg = _rid(cf.get('feature') or cf['placed_feature']['feature'])
         if not any(os.path.exists(f'{wg}/{d}/{cfg}.json') for d in ('feature', 'configured_feature')):
             raise SystemExit(f'в {version} нет настроенной фичи {cfg} (custom:{param})')
-        _dump(f'{dp}/placed_feature/gt_custom_{param}.json', cf['placed_feature'])
+        pfj = cf['placed_feature']
+        if os.path.isdir(f'{wg}/configured_feature'):      # 26.1/26.2: состояние блока в JSON — {"Name": …}, а не строка (строка — формат 26.3+)
+            def _old_states(o):
+                if isinstance(o, dict):
+                    return {k: ({'Name': v} if k == 'state' and isinstance(v, str) else _old_states(v)) for k, v in o.items()}
+                return [_old_states(x) for x in o] if isinstance(o, list) else o
+            pfj = _old_states(pfj)
+        _dump(f'{dp}/placed_feature/gt_custom_{param}.json', pfj)
         summary['overrides']['custom'] = param
     # --- биомы: карверы и фичи ----------------------------------------------------------------------------------------------
     n_biomes = 0

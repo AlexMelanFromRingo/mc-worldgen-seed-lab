@@ -59,6 +59,7 @@ typedef struct TrunkCfg {
     /* upwards_branching */ IntProv *extra_branch_steps, *extra_branch_length; float place_branch_per_log; u8 *can_grow_through;
     /* cherry */ IntProv *branch_count, *branch_horizontal_length, *branch_end_offset; int bs_min, bs_max;   /* branch_start_offset_from_top: UniformInt [bs_min, bs_max] */
     /* poplar */ IntProv *trunk_height_above_branches, *branch_amount;
+    /* straight (26.4+) */ IntProv *trunk_width;                /* NULL — 1 */
 } TrunkCfg;
 
 enum { FP_BLOB, FP_SPRUCE, FP_PINE, FP_ACACIA, FP_BUSH, FP_FANCY, FP_MEGA_JUNGLE, FP_MEGA_PINE, FP_DARK_OAK, FP_RANDOM_SPREAD, FP_CHERRY, FP_POPLAR };
