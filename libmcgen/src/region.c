@@ -4,6 +4,7 @@
 #include "fluidpp.h"
 #include "carver.h"
 #include "surface.h"
+#include "feature.h"
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -108,7 +109,7 @@ void gen_compute_state_classes(McGen *g) {
         int fluid = !strncmp(b, "water", 5) || !strncmp(b, "lava", 4) || !strncmp(b, "bubble_column", 13) || strstr(n, "waterlogged=true");
         int motion = !(!strncmp(b, "water", 5) || !strncmp(b, "lava", 4) || !strncmp(b, "bubble_column", 13));
         for (int k = 0; NONSOLID[k] && motion; k++) if (strstr(b, NONSOLID[k])) motion = 0;
-        if (!strcmp(b, "grass_block") || !strncmp(b, "flowering_azalea", 16) || !strncmp(b, "azalea_leaves", 13)) motion = 1;   /* «grass»/«flower» — подстроки не про них */
+        if (!strncmp(b, "grass_block", 11) || !strncmp(b, "flowering_azalea", 16) || !strncmp(b, "azalea_leaves", 13)) motion = 1;   /* «grass»/«flower» — подстроки не про них */
         if (!strncmp(b, "powder_snow", 11) && strncmp(b, "powder_snow_cauldron", 20)) motion = 0;                         /* пустая форма коллизии */
         c[i] = (u8)((motion ? CL_MOTION : 0) | (fluid ? CL_FLUID : 0) | (strstr(b, "_leaves") ? CL_LEAVES : 0));
     }
@@ -204,7 +205,19 @@ static void worker(void *arg) {
  * Блоки соседних чанков вне региона («гало») при необходимости генерируются лениво (TERRAIN); пометки гало-чанков,
  * лежащие у границы региона (могут растечься внутрь), тоже обрабатываются. Порядок — по чанкам (cz, затем cx). */
 typedef struct HaloChunk { int cx, cz; uint16_t *blocks; PPMarks marks; struct HaloChunk *next; } HaloChunk;
-typedef struct { McWorld *w; McRegion *r; HaloChunk *halo[256]; TerrainCtx *t; int fail; char err[256]; SurfCtx *sc; } View;
+typedef struct { McWorld *w; McRegion *r; HaloChunk *halo[256]; TerrainCtx *t; int fail; char err[256]; SurfCtx *sc; SCtx *bx; } View;
+/* SURFACE для гало-чанка: биомы чанка стадией BIOMES (пакетно, как у чанков региона), затем поверхность */
+static int halo_surface(View *v, int cx, int cz, uint16_t *blocks, char *e, size_t el) {
+    McWorld *w = v->w;
+    if (!v->sc) v->sc = surface_ctx_new(w);
+    if (!v->bx && w->nc) v->bx = sctx_new(w->nc, 1);
+    uint8_t *hb = xmalloc((size_t)(w->height / 4) * 16);
+    if (v->bx) sctx_reset_caches(v->bx);
+    world_chunk_biomes(w, v->bx, cx, cz, hb);
+    int rc = surface_apply_chunk(w, v->sc, cx, cz, blocks, hb, terrain_marks_rw(v->t), e, el);
+    free(hb);
+    return rc;
+}
 static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     McRegion *r = v->r;
     int i = chunk_index(r, cx, cz);
@@ -216,8 +229,7 @@ static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     if (!v->t) v->t = terrain_ctx_new(v->w);
     char e[256] = {0};
     if (terrain_fill_chunk(v->w, v->t, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
-    else if ((r->stages & MC_STAGE_SURFACE) && (v->sc || (v->sc = surface_ctx_new(v->w))) &&
-             surface_apply_chunk(v->w, v->sc, cx, cz, h->blocks, NULL, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
+    else if ((r->stages & MC_STAGE_SURFACE) && halo_surface(v, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
     else if ((r->stages & MC_STAGE_CARVERS) && carvers_apply_chunk(v->w, v->t, cx, cz, h->blocks, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
     ppmarks_copy(&h->marks, terrain_marks(v->t));
     h->next = v->halo[b]; v->halo[b] = h;
@@ -276,6 +288,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     for (int b = 0; b < 256; b++) { HaloChunk *h = v.halo[b]; while (h) { HaloChunk *nx2 = h->next; free(h->blocks); ppmarks_free(&h->marks); free(h); h = nx2; } }
     if (v.t) terrain_ctx_free(v.t);
     if (v.sc) surface_ctx_free(v.sc);
+    if (v.bx) sctx_free(v.bx);
     if (v.fail) { set_err(err, errlen, "%s", v.err); return -1; }
     if (cancel) { set_err(err, errlen, "отменено"); return 1; }
     return 0;
@@ -285,9 +298,10 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
                     McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     if (!w || !out || nx <= 0 || nz <= 0 || (long)nx * nz > 1 << 20) { set_err(err, errlen, "mcgen_generate_region: аргументы"); return MCGEN_E_ARG; }
     *out = NULL;
-    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS;
+    uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS | MC_STAGE_FEATURES;
     if (stages & MC_STAGE_SURFACE) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* поверхность: заполненный чанк и биомы для правил */
     if (stages & MC_STAGE_CARVERS) stages |= MC_STAGE_TERRAIN;   /* карверы работают над заполненным чанком */
+    if (stages & MC_STAGE_FEATURES) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* декорации: заполненные чанки и биомы (стадия features.c) */
     if (stages & ~sup & MC_STAGE_ALL) {
         /* стадии SURFACE и выше — другие потоки работ; пока считаем доступные */
         stages &= sup;
@@ -322,6 +336,12 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
     if (j.failed) { set_err(err, errlen, "%s", j.err); mcgen_region_free(r); return MCGEN_E_INTERNAL; }
     if (j.cancel) { set_err(err, errlen, "отменено"); mcgen_region_free(r); return MCGEN_E_CANCEL; }
     if (stages & MC_STAGE_TERRAIN) {
+        /* Порядок конвейера: все стадии по чанкам (worker/view_chunk: TERRAIN → SURFACE → CARVERS → …) → растекание жидкостей
+         * (в игре — при переходе чанка в FULL, т. е. после всех стадий генерации) → карты высот. Новые стадии вставлять до этого места. */
+        if (stages & MC_STAGE_FEATURES) {   /* декорации (feature*.c): после всех стадий чанков, до пост-обработки жидкостей */
+            int frc = features_apply_region(w, r, threads, cb, ud, err, errlen);
+            if (frc) { mcgen_region_free(r); return frc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
+        }
         /* fluid_flow = 0: «чистое» заполнение шумом (как чанк со статусом ниже full) — без растекания */
         int prc = w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0 ? region_postprocess(w, r, pp_margin, cb, ud, err, errlen) : 0;
         if (prc) { mcgen_region_free(r); return prc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
@@ -341,6 +361,8 @@ int mcgen_x_generate_region_pp(McWorld *w, int cx0, int cz0, int nx, int nz, uin
                                McRegion **out, char *err, size_t errlen) {
     return generate(w, cx0, cz0, nx, nz, stages, threads, pp_margin, NULL, NULL, out, err, errlen);
 }
+uint32_t region_stages(const McRegion *r) { return r->stages; }                                 /* для feature.c */
+PPMarks *region_chunk_marks(McRegion *r, int cx, int cz) { int i = chunk_index(r, cx, cz); return i < 0 ? NULL : &r->marks[i]; }
 void mcgen_region_free(McRegion *r) {
     if (!r) return;
     if (r->marks) for (int i = 0; i < r->info.nx * r->info.nz; i++) ppmarks_free(&r->marks[i]);

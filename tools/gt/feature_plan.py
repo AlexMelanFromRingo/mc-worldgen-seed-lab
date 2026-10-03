@@ -52,6 +52,12 @@ def main():
         if m.get('ok') and not mp.endswith('_rep/manifest.json') and '_t' not in os.path.basename(os.path.dirname(mp)).rsplit('-r', 1)[-1]:
             worlds.append((os.path.dirname(mp), m))
     hs = {wd: hist(wd, m['dim'], a.version, m['area_chunks']) for wd, m in worlds}
+    def rarity(pf):
+        try:
+            d = json.load(open(f'{pk}/placed_feature/{pf.split(":")[1]}.json'))
+            return max([int(m.get('chance', 0)) for m in d.get('placement', []) if str(m.get('type', '')).endswith('rarity_filter')] or [0])
+        except Exception:
+            return 0
     plan, skipped = [], []
     for pf in sorted(feat_biomes):
         bs = feat_biomes[pf]
@@ -67,7 +73,7 @@ def main():
             skipped.append(pf); continue
         _, wd, m = best
         plan.append({'feature': pf, 'dim': {'overworld': 'overworld', 'the_nether': 'nether', 'the_end': 'end'}[dim], 'seed': m['seed'],
-                     'cx': m['center_chunk'][0], 'cz': m['center_chunk'][1], 'radius': min(m['radius'], a.radius), 'cells': best[0], 'biomes': sorted(bs)})
+                     'cx': m['center_chunk'][0], 'cz': m['center_chunk'][1], 'radius': 10 if rarity(pf) >= 50 else min(m['radius'], a.radius), 'rarity': rarity(pf), 'cells': best[0], 'biomes': sorted(bs)})
     if a.limit:
         plan = plan[:a.limit]
     json.dump({'doc': 'tools/gt/feature_plan.py: области для изолированных фич', 'version': a.version, 'radius': a.radius, 'plan': plan, 'skipped': skipped},

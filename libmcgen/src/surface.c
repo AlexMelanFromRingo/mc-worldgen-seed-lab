@@ -16,6 +16,7 @@
  */
 #include "surface.h"
 #include "df_old.h"
+#include "mcgen_tweaks_table.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -65,6 +66,7 @@ typedef struct SurfWorld {
     PtrVec allocs;
     const S *prelim;                    /* 26.3+: router.chunk_surface_level */
     u64 uid;
+    PtrVec tl;                          /* контексты потоков для mcgen_surface_top_material: принадлежат миру (освобождаются вместе с ним) */
 } SurfWorld;
 
 typedef struct Comp {
@@ -313,7 +315,8 @@ int surface_world_init(McWorld *w, char *err, size_t errlen) {
     SurfWorld *S = xcalloc(1, sizeof *S);
     w->surface = S;
     S->w = w; S->newf = g->newf; S->v264 = g->version >= V26_4;
-    S->sea = w->ns->sea_level;         /* уровень моря правил — из настроек шума (твик sea_level_offset сдвигает только заполнение) */
+    /* уровень моря системы (айсберги, температура) — как у заполнения: настройки шума + твик sea_level_offset (числа в правилах — абсолютные y) */
+    S->sea = w->ns->sea_level + (int)w->tweak[MCGEN_TWEAK_SEA_LEVEL_OFFSET];
     S->uid = __atomic_add_fetch(&g_surface_uid, 1, __ATOMIC_RELAXED);
     S->defb = w->def_block;
     S->ctx_min = w->min_y > w->ns->min_y ? w->min_y : w->ns->min_y;
@@ -350,13 +353,19 @@ int surface_world_init(McWorld *w, char *err, size_t errlen) {
         Rnd r3 = rnd_legacy_seed(3456); for (int i = 0; i < 3; i++) gn_init(&S->f_noise[i], &r3, off);
         Rnd r2 = rnd_legacy_seed(2345); gn_init(&S->info_noise, &r2, off);
     }
-    if (g->newf) S->prelim = w->s_rf[RF_CHUNK_SURFACE_LEVEL];
+    if (g->newf) {
+        S->prelim = w->s_rf[RF_CHUNK_SURFACE_LEVEL];
+        if (!S->prelim) { set_err(err, errlen, "surface: в noise_router нет chunk_surface_level"); return MCGEN_E_DATA; }
+    }
     return 0;
 }
 
+void surface_ctx_free(SurfCtx *c);
 void surface_world_free(McWorld *w) {
     SurfWorld *S = w->surface;
     if (!S) return;
+    for (int i = 0; i < S->tl.n; i++) surface_ctx_free(S->tl.v[i]);
+    pv_free(&S->tl);
     for (int i = 0; i < S->allocs.n; i++) free(S->allocs.v[i]);
     pv_free(&S->allocs);
     sm_free(&S->slotmap, NULL);
@@ -366,6 +375,7 @@ void surface_world_free(McWorld *w) {
 
 /* ======================================================================= контекст потока */
 #define CELLC 4096
+#define FIDC 1024
 struct SurfCtx {
     McWorld *w; SurfWorld *S;
     SCtx *x; NChunk *nch; int nch_cx, nch_cz, nch_ok;
@@ -382,6 +392,10 @@ struct SurfCtx {
     int top_mode;                      /* topMaterial: preliminary surface — объём 1×1×1 */
     /* кэш биомов клеток */
     u64 ck[CELLC]; u8 cv[CELLC];
+    /* кэш «размытия» BiomeManager по угловым клеткам (fiddle зависит только от клетки и seed) */
+    struct { i32 x, y, z; u8 used; double f[3]; } fid[FIDC];
+    /* множества биомов собственного чанка по кварте y (быстрый отказ для условий biome без зума) */
+    u8 *qset; int qset_ok, qn; int interior;
 };
 
 SurfCtx *surface_ctx_new(McWorld *w) {
@@ -391,6 +405,7 @@ SurfCtx *surface_ctx_new(McWorld *w) {
     c->cst = xcalloc((size_t)(S->ncond + 1), sizeof(u64)); c->cval = xcalloc((size_t)(S->ncond + 1), 1);
     c->nst = xcalloc((size_t)(S->nslot + 1), sizeof(u64)); c->nval = xcalloc((size_t)(S->nslot + 1), sizeof(double));
     c->xz_stamp = c->y_stamp = 1;
+    c->qn = w->height >> 2; c->qset = xcalloc((size_t)c->qn, 32);
     if (S->newf) c->x = sctx_new(w->nc, 1);
     else c->nch = nchunk_new(w->old);
     return c;
@@ -399,19 +414,21 @@ void surface_ctx_free(SurfCtx *c) {
     if (!c) return;
     if (c->x) sctx_free(c->x);
     if (c->nch) nchunk_free(c->nch);
-    free(c->cst); free(c->cval); free(c->nst); free(c->nval); free(c);
+    free(c->cst); free(c->cval); free(c->nst); free(c->nval); free(c->qset); free(c);
 }
 
 /* ---- биомы: BiomeManager.getBiome ---- */
 static inline i64 zoom_lcg(i64 r, i64 cc) { u64 v = (u64)r; v *= v * 6364136223846793005ULL + 1442695040888963407ULL; return (i64)(v + (u64)cc); }
 static inline double fiddle(i64 r) { i64 m = (r >> 24) % 1024; if (m < 0) m += 1024; return ((double)m / 1024.0 - 0.5) * 0.9; }
-static double fiddled_distance(i64 seed, int x, int y, int z, double dx, double dy, double dz) {
+static void fiddle3(SurfCtx *c, i64 seed, int x, int y, int z, double f[3]) {
+    u32 h = ((u32)x * 73856093u ^ (u32)y * 19349663u ^ (u32)z * 83492791u) & (FIDC - 1);
+    if (c->fid[h].used && c->fid[h].x == x && c->fid[h].y == y && c->fid[h].z == z) { f[0] = c->fid[h].f[0]; f[1] = c->fid[h].f[1]; f[2] = c->fid[h].f[2]; return; }
     i64 r = seed;
     r = zoom_lcg(r, x); r = zoom_lcg(r, y); r = zoom_lcg(r, z); r = zoom_lcg(r, x); r = zoom_lcg(r, y); r = zoom_lcg(r, z);
-    double fx = fiddle(r); r = zoom_lcg(r, seed);
-    double fy = fiddle(r); r = zoom_lcg(r, seed);
-    double fz = fiddle(r);
-    return (dz + fz) * (dz + fz) + (dy + fy) * (dy + fy) + (dx + fx) * (dx + fx);
+    f[0] = fiddle(r); r = zoom_lcg(r, seed);
+    f[1] = fiddle(r); r = zoom_lcg(r, seed);
+    f[2] = fiddle(r);
+    c->fid[h].used = 1; c->fid[h].x = x; c->fid[h].y = y; c->fid[h].z = z; c->fid[h].f[0] = f[0]; c->fid[h].f[1] = f[1]; c->fid[h].f[2] = f[2];
 }
 static int cell_biome(SurfCtx *c, int qx, int qy, int qz) {
     const McWorld *w = c->w;
@@ -432,8 +449,10 @@ static int biome_at(SurfCtx *c, int x, int y, int z) {
     int mi = 0; double md = INFINITY;
     for (int i = 0; i < 8; i++) {
         int xe = (i & 4) == 0, ye = (i & 2) == 0, ze = (i & 1) == 0;
-        double d = fiddled_distance(c->w->biome_zoom_seed, xe ? px : px + 1, ye ? py : py + 1, ze ? pz : pz + 1,
-                                    xe ? fx : fx - 1.0, ye ? fy : fy - 1.0, ze ? fz : fz - 1.0);
+        double f3[3];
+        fiddle3(c, c->w->biome_zoom_seed, xe ? px : px + 1, ye ? py : py + 1, ze ? pz : pz + 1, f3);
+        double dx = xe ? fx : fx - 1.0, dy = ye ? fy : fy - 1.0, dz = ze ? fz : fz - 1.0;
+        double d = (dz + f3[2]) * (dz + f3[2]) + (dy + f3[1]) * (dy + f3[1]) + (dx + f3[0]) * (dx + f3[0]);
         if (md > d) { mi = i; md = d; }
     }
     return cell_biome(c, (mi & 4) == 0 ? px : px + 1, (mi & 2) == 0 ? py : py + 1, (mi & 1) == 0 ? pz : pz + 1);
@@ -516,6 +535,7 @@ static void update_xz(SurfCtx *c, int bx, int bz, int gx, int gz) {
     c->xz_stamp++; c->y_stamp++;
     c->bx = bx; c->bz = bz; c->gradx = gx; c->gradz = gz;
     c->minsl_ok = 0; c->sec_ok = 0;
+    c->interior = ((bx & 15) >= 2 && (bx & 15) <= 13 && (bz & 15) >= 2 && (bz & 15) <= 13);   /* все 8 угловых клеток зума — в этом чанке */
     double nv = S->newf ? (double)ns_get(S->surface.ns, bx, 0.0, bz) : old_normal_get(S->surface.on, bx, 0.0, bz);
     Rnd r = pos_at(&c->w->pos_terrain, bx, 0, bz);
     c->sdepth = jm_d2i(nv * 2.75 + 3.0 + rnd_next_double(&r) * 0.25);
@@ -591,7 +611,18 @@ static double noise_slot_value(SurfCtx *c, int s) {
 static int cond_compute(SurfCtx *c, const CNode *n) {
     const SurfWorld *S = c->S;
     switch (n->type) {
-    case CN_BIOME: { int b = ctx_biome(c); return (n->mask[b >> 3] >> (b & 7)) & 1; }
+    case CN_BIOME: {
+        if (c->qset_ok && c->interior && !c->top_mode) {
+            /* блок внутри чанка: результат зума — одна из угловых клеток py, py+1 (y зажат) собственного чанка */
+            int qmin = c->minY >> 2, py = ((c->by - 2) >> 2) - qmin;
+            int q0 = py < 0 ? 0 : (py >= c->qn ? c->qn - 1 : py), q1 = py + 1 < 0 ? 0 : (py + 1 >= c->qn ? c->qn - 1 : py + 1);
+            const u8 *a = &c->qset[q0 * 32], *b = &c->qset[q1 * 32];
+            int hit = 0;
+            for (int i = 0; i < 32 && !hit; i++) hit = n->mask[i] & (a[i] | b[i]);
+            if (!hit) return 0;
+        }
+        int b = ctx_biome(c); return (n->mask[b >> 3] >> (b & 7)) & 1;
+    }
     case CN_NOISE: { double v = noise_slot_value(c, n->slot); return v >= n->lo && v <= n->hi; }
     case CN_VGRAD: {
         int y = c->by;
@@ -716,6 +747,12 @@ static int load_chunk(SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_
     c->cx = cx; c->cz = cz; c->blk = blocks; c->bio = bio; c->marks = marks;
     c->minY = w->min_y; c->maxY = w->min_y + w->height - 1;
     c->prelim_ok = 0; c->top_mode = 0;
+    c->qset_ok = 0;
+    if (bio) {   /* множества биомов собственного чанка по квартам y */
+        memset(c->qset, 0, (size_t)c->qn * 32);
+        for (int qy = 0; qy < c->qn; qy++) for (int i = 0; i < 16; i++) { int b = bio[qy * 16 + i]; c->qset[qy * 32 + (b >> 3)] |= (u8)(1u << (b & 7)); }
+        c->qset_ok = 1;
+    }
     for (int col = 0; col < 256; col++) {
         int f = c->minY;
         for (int y = w->height - 1; y >= 0; y--) if (!is_air(c, blocks[(size_t)y * 256 + col])) { f = c->minY + y + 1; break; }
@@ -726,7 +763,7 @@ static int load_chunk(SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_
 
 int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks, char *err, size_t errlen) {
     SurfWorld *S = w->surface;
-    if (!S) return MCGEN_OK;
+    if (!S || !S->root) return MCGEN_OK;
     const McGen *g = w->g;
     int old = !S->newf;
     load_chunk(c, cx, cz, blocks, chunk_biomes, marks);
@@ -792,7 +829,10 @@ int mcgen_surface_top_material(McWorld *w, TerrainCtx *t, int cx, int cz, const 
     (void)t;
     SurfWorld *S = w->surface;
     if (!S || !S->root) return -1;
-    if (tl_uid != S->uid || !tl_ctx) { if (tl_ctx) surface_ctx_free(tl_ctx); tl_ctx = surface_ctx_new(w); tl_uid = S->uid; }
+    if (tl_uid != S->uid || !tl_ctx) {   /* контекст принадлежит миру: при смене мира старый не трогаем (его мир мог быть уже освобождён) */
+        tl_ctx = surface_ctx_new(w); tl_uid = S->uid;
+        mutex_lock(w->lock); pv_push(&S->tl, tl_ctx); mutex_unlock(w->lock);
+    }
     SurfCtx *c = tl_ctx;
     c->cx = cx; c->cz = cz; c->blk = (uint16_t *)blocks; c->bio = NULL; c->marks = NULL;
     c->minY = w->min_y; c->maxY = w->min_y + w->height - 1;

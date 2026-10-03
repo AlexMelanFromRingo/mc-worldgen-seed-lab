@@ -260,7 +260,7 @@ def unpack_bits(longs, bits, count):
 
 
 class Chunk:
-    __slots__ = ('cx', 'cz', 'status', 'min_y', 'blocks', 'biomes', 'heightmaps', 'nbt_keys')
+    __slots__ = ('cx', 'cz', 'status', 'min_y', 'blocks', 'biomes', 'heightmaps', 'nbt_keys', 'biomes_block')
 
 
 def dim_extent(version, dim):
@@ -286,6 +286,7 @@ def parse_chunk(nbt, states, biomes_tab, extent=None):
         h = (y1 - y0 + 1) * 16
     blocks = np.full((h, 16, 16), states.air, dtype=np.uint16)
     biomes = np.zeros((h // 4, 4, 4), dtype=np.uint8)
+    bblock, single = None, []
     for s in secs:
         i = s['Y'] - y0
         if not 0 <= i < h // 16:
@@ -303,9 +304,22 @@ def parse_chunk(nbt, states, biomes_tab, extent=None):
             pal = np.array([biomes_tab.get(e if isinstance(e, str) else e.get('Name', '')) for e in bi['palette']], dtype=np.uint8)
             if len(pal) == 1 or 'data' not in bi:
                 biomes[i * 4:(i + 1) * 4] = pal[0]
+                single.append((i, pal[0]))
             else:
                 bits = max(1, (len(pal) - 1).bit_length())
-                biomes[i * 4:(i + 1) * 4] = pal[unpack_bits(bi['data'], bits, 64)].reshape(4, 4, 4)
+                per = 64 // bits
+                if len(bi['data']) == -(-4096 // per):         # 26.4-snapshot-2: биомы поблочно (4096 значений на секцию)
+                    if bblock is None:
+                        bblock = np.zeros((h, 16, 16), dtype=np.uint8)
+                    a = pal[unpack_bits(bi['data'], bits, 4096)].reshape(16, 16, 16)
+                    bblock[i * 16:(i + 1) * 16] = a
+                    biomes[i * 4:(i + 1) * 4] = a[::4, ::4, ::4]    # клетка = блок в её углу (приближение; точная сверка — по biomes_block)
+                else:
+                    biomes[i * 4:(i + 1) * 4] = pal[unpack_bits(bi['data'], bits, 64)].reshape(4, 4, 4)
+    if bblock is not None:
+        for i, v in single:
+            bblock[i * 16:(i + 1) * 16] = v
+    c.biomes_block = bblock
     c.blocks, c.biomes = blocks, biomes
     hm = np.zeros((4, 256), dtype=np.int16)
     hbits = max(1, h.bit_length())  # ceil(log2(h+1))
@@ -347,7 +361,7 @@ class World:
 
     def _key(self, path):
         st = os.stat(path)
-        return f'{st.st_size}:{int(st.st_mtime)}:{self.states.sha}'
+        return f'{st.st_size}:{int(st.st_mtime)}:{self.states.sha}:v2'
 
     def load_region(self, rx, rz):
         """-> dict {(cx,cz): Chunk-подобный кортеж} для всех присутствующих в region-файле чанков (кэшируется)."""
@@ -369,13 +383,15 @@ class World:
                     remap = np.array([self.biomes.get(n) for n in names], dtype=np.uint8)
                     out = {}
                     index, status, min_y = z['index'], z['status'], z['min_y']
-                    blocks, bio, hm = z['blocks'], z['biomes'], z['hm']   # NpzFile читает массив при каждом обращении: берём один раз
+                    blocks, bio, hm = z['blocks'], z['biomes'], z['hm']
+                    bblk = z['biomes_block'] if 'biomes_block' in z.files else None   # NpzFile читает массив при каждом обращении: берём один раз
                     for i, idx in enumerate(index):
                         c = Chunk()
                         c.cx, c.cz = rx * 32 + int(idx) % 32, rz * 32 + int(idx) // 32
                         c.status = str(status[i]); c.min_y = int(min_y[i])
                         c.blocks = blocks[i]; c.biomes = remap[bio[i]]; c.heightmaps = hm[i]
                         c.nbt_keys = []
+                        c.biomes_block = remap[bblk[i]] if bblk is not None else None
                         out[(c.cx, c.cz)] = c
             except Exception:
                 out = None
@@ -401,7 +417,8 @@ class World:
                         index=np.array([(cx & 31) + (cz & 31) * 32 for cx, cz in ks], dtype=np.int32),
                         status=np.array([out[k].status or '' for k in ks]), min_y=np.array([out[k].min_y for k in ks], dtype=np.int32),
                         blocks=np.stack([out[k].blocks for k in ks]), biomes=np.stack([out[k].biomes for k in ks]),
-                        hm=np.stack([out[k].heightmaps for k in ks]))
+                        hm=np.stack([out[k].heightmaps for k in ks]),
+                        **({'biomes_block': np.stack([out[k].biomes_block for k in ks])} if all(out[k].biomes_block is not None for k in ks) else {}))
         self._reg[(rx, rz)] = out
         while len(self._reg) > self.max_regions:
             self._reg.popitem(last=False)

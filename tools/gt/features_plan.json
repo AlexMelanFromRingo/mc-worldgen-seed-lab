@@ -9,6 +9,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 24,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -75,6 +77,8 @@
    "seed": -7048155917072976836,
    "cx": 107,
    "cz": 170,
+   "radius": 5,
+   "rarity": 0,
    "cells": 204209,
    "biomes": [
     "bamboo_jungle"
@@ -86,6 +90,8 @@
    "seed": 12345,
    "cx": -103,
    "cz": 2,
+   "radius": 5,
+   "rarity": 4,
    "cells": 527883,
    "biomes": [
     "jungle"
@@ -97,6 +103,8 @@
    "seed": -7048155917072976836,
    "cx": 107,
    "cz": 170,
+   "radius": 5,
+   "rarity": 0,
    "cells": 204209,
    "biomes": [
     "bamboo_jungle"
@@ -108,9 +116,24 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
+   ]
+  },
+  {
+   "feature": "minecraft:basalt_pillar",
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": -7,
+   "cz": 26,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 123904,
+   "biomes": [
+    "soul_sand_valley"
    ]
   },
   {
@@ -119,6 +142,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 28992,
    "biomes": [
     "old_growth_birch_forest"
@@ -130,6 +155,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -141,10 +168,25 @@
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 13920,
    "biomes": [
     "deep_frozen_ocean",
     "frozen_ocean"
+   ]
+  },
+  {
+   "feature": "minecraft:brown_mushroom_dappled_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 41,
+   "cz": -69,
+   "radius": 5,
+   "rarity": 2,
+   "cells": 140365,
+   "biomes": [
+    "dappled_forest"
    ]
   },
   {
@@ -153,6 +195,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 2,
    "cells": 430719,
    "biomes": [
     "basalt_deltas",
@@ -165,6 +209,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 10,
+   "rarity": 256,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -214,11 +260,27 @@
    ]
   },
   {
+   "feature": "minecraft:brown_mushroom_old_growth",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 5,
+   "rarity": 4,
+   "cells": 149379,
+   "biomes": [
+    "old_growth_pine_taiga",
+    "old_growth_spruce_taiga"
+   ]
+  },
+  {
    "feature": "minecraft:brown_mushroom_swamp",
    "dim": "overworld",
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -230,6 +292,8 @@
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 4,
    "cells": 316100,
    "biomes": [
     "mushroom_fields",
@@ -243,6 +307,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -254,6 +320,8 @@
    "seed": 12345,
    "cx": -40,
    "cz": -90,
+   "radius": 5,
+   "rarity": 0,
    "cells": 113664,
    "biomes": [
     "end_highlands"
@@ -265,6 +333,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -276,6 +346,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 292288,
    "biomes": [
     "crimson_forest"
@@ -287,6 +359,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 292288,
    "biomes": [
     "crimson_forest"
@@ -298,6 +372,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 62345,
    "biomes": [
     "dark_forest"
@@ -309,6 +385,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -320,6 +398,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 10,
+   "rarity": 1000,
    "cells": 584722,
    "biomes": [
     "desert"
@@ -331,6 +411,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -392,11 +474,26 @@
    ]
   },
   {
+   "feature": "minecraft:disk_grass",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185244,
+   "biomes": [
+    "mangrove_swamp"
+   ]
+  },
+  {
    "feature": "minecraft:disk_gravel",
    "dim": "overworld",
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -461,6 +558,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -525,6 +624,8 @@
    "seed": 12345,
    "cx": -177,
    "cz": 86,
+   "radius": 5,
+   "rarity": 0,
    "cells": 74284,
    "biomes": [
     "dripstone_caves"
@@ -536,6 +637,8 @@
    "seed": 12345,
    "cx": -40,
    "cz": -90,
+   "radius": 10,
+   "rarity": 700,
    "cells": 113664,
    "biomes": [
     "end_highlands"
@@ -547,6 +650,8 @@
    "seed": 8675309,
    "cx": 90,
    "cz": 0,
+   "radius": 5,
+   "rarity": 14,
    "cells": 332800,
    "biomes": [
     "small_end_islands"
@@ -558,6 +663,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "the_end"
@@ -569,6 +676,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "the_end"
@@ -580,6 +689,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 261,
    "biomes": [
     "cherry_grove"
@@ -591,6 +702,8 @@
    "seed": 12345,
    "cx": 2,
    "cz": 212,
+   "radius": 5,
+   "rarity": 32,
    "cells": 648888,
    "biomes": [
     "beach",
@@ -625,14 +738,55 @@
    ]
   },
   {
+   "feature": "minecraft:flower_flower_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -179,
+   "cz": -135,
+   "radius": 5,
+   "rarity": 2,
+   "cells": 174340,
+   "biomes": [
+    "flower_forest"
+   ]
+  },
+  {
+   "feature": "minecraft:flower_forest_flowers",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -179,
+   "cz": -135,
+   "radius": 5,
+   "rarity": 7,
+   "cells": 174340,
+   "biomes": [
+    "flower_forest"
+   ]
+  },
+  {
    "feature": "minecraft:flower_meadow",
    "dim": "overworld",
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 18447,
    "biomes": [
     "meadow"
+   ]
+  },
+  {
+   "feature": "minecraft:flower_pale_garden",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -118,
+   "cz": -157,
+   "radius": 5,
+   "rarity": 32,
+   "cells": 94471,
+   "biomes": [
+    "pale_garden"
    ]
   },
   {
@@ -641,6 +795,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 32,
    "cells": 282732,
    "biomes": [
     "deep_dark",
@@ -655,6 +811,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 32,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -666,6 +824,8 @@
    "seed": 8675309,
    "cx": -30,
    "cz": -187,
+   "radius": 5,
+   "rarity": 16,
    "cells": 589106,
    "biomes": [
     "bamboo_jungle",
@@ -681,6 +841,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 7,
    "cells": 399807,
    "biomes": [
     "birch_forest",
@@ -690,11 +852,27 @@
    ]
   },
   {
+   "feature": "minecraft:forest_rock",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 149379,
+   "biomes": [
+    "old_growth_pine_taiga",
+    "old_growth_spruce_taiga"
+   ]
+  },
+  {
    "feature": "minecraft:fossil_lower",
    "dim": "overworld",
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 10,
+   "rarity": 64,
    "cells": 584722,
    "biomes": [
     "desert",
@@ -708,6 +886,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 10,
+   "rarity": 64,
    "cells": 584722,
    "biomes": [
     "desert",
@@ -721,6 +901,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -787,6 +969,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -853,6 +1037,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -868,6 +1054,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -878,11 +1066,39 @@
    ]
   },
   {
+   "feature": "minecraft:ice_patch",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -135,
+   "cz": -151,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 172696,
+   "biomes": [
+    "ice_spikes"
+   ]
+  },
+  {
+   "feature": "minecraft:ice_spike",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -135,
+   "cz": -151,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 172696,
+   "biomes": [
+    "ice_spikes"
+   ]
+  },
+  {
    "feature": "minecraft:iceberg_blue",
    "dim": "overworld",
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 10,
+   "rarity": 200,
    "cells": 13920,
    "biomes": [
     "deep_frozen_ocean",
@@ -895,6 +1111,8 @@
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 5,
+   "rarity": 16,
    "cells": 13920,
    "biomes": [
     "deep_frozen_ocean",
@@ -907,6 +1125,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 591648,
    "biomes": [
     "cold_ocean",
@@ -921,6 +1141,8 @@
    "seed": 8675309,
    "cx": 12,
    "cz": -19,
+   "radius": 5,
+   "rarity": 0,
    "cells": 198319,
    "biomes": [
     "deep_lukewarm_ocean",
@@ -933,6 +1155,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 10,
+   "rarity": 200,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -998,6 +1222,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 9,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1063,6 +1289,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -1074,6 +1302,8 @@
    "seed": 12345,
    "cx": -177,
    "cz": 86,
+   "radius": 5,
+   "rarity": 0,
    "cells": 74284,
    "biomes": [
     "dripstone_caves"
@@ -1085,6 +1315,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -1096,6 +1328,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -1107,6 +1341,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -1118,6 +1354,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1184,6 +1422,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1245,11 +1485,26 @@
    ]
   },
   {
+   "feature": "minecraft:mushroom_island_vegetation",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": 52,
+   "cz": -206,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 178427,
+   "biomes": [
+    "mushroom_fields"
+   ]
+  },
+  {
    "feature": "minecraft:nether_sprouts",
    "dim": "nether",
    "seed": 12345,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 176448,
    "biomes": [
     "warped_forest"
@@ -1261,6 +1516,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -1276,6 +1533,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1342,6 +1601,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 6,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1408,6 +1669,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -1422,6 +1685,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -1433,6 +1698,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1499,6 +1766,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1565,6 +1834,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1630,6 +1901,8 @@
    "seed": 12345,
    "cx": -177,
    "cz": 86,
+   "radius": 5,
+   "rarity": 0,
    "cells": 74284,
    "biomes": [
     "dripstone_caves"
@@ -1641,6 +1914,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -1656,6 +1931,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1722,6 +1999,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1788,6 +2067,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 9,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1854,6 +2135,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1920,6 +2203,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -1986,6 +2271,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 6,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2052,6 +2339,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2118,6 +2407,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 559772,
    "biomes": [
     "cherry_grove",
@@ -2138,6 +2429,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2204,6 +2497,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -2212,10 +2507,12 @@
   {
    "feature": "minecraft:ore_gold_extra",
    "dim": "overworld",
-   "seed": -7048155917072976836,
-   "cx": 201,
-   "cz": -145,
-   "cells": 147712,
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 165916,
    "biomes": [
     "badlands",
     "eroded_badlands",
@@ -2228,6 +2525,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2294,6 +2593,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -2308,6 +2609,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2374,6 +2677,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 6,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2440,6 +2745,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2506,6 +2813,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -2520,6 +2829,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 559772,
    "biomes": [
     "cherry_grove",
@@ -2540,6 +2851,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2606,6 +2919,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2672,6 +2987,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2738,6 +3055,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2804,6 +3123,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2870,6 +3191,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -2885,6 +3208,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -2896,6 +3221,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -2910,6 +3237,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -2976,6 +3305,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -3034,6 +3365,19 @@
     "windswept_hills",
     "windswept_savanna",
     "wooded_badlands"
+   ]
+  },
+  {
+   "feature": "minecraft:ore_soul_sand",
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": -7,
+   "cz": 26,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 123904,
+   "biomes": [
+    "soul_sand_valley"
    ]
   },
   {
@@ -3042,6 +3386,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -3103,11 +3449,52 @@
    ]
   },
   {
+   "feature": "minecraft:pale_garden_flowers",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -118,
+   "cz": -157,
+   "radius": 5,
+   "rarity": 8,
+   "cells": 94471,
+   "biomes": [
+    "pale_garden"
+   ]
+  },
+  {
+   "feature": "minecraft:pale_garden_vegetation",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -118,
+   "cz": -157,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 94471,
+   "biomes": [
+    "pale_garden"
+   ]
+  },
+  {
+   "feature": "minecraft:pale_moss_patch",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -118,
+   "cz": -157,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 94471,
+   "biomes": [
+    "pale_garden"
+   ]
+  },
+  {
    "feature": "minecraft:patch_berry_common",
    "dim": "overworld",
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 32,
    "cells": 316100,
    "biomes": [
     "old_growth_pine_taiga",
@@ -3121,6 +3508,8 @@
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 10,
+   "rarity": 384,
    "cells": 30423,
    "biomes": [
     "snowy_taiga"
@@ -3132,6 +3521,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 4,
    "cells": 571633,
    "biomes": [
     "birch_forest",
@@ -3148,10 +3539,12 @@
   {
    "feature": "minecraft:patch_cactus_decorated",
    "dim": "overworld",
-   "seed": -7048155917072976836,
-   "cx": 201,
-   "cz": -145,
-   "cells": 147712,
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 13,
+   "cells": 165916,
    "biomes": [
     "badlands",
     "eroded_badlands",
@@ -3164,18 +3557,35 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 6,
    "cells": 584722,
    "biomes": [
     "desert"
    ]
   },
   {
+   "feature": "minecraft:patch_crimson_roots",
+   "dim": "nether",
+   "seed": -7048155917072976836,
+   "cx": -7,
+   "cz": 26,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 123904,
+   "biomes": [
+    "soul_sand_valley"
+   ]
+  },
+  {
    "feature": "minecraft:patch_dead_bush",
    "dim": "overworld",
-   "seed": 12345,
-   "cx": -19,
-   "cz": -208,
-   "cells": 25809,
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185244,
    "biomes": [
     "mangrove_swamp",
     "old_growth_pine_taiga",
@@ -3189,6 +3599,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 584722,
    "biomes": [
     "desert"
@@ -3197,10 +3609,12 @@
   {
    "feature": "minecraft:patch_dead_bush_badlands",
    "dim": "overworld",
-   "seed": -7048155917072976836,
-   "cx": 201,
-   "cz": -145,
-   "cells": 147712,
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 165916,
    "biomes": [
     "badlands",
     "eroded_badlands",
@@ -3210,10 +3624,12 @@
   {
    "feature": "minecraft:patch_dry_grass_badlands",
    "dim": "overworld",
-   "seed": -7048155917072976836,
-   "cx": 201,
-   "cz": -145,
-   "cells": 147712,
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 6,
+   "cells": 165916,
    "biomes": [
     "badlands",
     "eroded_badlands",
@@ -3226,6 +3642,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 3,
    "cells": 584722,
    "biomes": [
     "desert"
@@ -3237,6 +3655,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "basalt_deltas",
@@ -3252,6 +3672,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -3304,6 +3726,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -3315,6 +3739,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 8,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -3326,6 +3752,8 @@
    "seed": -7048155917072976836,
    "cx": 201,
    "cz": -145,
+   "radius": 5,
+   "rarity": 0,
    "cells": 668946,
    "biomes": [
     "badlands",
@@ -3360,6 +3788,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 399807,
    "biomes": [
     "birch_forest",
@@ -3376,6 +3806,8 @@
    "seed": 8675309,
    "cx": -30,
    "cz": -187,
+   "radius": 5,
+   "rarity": 0,
    "cells": 589106,
    "biomes": [
     "bamboo_jungle",
@@ -3389,6 +3821,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 18447,
    "biomes": [
     "meadow"
@@ -3397,10 +3831,12 @@
   {
    "feature": "minecraft:patch_grass_normal",
    "dim": "overworld",
-   "seed": 12345,
-   "cx": -19,
-   "cz": -208,
-   "cells": 25809,
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185340,
    "biomes": [
     "mangrove_swamp",
     "swamp",
@@ -3413,6 +3849,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 282993,
    "biomes": [
     "cherry_grove",
@@ -3428,10 +3866,26 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 27148,
    "biomes": [
     "savanna",
     "savanna_plateau"
+   ]
+  },
+  {
+   "feature": "minecraft:patch_grass_taiga",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 149379,
+   "biomes": [
+    "old_growth_pine_taiga",
+    "old_growth_spruce_taiga"
    ]
   },
   {
@@ -3440,6 +3894,8 @@
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 316100,
    "biomes": [
     "snowy_taiga",
@@ -3452,6 +3908,8 @@
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 5,
    "cells": 316100,
    "biomes": [
     "old_growth_pine_taiga",
@@ -3466,6 +3924,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 62345,
    "biomes": [
     "dark_forest"
@@ -3477,6 +3937,8 @@
    "seed": 12345,
    "cx": -103,
    "cz": 2,
+   "radius": 5,
+   "rarity": 6,
    "cells": 527883,
    "biomes": [
     "bamboo_jungle",
@@ -3489,6 +3951,8 @@
    "seed": 8675309,
    "cx": -30,
    "cz": -187,
+   "radius": 10,
+   "rarity": 64,
    "cells": 416551,
    "biomes": [
     "sparse_jungle"
@@ -3500,6 +3964,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 10,
+   "rarity": 300,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -3551,11 +4017,26 @@
    ]
   },
   {
+   "feature": "minecraft:patch_red_shrub",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 41,
+   "cz": -69,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 140365,
+   "biomes": [
+    "dappled_forest"
+   ]
+  },
+  {
    "feature": "minecraft:patch_soul_fire",
    "dim": "nether",
    "seed": 12345,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 445376,
    "biomes": [
     "basalt_deltas",
@@ -3570,6 +4051,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 6,
    "cells": 677376,
    "biomes": [
     "bamboo_jungle",
@@ -3615,10 +4098,12 @@
   {
    "feature": "minecraft:patch_sugar_cane_badlands",
    "dim": "overworld",
-   "seed": -7048155917072976836,
-   "cx": 201,
-   "cz": -145,
-   "cells": 147712,
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 5,
+   "cells": 165916,
    "biomes": [
     "badlands",
     "eroded_badlands",
@@ -3631,6 +4116,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 584722,
    "biomes": [
     "desert"
@@ -3642,6 +4129,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 3,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -3653,6 +4142,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 3,
    "cells": 25774,
    "biomes": [
     "sunflower_plains"
@@ -3664,6 +4155,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 5,
    "cells": 27148,
    "biomes": [
     "savanna",
@@ -3676,6 +4169,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 32,
    "cells": 282993,
    "biomes": [
     "cherry_grove",
@@ -3691,10 +4186,12 @@
   {
    "feature": "minecraft:patch_waterlily",
    "dim": "overworld",
-   "seed": 12345,
-   "cx": -19,
-   "cz": -208,
-   "cells": 25809,
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185244,
    "biomes": [
     "mangrove_swamp",
     "swamp"
@@ -3706,6 +4203,8 @@
    "seed": 12345,
    "cx": -177,
    "cz": 86,
+   "radius": 5,
+   "rarity": 0,
    "cells": 74284,
    "biomes": [
     "dripstone_caves"
@@ -3717,6 +4216,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 2,
    "cells": 430719,
    "biomes": [
     "basalt_deltas",
@@ -3729,6 +4230,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 10,
+   "rarity": 512,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -3778,11 +4281,27 @@
    ]
   },
   {
+   "feature": "minecraft:red_mushroom_old_growth",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 10,
+   "rarity": 171,
+   "cells": 149379,
+   "biomes": [
+    "old_growth_pine_taiga",
+    "old_growth_spruce_taiga"
+   ]
+  },
+  {
    "feature": "minecraft:red_mushroom_swamp",
    "dim": "overworld",
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 10,
+   "rarity": 64,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -3794,6 +4313,8 @@
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 10,
+   "rarity": 256,
    "cells": 316100,
    "biomes": [
     "mushroom_fields",
@@ -3807,6 +4328,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -3818,6 +4341,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 80946,
    "biomes": [
     "sulfur_caves"
@@ -3829,6 +4354,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 87803,
    "biomes": [
     "deep_dark"
@@ -3840,9 +4367,37 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 87803,
    "biomes": [
     "deep_dark"
+   ]
+  },
+  {
+   "feature": "minecraft:sea_pickle",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -74,
+   "cz": -52,
+   "radius": 5,
+   "rarity": 16,
+   "cells": 185856,
+   "biomes": [
+    "warm_ocean"
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_cold",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -19,
+   "cz": -25,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 54048,
+   "biomes": [
+    "cold_ocean"
    ]
   },
   {
@@ -3851,9 +4406,37 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 352608,
    "biomes": [
     "deep_ocean"
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_deep_cold",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": -19,
+   "cz": -25,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 131808,
+   "biomes": [
+    "deep_cold_ocean"
+   ]
+  },
+  {
+   "feature": "minecraft:seagrass_deep_warm",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 30,
+   "cz": 124,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185856,
+   "biomes": [
+    "deep_lukewarm_ocean"
    ]
   },
   {
@@ -3862,6 +4445,8 @@
    "seed": 12345,
    "cx": 2,
    "cz": 212,
+   "radius": 5,
+   "rarity": 0,
    "cells": 556550,
    "biomes": [
     "ocean"
@@ -3873,6 +4458,8 @@
    "seed": 12345,
    "cx": -177,
    "cz": 86,
+   "radius": 5,
+   "rarity": 0,
    "cells": 111920,
    "biomes": [
     "river"
@@ -3881,10 +4468,12 @@
   {
    "feature": "minecraft:seagrass_swamp",
    "dim": "overworld",
-   "seed": 12345,
-   "cx": -19,
-   "cz": -208,
-   "cells": 25809,
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185244,
    "biomes": [
     "mangrove_swamp",
     "swamp"
@@ -3896,6 +4485,8 @@
    "seed": 8675309,
    "cx": 12,
    "cz": -19,
+   "radius": 5,
+   "rarity": 0,
    "cells": 198319,
    "biomes": [
     "lukewarm_ocean",
@@ -3908,6 +4499,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -3919,6 +4512,8 @@
    "seed": 12345,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 167398,
    "biomes": [
     "lush_caves"
@@ -3930,6 +4525,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -3944,6 +4541,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -3955,6 +4554,8 @@
    "seed": 8675309,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 109760,
    "biomes": [
     "basalt_deltas"
@@ -3966,6 +4567,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -4035,6 +4638,8 @@
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 523860,
    "biomes": [
     "frozen_peaks",
@@ -4049,6 +4654,8 @@
    "seed": -7048155917072976836,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451584,
    "biomes": [
     "crimson_forest",
@@ -4063,6 +4670,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -4128,6 +4737,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 80946,
    "biomes": [
     "sulfur_caves"
@@ -4139,6 +4750,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 80946,
    "biomes": [
     "sulfur_caves"
@@ -4150,9 +4763,24 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 80946,
    "biomes": [
     "sulfur_caves"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_badlands",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -173,
+   "cz": 223,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 165556,
+   "biomes": [
+    "wooded_badlands"
    ]
   },
   {
@@ -4161,6 +4789,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 38129,
    "biomes": [
     "birch_forest"
@@ -4172,6 +4802,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 332686,
    "biomes": [
     "forest"
@@ -4183,9 +4815,37 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 261,
    "biomes": [
     "cherry_grove"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_dappled_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": 41,
+   "cz": -69,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 140365,
+   "biomes": [
+    "dappled_forest"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_flower_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "cx": -179,
+   "cz": -135,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 174340,
+   "biomes": [
+    "flower_forest"
    ]
   },
   {
@@ -4194,6 +4854,8 @@
    "seed": -7048155917072976836,
    "cx": -61,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 451567,
    "biomes": [
     "grove"
@@ -4205,9 +4867,24 @@
    "seed": 12345,
    "cx": -103,
    "cz": 2,
+   "radius": 5,
+   "rarity": 0,
    "cells": 527883,
    "biomes": [
     "jungle"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_mangrove",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 107,
+   "cz": -8,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185244,
+   "biomes": [
+    "mangrove_swamp"
    ]
   },
   {
@@ -4216,9 +4893,24 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 10,
+   "rarity": 100,
    "cells": 18447,
    "biomes": [
     "meadow"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_old_growth_pine_taiga",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 19,
+   "cz": -30,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 149379,
+   "biomes": [
+    "old_growth_pine_taiga"
    ]
   },
   {
@@ -4227,6 +4919,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 282732,
    "biomes": [
     "deep_dark",
@@ -4241,6 +4935,8 @@
    "seed": 8675309,
    "cx": 180,
    "cz": -103,
+   "radius": 5,
+   "rarity": 0,
    "cells": 27148,
    "biomes": [
     "savanna",
@@ -4251,9 +4947,11 @@
    "feature": "minecraft:trees_snowy",
    "dim": "overworld",
    "seed": -7048155917072976836,
-   "cx": -61,
-   "cz": -208,
-   "cells": 15316,
+   "cx": -135,
+   "cz": -151,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 173272,
    "biomes": [
     "ice_spikes",
     "snowy_plains"
@@ -4265,6 +4963,8 @@
    "seed": 8675309,
    "cx": -30,
    "cz": -187,
+   "radius": 5,
+   "rarity": 0,
    "cells": 416551,
    "biomes": [
     "sparse_jungle"
@@ -4276,6 +4976,8 @@
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 25809,
    "biomes": [
     "swamp"
@@ -4287,6 +4989,8 @@
    "seed": -7048155917072976836,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 316100,
    "biomes": [
     "snowy_taiga",
@@ -4299,6 +5003,8 @@
    "seed": -7048155917072976836,
    "cx": 138,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 594624,
    "biomes": [
     "cold_ocean",
@@ -4315,15 +5021,43 @@
    ]
   },
   {
+   "feature": "minecraft:trees_windswept_forest",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 162,
+   "cz": 69,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 131045,
+   "biomes": [
+    "windswept_forest"
+   ]
+  },
+  {
    "feature": "minecraft:trees_windswept_hills",
    "dim": "overworld",
    "seed": 12345,
    "cx": -19,
    "cz": -208,
+   "radius": 5,
+   "rarity": 0,
    "cells": 559772,
    "biomes": [
     "windswept_gravelly_hills",
     "windswept_hills"
+   ]
+  },
+  {
+   "feature": "minecraft:trees_windswept_savanna",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "cx": 118,
+   "cz": 3,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 176064,
+   "biomes": [
+    "windswept_savanna"
    ]
   },
   {
@@ -4332,6 +5066,8 @@
    "seed": 12345,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 176448,
    "biomes": [
     "warped_forest"
@@ -4343,6 +5079,8 @@
    "seed": 8675309,
    "cx": -114,
    "cz": -51,
+   "radius": 5,
+   "rarity": 0,
    "cells": 677376,
    "biomes": [
     "badlands",
@@ -4409,6 +5147,8 @@
    "seed": 8675309,
    "cx": -30,
    "cz": -187,
+   "radius": 5,
+   "rarity": 0,
    "cells": 589106,
    "biomes": [
     "bamboo_jungle",
@@ -4417,11 +5157,26 @@
    ]
   },
   {
+   "feature": "minecraft:warm_ocean_vegetation",
+   "dim": "overworld",
+   "seed": 8675309,
+   "cx": -74,
+   "cz": -52,
+   "radius": 5,
+   "rarity": 0,
+   "cells": 185856,
+   "biomes": [
+    "warm_ocean"
+   ]
+  },
+  {
    "feature": "minecraft:warped_forest_vegetation",
    "dim": "nether",
    "seed": 12345,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 176448,
    "biomes": [
     "warped_forest"
@@ -4433,6 +5188,8 @@
    "seed": 12345,
    "cx": 60,
    "cz": -60,
+   "radius": 5,
+   "rarity": 0,
    "cells": 176448,
    "biomes": [
     "warped_forest"
@@ -4444,6 +5201,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 292288,
    "biomes": [
     "crimson_forest"
@@ -4455,6 +5214,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 2,
    "cells": 67121,
    "biomes": [
     "birch_forest",
@@ -4467,6 +5228,8 @@
    "seed": 8675309,
    "cx": 0,
    "cz": 0,
+   "radius": 5,
+   "rarity": 0,
    "cells": 18447,
    "biomes": [
     "meadow"
@@ -4474,38 +5237,7 @@
   }
  ],
  "skipped": [
-  "minecraft:basalt_pillar",
-  "minecraft:brown_mushroom_dappled_forest",
-  "minecraft:brown_mushroom_old_growth",
-  "minecraft:disk_grass",
-  "minecraft:flower_flower_forest",
-  "minecraft:flower_forest_flowers",
-  "minecraft:flower_pale_garden",
-  "minecraft:forest_rock",
-  "minecraft:ice_patch",
-  "minecraft:ice_spike",
-  "minecraft:mushroom_island_vegetation",
-  "minecraft:ore_soul_sand",
-  "minecraft:pale_garden_flowers",
-  "minecraft:pale_garden_vegetation",
-  "minecraft:pale_moss_patch",
-  "minecraft:patch_crimson_roots",
-  "minecraft:patch_grass_taiga",
-  "minecraft:patch_red_shrub",
-  "minecraft:red_mushroom_old_growth",
-  "minecraft:sea_pickle",
-  "minecraft:seagrass_cold",
-  "minecraft:seagrass_deep_cold",
-  "minecraft:seagrass_deep_warm",
-  "minecraft:trees_badlands",
-  "minecraft:trees_dappled_forest",
-  "minecraft:trees_flower_forest",
-  "minecraft:trees_mangrove",
-  "minecraft:trees_old_growth_pine_taiga",
   "minecraft:trees_old_growth_spruce_taiga",
-  "minecraft:trees_windswept_forest",
-  "minecraft:trees_windswept_savanna",
-  "minecraft:void_start_platform",
-  "minecraft:warm_ocean_vegetation"
+  "minecraft:void_start_platform"
  ]
 }

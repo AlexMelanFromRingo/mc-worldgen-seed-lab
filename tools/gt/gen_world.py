@@ -68,7 +68,7 @@ GAMERULES = ['random_tick_speed 0', 'mob_griefing false', 'spawn_mobs false', 'a
 
 
 def generate(version, variant, dim, seed, cx, cz, radius, xmx='5g', batch=512, force=False, tick='freeze', timeout=7200,
-             extra_props=None, tag='', stall=300):
+             extra_props=None, tag='', stall=300, bg_threads=None):
     dim = DIMS[dim]
     spec, param = datapack.parse_variant(variant)
     wd = world_dir(version, variant, dim, seed, cx, cz, radius, tag)
@@ -98,11 +98,11 @@ def generate(version, variant, dim, seed, cx, cz, radius, xmx='5g', batch=512, f
     x0, x1, z0, z1 = cx - radius, cx + radius, cz - radius, cz + radius
     area = [(x, z) for x in range(x0, x1 + 1) for z in range(z0, z1 + 1)]
     rdir = anvil.region_dir(f'{wd}/world', dim)
-    srv = Server(version, wd, xmx=xmx)
+    srv = Server(version, wd, xmx=xmx, extra_jvm=[f'-Dmax.bg.threads={bg_threads}'] if bg_threads else [])
     man = {'ok': False, 'tool': 'tools/gt/gen_world.py', 'version': version, 'variant': variant, 'dim': dim, 'seed': seed,
            'center_chunk': [cx, cz], 'radius': radius, 'area_chunks': [x0, z0, x1, z1], 'chunks_area': len(area),
            'datapack': dp, 'properties': props, 'java_xmx': xmx, 'tick': tick, 'world_version': version_info(version)['world_version'],
-           'host': {'cores': os.cpu_count(), 'platform': platform.platform()}}
+           'bg_threads': bg_threads, 'host': {'cores': os.cpu_count(), 'platform': platform.platform()}}
     with server_lock(log):
         t_lock = time.monotonic()
         log(f'старт сервера {version} -> {wd}')
@@ -187,9 +187,10 @@ def main():
     ap.add_argument('--tick', default='freeze', choices=['freeze', 'normal'], help='freeze: /tick freeze (никаких случайных тиков и потоков жидкости)')
     ap.add_argument('--timeout', type=int, default=7200)
     ap.add_argument('--force', action='store_true', help='пересоздать, даже если manifest.json готов')
+    ap.add_argument('--bg-threads', type=int, default=None, help='-Dmax.bg.threads=N (1 — порядок шагов генерации воспроизводим: проверка детерминизма фич)')
     ap.add_argument('--tag', default='', help='суффикс имени каталога (повторные прогоны для проверки детерминизма)')
     a = ap.parse_args()
-    m = generate(a.version, a.variant, a.dim, a.seed, a.cx, a.cz, a.radius, a.xmx, a.batch, a.force, a.tick, a.timeout, tag=a.tag)
+    m = generate(a.version, a.variant, a.dim, a.seed, a.cx, a.cz, a.radius, a.xmx, a.batch, a.force, a.tick, a.timeout, tag=a.tag, bg_threads=a.bg_threads)
     sys.exit(0 if m.get('ok') else 1)
 
 

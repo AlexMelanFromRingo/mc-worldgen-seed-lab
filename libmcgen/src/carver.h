@@ -30,10 +30,17 @@ void carvers_world_free(McWorld *w);
 int mcgen_surface_top_material(McWorld *w, TerrainCtx *t, int cx, int cz, const uint16_t *blocks, int x, int y, int z, int under_fluid)
     __attribute__((weak));
 
-/* Тестовый экспорт: маска вырезания чанка без применения (для сверки с Java): mask[(x*16+z)*H + (y-miny)], H = высота маски.
- * Возвращает число отмеченных блоков или −1; *miny, *h — геометрия маски. 26.3+ */
+/* 26.4: маска в куче (NULL — маска пуста): mask[(x*16+z)*mh + (y - mmin)]; освобождает вызывающий. Для прохода поверхности (ChunkTerrainBuilder.fillColumn):
+ *   carved = маска[x,z,y]; для «твёрдого» блока шума: если carved и результат правила материала не uncarvable → terrain_carve_substance(x,y,z):
+ *   воздух (AIR) — блок удалить (в игре он не записывается), carvedTopBlock |= stoneAbove == 1; жидкость — записать (+ пометка при sched);
+ *   −1 (SOLID) — обычный путь; carvedTopBlock → для dirt правило пересчитывается с stoneDepthAbove = 1; в ветках воздуха/жидкости шума carvedTopBlock &= carved. */
+uint8_t *carvers_mask_alloc(McWorld *w, int cx, int cz, int *mmin, int *mh, char *err, size_t errlen);
+
+/* Маска вырезания чанка без применения (CarvingMask игры): mask[(x*16+z)*H + (y-miny)], H = высота маски; зависит только от seed, биомов
+ * исходных чанков и данных карверов, не от блоков. Для 26.4, где карвинг встроен в проход поверхности (ChunkTerrainBuilder.fillColumn), её
+ * вместе с terrain_carve_substance() использует стадия SURFACE. Возвращает число отмеченных блоков или −1; *miny, *h — геометрия маски. 26.3+ */
 void carvers_x_stats(long *calls, long *changed);   /* тест: вызовы topMaterial / изменённые им блоки */
 void carvers_x_set_eager(int on);   /* тест: «жадный» режим 26.1/26.2 для 26.3+ */
-int carvers_x_mask(McWorld *w, int cx, int cz, uint8_t *mask, size_t cap, int *miny, int *h);
+int carvers_chunk_mask(McWorld *w, int cx, int cz, uint8_t *mask, size_t cap, int *miny, int *h);
 
 #endif

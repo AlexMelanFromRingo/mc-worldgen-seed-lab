@@ -1,4 +1,4 @@
-/* carver.c — стадия CARVERS для 26.3+ (карверы описаны данными: worldgen/carver/*.json; тип cave / canyon).
+/* carver.c — стадия CARVERS для 26.3+ (карверы описаны данными: worldgen/carver/<имя>.json; тип cave / canyon).
  *
  * Как устроено в игре (NoiseBasedChunkGenerator.generateCarvers):
  *   1. маска CarvingMask чанка (биты по (x, z, y), y ∈ [minGenY+1, minGenY+genDepth−1−7]);
@@ -48,18 +48,27 @@ static inline void cr_large_feature_seed(CRnd *r, i64 seed, i32 cx, i32 cz) {
 static inline i32 cr_range(CRnd *r, i32 lo, i32 hi) { return lo >= hi ? lo : cr_int(r, hi - lo + 1) + lo; }
 
 /* ---------------- Mth.sin / Mth.cos: таблица из 65536 float ---------------- */
-static float g_sin[65536];
+static float g_sin[65536], g_sin4[65536];   /* g_sin4 — 26.4: четыре узла заданы точно (sin[0] = 0, sin[16384] = 1, …) */
 static int g_sin_state;   /* 0 — нет, 1 — строится, 2 — готова */
 static void sin_ensure(void) {
     if (__atomic_load_n(&g_sin_state, __ATOMIC_ACQUIRE) == 2) return;
     int exp = 0;
     if (__atomic_compare_exchange_n(&g_sin_state, &exp, 1, 0, __ATOMIC_ACQ_REL, __ATOMIC_ACQUIRE)) {
         for (int i = 0; i < 65536; i++) g_sin[i] = (float)sin((double)i / 10430.378350470453);
+        memcpy(g_sin4, g_sin, sizeof g_sin);
+        g_sin4[0] = 0.0f; g_sin4[16384] = 1.0f; g_sin4[32768] = 0.0f; g_sin4[49152] = -1.0f;
         __atomic_store_n(&g_sin_state, 2, __ATOMIC_RELEASE);
     } else while (__atomic_load_n(&g_sin_state, __ATOMIC_ACQUIRE) != 2) { }
 }
-static inline float mth_sin(double v) { return g_sin[(int)(jm_d2l(v * 10430.378350470453) & 65535LL)]; }
-static inline float mth_cos(double v) { return g_sin[(int)(jm_d2l(v * 10430.378350470453 + 16384.0) & 65535LL)]; }
+/* v4: 26.4+ — Mth.sin/cos с округлением индекса (+0.5) и нечётной симметрией для i < 0 */
+static inline float mth_sin(int v4, double v) {
+    if (!v4) return g_sin[(int)(jm_d2l(v * 10430.378350470453) & 65535LL)];
+    return v >= 0.0 ? g_sin4[(int)(jm_d2l(v * 10430.378350470453 + 0.5) & 65535LL)] : -g_sin4[(int)(jm_d2l(-v * 10430.378350470453 + 0.5) & 65535LL)];
+}
+static inline float mth_cos(int v4, double v) {
+    if (!v4) return g_sin[(int)(jm_d2l(v * 10430.378350470453 + 16384.0) & 65535LL)];
+    return v >= 0.0 ? g_sin4[(int)(jm_d2l(v * 10430.378350470453 + 16384.0 + 0.5) & 65535LL)] : g_sin4[(int)(jm_d2l(-v * 10430.378350470453 + 16384.0 + 0.5) & 65535LL)];
+}
 
 /* ---------------- поставщики значений ---------------- */
 typedef struct { int kind; int a, b; } IProv;               /* 0 константа a; 1 uniform [a,b]; 2 biased_to_bottom; 3 very_biased_to_bottom */
@@ -413,6 +422,7 @@ typedef struct {
     u8 *mask;                           /* [(x*16+z)*mh + (y−mmin)] */
     u8 colany[256];
     /* 26.1/26.2: карвер сразу меняет чанк (WorldCarver.carveBlock), маска — только отметка «блок уже вырезан» */
+    int sinv;                           /* 1 — таблица синусов 26.4 */
     int eager;
     McWorld *w; const Carvers *C; TerrainCtx *t; uint16_t *blocks; PPMarks *marks;
     const CarverDef *cur;               /* карвер, чей carve() выполняется */
@@ -515,13 +525,13 @@ static void cave_tunnel(CCtx *c, i64 tunnel_seed, double x, double y, double z, 
     int steep = cr_int(&r, 6) == 0;
     float y_rota = 0.0f, x_rota = 0.0f;
     for (int cur = step; cur < dist; cur++) {
-        float sv = mth_sin((double)((PI_F * (float)cur) / (float)dist));
+        float sv = mth_sin(c->sinv, (double)((PI_F * (float)cur) / (float)dist));
         double hr = 1.5 + (double)(sv * thickness);
         double vr = hr * yscale;
-        float cos_x = mth_cos((double)vrot);
-        x += (double)(mth_cos((double)hrot) * cos_x);
-        y += (double)mth_sin((double)vrot);
-        z += (double)(mth_sin((double)hrot) * cos_x);
+        float cos_x = mth_cos(c->sinv, (double)vrot);
+        x += (double)(mth_cos(c->sinv, (double)hrot) * cos_x);
+        y += (double)mth_sin(c->sinv, (double)vrot);
+        z += (double)(mth_sin(c->sinv, (double)hrot) * cos_x);
         vrot *= steep ? 0.92f : 0.7f;
         vrot += x_rota * 0.1f;
         hrot += y_rota * 0.1f;
@@ -560,7 +570,7 @@ static void cave_carve(CCtx *c, const CarverDef *d, CRnd *r, int sx, int sz) {
             double yscale = (double)fp_sample(&d->room_v, r);
             float thickness = 1.0f + cr_float(r) * 6.0f;
             if (d->size_mul != 1.0f) thickness *= d->size_mul;
-            double hr = 1.5 + (double)(mth_sin((double)HALF_PI_F) * thickness);
+            double hr = 1.5 + (double)(mth_sin(c->sinv, (double)HALF_PI_F) * thickness);
             double vr = hr * yscale;
             carve_ellipsoid(c, x + 1.0, y, z, hr, vr, &sk);
             tunnels += cr_int(r, 4);
@@ -593,7 +603,7 @@ static void canyon_do_carve(CCtx *c, const CarverDef *d, i64 tunnel_seed, double
     Skip sk = { 1, 0.0, wf, c->min_gen_y };
     float y_rota = 0.0f, x_rota = 0.0f;
     for (int cur = step; cur < distance; cur++) {
-        float sv = mth_sin((double)(((float)cur * PI_F) / (float)distance));
+        float sv = mth_sin(c->sinv, (double)(((float)cur * PI_F) / (float)distance));
         double hr = 1.5 + (double)(sv * thickness);
         double vr = hr * yscale;
         hr *= (double)fp_sample(&d->hrad_factor, &r);
@@ -603,10 +613,10 @@ static void canyon_do_carve(CCtx *c, const CarverDef *d, i64 tunnel_seed, double
             float rb = cr_float(&r) * (1.0f - 0.75f) + 0.75f;
             vr = (double)factor * vr * (double)rb;
         }
-        float xc = mth_cos((double)vrot), xs = mth_sin((double)vrot);
-        x += (double)(mth_cos((double)hrot) * xc);
+        float xc = mth_cos(c->sinv, (double)vrot), xs = mth_sin(c->sinv, (double)vrot);
+        x += (double)(mth_cos(c->sinv, (double)hrot) * xc);
         y += (double)xs;
-        z += (double)(mth_sin((double)hrot) * xc);
+        z += (double)(mth_sin(c->sinv, (double)hrot) * xc);
         vrot *= 0.7f;
         vrot += x_rota * 0.05f;
         hrot += y_rota * 0.05f;
@@ -681,6 +691,7 @@ static int ctx_init(McWorld *w, CCtx *c, int cx, int cz) {
     const NoiseSettings *ns = w->ns;
     memset(c, 0, sizeof *c);
     c->cx = cx; c->cz = cz;
+    c->sinv = w->g->version >= V26_4;
     c->min_gen_y = w->min_y > ns->min_y ? w->min_y : ns->min_y;                    /* WorldGenerationContext */
     c->gen_depth = w->height < ns->height ? w->height : ns->height;
     c->sea = ns->sea_level;
@@ -761,7 +772,7 @@ int carvers_apply_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *blo
     return MCGEN_OK;
 }
 
-int carvers_x_mask(McWorld *w, int cx, int cz, uint8_t *mask, size_t cap, int *miny, int *h) {
+int carvers_chunk_mask(McWorld *w, int cx, int cz, uint8_t *mask, size_t cap, int *miny, int *h) {
     if (!w->g->newf) return -1;
     sin_ensure();
     char e[256];
@@ -776,4 +787,21 @@ int carvers_x_mask(McWorld *w, int cx, int cz, uint8_t *mask, size_t cap, int *m
     ctx_free(&c);
     int n = 0; for (size_t i = 0; i < (size_t)*h * 256; i++) n += mask[i];
     return n;
+}
+
+/* Маска чанка в куче (для 26.4, где карвинг встроен в проход поверхности): NULL, если маска пуста или карверов нет.
+ * Индекс: mask[(x*16+z)*mh + (y - mmin)]; освобождает вызывающий (free). */
+uint8_t *carvers_mask_alloc(McWorld *w, int cx, int cz, int *mmin, int *mh, char *err, size_t errlen) {
+    sin_ensure();
+    Carvers *C = carvers_get(w, err, errlen);
+    if (!C) return NULL;
+    if (C->uniform_list >= 0 && C->list_n[C->uniform_list] == 0) return NULL;
+    CCtx c;
+    if (!ctx_init(w, &c, cx, cz)) return NULL;
+    build_mask(w, C, &c);
+    int any = 0; for (int i = 0; i < 256; i++) if (c.colany[i]) { any = 1; break; }
+    uint8_t *m = c.mask; c.mask = NULL;
+    *mmin = c.mmin; *mh = c.mh;
+    if (!any) { free(m); return NULL; }
+    return m;
 }

@@ -76,6 +76,8 @@ struct McGen {
     int *ow_leaf_biome, *nether_leaf_biome; /* лист дерева → id биома libmcgen */
     /* тонкие настройки */
     int ntweaks; const McTweakInfo *tweaks;
+    /* стадия FEATURES (поток W8): таблица состояний блоков (blockstate.c) */
+    void *bs_tab;
 };
 
 void gen_compute_state_classes(McGen *g);
@@ -125,7 +127,10 @@ struct McWorld {
     double noise_mxz, noise_my, cave_m;
     void *carvers;              /* стадия CARVERS (carver.c): определения карверов, списки по биомам; строится лениво */
     void *surface;              /* стадия SURFACE (surface.c): дерево правил, шумы, полосы; строится в mcgen_world_new */
+    void *features;             /* стадия FEATURES (feature*.c): скомпилированные фичи и порядок по шагам; строится лениво */
 };
+void bs_free(void *tab);                 /* blockstate.c */
+void features_world_free(McWorld *w);    /* feature.c */
 
 void tweaks_prepare(McWorld *w);
 void tweaks_release(McWorld *w);

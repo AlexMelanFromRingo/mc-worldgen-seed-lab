@@ -419,6 +419,7 @@ void mcgen_close(McGen *g) {
         free(g->dims[d].p); free(g->dims[d].name);
     }
     biome_params_free(g);
+    bs_free(g->bs_tab);
     free(g->state_cls); free(g->state_block);
     sm_free(&g->tags, free);
     if (g->lock) mutex_free(g->lock);

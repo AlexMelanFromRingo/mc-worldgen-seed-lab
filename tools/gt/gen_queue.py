@@ -19,6 +19,16 @@ CORE_LABELS = {('overworld', 'spawn'), ('nether', 'center'), ('end', 'main_islan
 LAND_LABELS = CORE_LABELS | {('overworld', 'ocean'), ('overworld', 'mountains'), ('overworld', 'desert'), ('overworld', 'jungle')}
 
 
+GEO = ('ore_', 'disk_', 'spring_', 'lake_', 'blue_ice', 'forest_rock', 'iceberg', 'ice_', 'basalt', 'blackstone', 'delta', 'nether_', 'amethyst', 'monster_room',
+       'fossil', 'geode', 'dripstone', 'large_dripstone', 'pointed_dripstone', 'sculk', 'glowstone', 'magma', 'fire', 'soul_fire', 'lava', 'end_', 'chorus', 'void',
+       'moss', 'cave_', 'lush_', 'clay', 'glow_lichen', 'seagrass', 'kelp', 'sea_pickle', 'coral', 'warm_ocean')
+
+
+def feature_group(fid):
+    n = fid.split(':')[-1]
+    return 'ores' if n.startswith(GEO) or 'blob' in n or 'vein' in n else 'veg'
+
+
 def configs(profile, seeds=None, dims=None):
     m = json.load(open(f'{ROOT}/tools/gt/matrix.json'))
     if profile == 'extras':          # области (r=5) с редкими биомами для изоляции фич (pick_regions.py)
@@ -45,6 +55,9 @@ def main():
     ap.add_argument('--dims', default=None, help='overworld,nether,end')
     ap.add_argument('--xmx', default='5g')
     ap.add_argument('--force', action='store_true')
+    ap.add_argument('--group', default='all', choices=['all', 'ores', 'veg'], help='с --plan features: ores = руды/диски/источники/блобы/геология, veg = растительность')
+    ap.add_argument('--tag', default='', help='суффикс каталога (повторные прогоны для --stable-with: rep1, rep2)')
+    ap.add_argument('--bg-threads', type=int, default=None)
     ap.add_argument('--timeout', type=int, default=7200)
     ap.add_argument('--plan', default=None, help='structures: области построек из tools/gt/structures_plan.json (structure_plan.py); в --variants `structure` = '
                                                  '`structure:<набор из плана>`, остальные варианты (full, surface, ...) — на тех же областях')
@@ -63,8 +76,11 @@ def main():
             if a.seeds and e['seed'] not in a.seeds:
                 continue
             c = {'dim': e['dim'], 'seed': e['seed'], 'cx': e['cx'], 'cz': e['cz'], 'radius': a.plan_radius or e.get('radius', fp['radius']), 'label': e['feature'].split(':')[1]}
+            if a.group != 'all' and feature_group(e['feature']) != a.group:
+                continue
             for v in a.variants.split(','):
                 jobs.append((f'feature:{e["feature"]}' if v == 'feature' else v, c))
+        jobs.sort(key=lambda j: (feature_group(j[0].split(':', 1)[-1]) != 'ores', j[0]))      # сначала геология/руды, затем растительность
     elif a.plan:
         plan = json.load(open(f'{ROOT}/tools/gt/structures_plan.json'))['plan']
         only = set(a.sets.split(',')) if a.sets else None
@@ -84,10 +100,10 @@ def main():
     t_q = time.monotonic()
     print(time.strftime('%H:%M:%S'), f'очередь: {len(jobs)} задач ({a.version}, {a.variants}, профиль {a.profile})', flush=True)
     for i, (v, c) in enumerate(jobs):
-        wd = gen_world.world_dir(a.version, v, c['dim'], c['seed'], c['cx'], c['cz'], c['radius'])
+        wd = gen_world.world_dir(a.version, v, c['dim'], c['seed'], c['cx'], c['cz'], c['radius'], a.tag)
         print(time.strftime('%H:%M:%S'), f'[{i + 1}/{len(jobs)}] {v} {c["dim"]} s{c["seed"]} ({c["cx"]},{c["cz"]}) {c["label"]}', flush=True)
         try:
-            m = gen_world.generate(a.version, v, c['dim'], c['seed'], c['cx'], c['cz'], c['radius'], xmx=a.xmx, force=a.force, timeout=a.timeout)
+            m = gen_world.generate(a.version, v, c['dim'], c['seed'], c['cx'], c['cz'], c['radius'], xmx=a.xmx, force=a.force, timeout=a.timeout, tag=a.tag, bg_threads=a.bg_threads)
             summary[wd.replace(ROOT + '/', '')] = {k: m.get(k) for k in ('ok', 'chunks_full', 'chunks_area', 'server_start_s', 'generate_s', 'total_s',
                                                                          'region_bytes', 'finished')} | {'label': c['label']}
         except Exception as e:

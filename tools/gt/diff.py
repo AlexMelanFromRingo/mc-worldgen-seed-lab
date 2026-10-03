@@ -16,6 +16,8 @@
   --mask-ext           исключить столбцы у биомов eroded_badlands / frozen_ocean / deep_frozen_ocean (расширения «столбы бесплодных земель»
                        и «айсберги» выполняются кодом игры при ЛЮБОМ правиле материала, поэтому в варианте raw они «грязь» для G2)
   --margin N           не сравнивать N крайних чанков области дампа
+  --stable-with МИР    (повтор.) маскировать клетки, где эталон расходится с этим повторным прогоном: порядок шагов features у ванили зависит от
+                       планировщика (измерено: ~0.1-0.25 % блоков у features/full), поэтому 100 % по декорациям недостижимы и у самой ванили
   --no-mask-flow       не маскировать «текущие» жидкости (water/lava[level=1..15]) и их гало: при переходе чанка в full игра один раз растекает жидкость
                        из позиций, помеченных aquifer (PostProcessing), даже при /tick freeze — это не стадия генерации (в raw ~26 блоков на 43 млн)
                        и превращает соседние пустые клетки в источники (правило «бесконечной воды»)
@@ -59,7 +61,7 @@ class Opts:
         self.dim = 'overworld'; self.version = '26.3'; self.min_status = 'minecraft:full'
         self.ignore_state = []; self.ignore_y = []; self.only_y = None; self.mask_ext = False; self.margin = 0
         self.top = 20; self.biomes = False; self.heightmaps = False; self.min_match = 100.0; self.allow_missing = False
-        self.region = None; self.no_cache = False; self.mask_flow = True; self.flow_halo = 0; self.list = 0
+        self.region = None; self.no_cache = False; self.mask_flow = True; self.flow_halo = 0; self.list = 0; self.stable_with = []
         self.__dict__.update(kw)
 
 
@@ -233,6 +235,8 @@ def compare(ref, ours, o):
     flow_pos, cand = set(), {}; cand_overflow = False
     full_rank = status_rank('minecraft:full')
     pure_set = set()
+    stab = [anvil.World(find_world(sp), o.dim, o.version, states=ref.states, biomes=ref.biomes, use_cache=not o.no_cache) for sp in o.stable_with]
+    unstable_cells = 0
     cls = {'pure': [0, 0, 0], 'full': [0, 0, 0]}        # [чанков, блоков сравнено, расхождений]; pure = статус ниже full (PostProcessing не выполнялся)
     ext_ids = {ref.biomes.get(n) for n in EXT_BIOMES} if o.mask_ext else set()
     minst = status_rank(o.min_status)
@@ -249,7 +253,7 @@ def compare(ref, ours, o):
     ychist = np.zeros(H, dtype=np.int64); yden = np.zeros(H, dtype=np.int64)
     cmap = {}            # (cx,cz) -> (mismatch, compared) | 'missing' | 'status' | 'masked'
     tot_cmp = tot_bad = masked_cells = ext_cols = unmapped_bad = 0
-    bio_cmp = bio_bad = 0; bpair = collections.Counter(); bsamples = []
+    bio_cmp = bio_bad = 0; bpair = collections.Counter(); bsamples = []; bio_skip = False
     hm_bad = np.zeros(4, dtype=np.int64); hm_cmp = 0
     ymask = np.zeros(H, dtype=bool)
     ys = np.arange(H) + ours.min_y
@@ -296,6 +300,12 @@ def compare(ref, ours, o):
             mask |= fm
         if ymask.any():
             mask |= ymask[:, None, None]
+        for sw in stab:       # клетки, где повторные прогоны ВАНИЛЬНОГО сервера расходятся (порядок шагов features недетерминирован), не сравниваем
+            sc = sw.chunk(cx, cz)
+            if sc is not None and sc.blocks.shape == rb.shape:
+                um = (sc.blocks != rb) & ~mask
+                unstable_cells += int(um.sum())
+                mask |= um
         colmask = None
         if ext_ids:
             colmask = _ext_columns(ref, cx, cz, rc, ext_ids)
@@ -337,7 +347,9 @@ def compare(ref, ours, o):
             for k, cnt in zip(u.tolist(), n.tolist()):
                 pair[(k >> 16, k & 65535)] += cnt
             unmapped_bad += int((mine[bad] == 65535).sum())
-        if o.biomes:
+        if o.biomes and rc.biomes_block is not None:
+            bio_skip = True      # 26.4: биомы эталона поблочные, дамп libmcgen — по клеткам 4x4x4: сравнение по клеткам некорректно (см. anvil.py)
+        elif o.biomes:
             mb = ours.blut[obio]
             bm = np.zeros(rc.biomes.shape, dtype=bool)
             if colmask is not None:
@@ -384,7 +396,7 @@ def compare(ref, ours, o):
         'chunks_in_dump': len(chunks), 'chunks_compared': n_cmp,
         'chunks_skipped_status': sum(1 for v in cmap.values() if v == 'status'),
         'chunks_missing': sum(1 for v in cmap.values() if v == 'missing'),
-        'blocks_compared': tot_cmp, 'blocks_mismatch': tot_bad, 'blocks_masked': masked_cells, 'blocks_masked_flow': masked_flow, 'blocks_flow_induced': flow_induced, 'ext_columns_masked': ext_cols,
+        'blocks_compared': tot_cmp, 'blocks_mismatch': tot_bad, 'blocks_masked': masked_cells, 'blocks_masked_flow': masked_flow, 'blocks_unstable': unstable_cells, 'blocks_flow_induced': flow_induced, 'ext_columns_masked': ext_cols,
         'match_pct': (100.0 * (tot_cmp - tot_bad) / tot_cmp) if tot_cmp else 0.0,
         'unmapped_state_mismatch': unmapped_bad,
         'pure': {'chunks': cls['pure'][0], 'blocks': cls['pure'][1], 'mismatch': cls['pure'][2]},
@@ -396,7 +408,10 @@ def compare(ref, ours, o):
                       for (a, b), c in pair.most_common(o.top)]
     R['pairs_total'] = len(pair)
     R['samples'] = samples
-    if o.biomes:
+    if o.biomes and bio_skip:
+        R['biomes'] = {'cells_compared': 0, 'cells_mismatch': 0, 'samples': [], 'match_pct': float('nan'), 'top_pairs': [],
+                       'skipped': 'эталон хранит биомы поблочно (26.4); сверка биомов — через mcgen_biome_at по блокам'}
+    elif o.biomes:
         R['biomes'] = {'cells_compared': bio_cmp, 'cells_mismatch': bio_bad, 'samples': bsamples,
                        'match_pct': (100.0 * (bio_cmp - bio_bad) / bio_cmp) if bio_cmp else 0.0,
                        'top_pairs': [{'ours': ours.biome_names[a] if a < len(ours.biome_names) else f'#{a}',
@@ -457,6 +472,8 @@ def text_report(R, o):
     L.append(f'чанков в дампе {R["chunks_in_dump"]}, сравнено {R["chunks_compared"]}, пропущено по статусу {R["chunks_skipped_status"]}, нет {R["chunks_missing"]}')
     L.append(f'блоков сравнено {R["blocks_compared"]:,}, расхождений {R["blocks_mismatch"]:,}  ->  совпадение {R["match_pct"]:.6f} %   '
              f'(замаскировано {R["blocks_masked"]:,}, из них текущих жидкостей {R["blocks_masked_flow"]:,}; ext-столбцов {R["ext_columns_masked"]})   чанков с расхождениями: {R["chunks_mismatching"]}')
+    if R['blocks_unstable']:
+        L.append(f'  не сравнивались (расходятся повторные прогоны ванильного сервера, --stable-with): {R["blocks_unstable"]:,}')
     if R['pure']['chunks']:
         L.append(f'  чистые чанки (статус ниже full, без PostProcessing): {R["pure"]["chunks"]} чанков, {R["pure"]["blocks"]:,} блоков, расхождений {R["pure"]["mismatch"]:,}; '
                  f'full: {R["full"]["chunks"]} чанков, {R["full"]["blocks"]:,} блоков, расхождений {R["full"]["mismatch"]:,}')
@@ -485,6 +502,10 @@ def text_report(R, o):
                 L.append(f'  y {b["y0"]:5d}..{b["y1"]:5d}  {b["mismatch"]:11,d} / {b["compared"]:12,d}  ({100 * b["mismatch"] / b["compared"]:7.4f} %)  {bar}')
     if 'biomes' in R:
         B = R['biomes']
+        if B.get('skipped'):
+            L.append('\nбиомы: ' + B['skipped'])
+            B = None
+    if 'biomes' in R and B is not None:
         L.append(f'\nбиомы (клетки 4x4x4): сравнено {B["cells_compared"]:,}, расхождений {B["cells_mismatch"]:,} -> {B["match_pct"]:.4f} %')
         for p in B['top_pairs'][:10]:
             L.append(f'  {p["count"]:10,d}  {p["ours"]} -> {p["ref"]}')
@@ -547,10 +568,11 @@ def main():
     ap.add_argument('--region', nargs=4, type=int, metavar=('CX0', 'CZ0', 'NX', 'NZ'))
     ap.add_argument('--no-cache', action='store_true'); ap.add_argument('--no-mask-flow', action='store_true'); ap.add_argument('--flow-halo', type=int, default=0)
     ap.add_argument('--list', type=int, default=0, help='вывести координаты первых N расхождений блоков и биомов')
+    ap.add_argument('--stable-with', action='append', default=[])
     ap.add_argument('--json'); ap.add_argument('--png'); ap.add_argument('--md')
     a = ap.parse_args()
     kw = {k: getattr(a, k) for k in ('dim', 'version', 'min_status', 'ignore_state', 'ignore_y', 'only_y', 'mask_ext', 'margin', 'top', 'biomes',
-                                    'heightmaps', 'min_match', 'allow_missing', 'region', 'no_cache', 'list', 'flow_halo')}
+                                    'heightmaps', 'min_match', 'allow_missing', 'region', 'no_cache', 'list', 'flow_halo', 'stable_with')}
     kw['mask_flow'] = not a.no_mask_flow
     box = None
     if a.vs_world:

@@ -33,7 +33,7 @@ class Java:
         r = self.p.stdout.readline().strip()
         if not r.startswith('ok '):
             raise RuntimeError(r or 'пустой ответ Java-эталона')
-        return r[3:]
+        return r[3:].split(' ')
 
     def close(self):
         try:
@@ -78,12 +78,16 @@ def compare(a, java, dim, preset, seed, cx0, cz0, nx, nz, rows, label=''):
     cli_dump(a, dim, preset, seed, cx0, cz0, nx, nz, out)
     t_ours = time.time() - t0
     M = mcr.Mcr(out)
-    bad = 0; tot = 0; pairs = collections.Counter(); badc = 0
+    bad = 0; tot = 0; pairs = collections.Counter(); badc = 0; hm_bad = 0
     t0 = time.time()
     for cz in range(cz0, cz0 + nz):
         for cx in range(cx0, cx0 + nx):
-            raw = base64.b64decode(java.cmd(f'surface {dim} {preset} {seed} {cx} {cz}'))
-            jb = np.frombuffer(raw, dtype='<u2').reshape(M.height, 16, 16)
+            ans = java.cmd(f'surface {dim} {preset} {seed} {cx} {cz}')
+            jb = np.frombuffer(base64.b64decode(ans[0]), dtype='<u2').reshape(M.height, 16, 16)
+            jh = np.frombuffer(base64.b64decode(ans[1]), dtype='<i2').reshape(4, 256).astype(np.int32) if len(ans) > 1 else None
+            if jh is not None:
+                oh = np.asarray(M.heightmaps(cx, cz)).astype(np.int32)
+                hm_bad += int((jh != oh).sum())
             ob = np.asarray(M.blocks(cx, cz))
             d = jb != ob
             n = int(d.sum())
@@ -97,13 +101,30 @@ def compare(a, java, dim, preset, seed, cx0, cz0, nx, nz, rows, label=''):
                     print(f'   чанк ({cx},{cz}): {n} расхождений, первые (x,y,z): ' +
                           ', '.join(f'({cx * 16 + int(x)},{M.min_y + int(y)},{cz * 16 + int(z)})' for y, z, x in list(zip(ys, zs, xs))[:4]), flush=True)
     t_java = time.time() - t0
+    stats = {}
+    if a.stats:
+        want = [w for w in a.stats.split(',') if w]
+        ids = {i: nm for i, nm in enumerate(M.state_names) if any(nm.startswith('minecraft:' + w) for w in want)}
+        if ids:
+            lut = np.zeros(len(M.state_names), dtype=bool)
+            lut[list(ids)] = True
+            cnt = collections.Counter()
+            for cz in range(cz0, cz0 + nz):
+                for cx in range(cx0, cx0 + nx):
+                    b = np.asarray(M.blocks(cx, cz))
+                    u, c = np.unique(b[lut[b]], return_counts=True)
+                    for k, v in zip(u, c):
+                        cnt[ids[int(k)].split('[')[0].replace('minecraft:', '')] += int(v)
+            stats = dict(cnt)
     if not a.keep:
         os.remove(out)
     rows.append({'label': label, 'dim': dim, 'seed': seed, 'cx0': cx0, 'cz0': cz0, 'nx': nx, 'nz': nz, 'blocks': tot, 'mismatch': bad,
-                 'chunks_bad': badc, 'top': [[k[0], k[1], v] for k, v in pairs.most_common(5)], 'ours_s': round(t_ours, 2), 'java_s': round(t_java, 1)})
-    print(f'{a.version} {dim:9s} s={seed} ({cx0},{cz0}) {nx}x{nz} {label:22s} блоков {tot:,} расхождений {bad} (чанков {badc}) | наш {t_ours:.1f} с, Java {t_java:.1f} с'
+                 'chunks_bad': badc, 'hm_mismatch': hm_bad, 'stats': stats, 'top': [[k[0], k[1], v] for k, v in pairs.most_common(5)], 'ours_s': round(t_ours, 2), 'java_s': round(t_java, 1)})
+    print(f'{a.version} {dim:9s} s={seed} ({cx0},{cz0}) {nx}x{nz} {label:22s} блоков {tot:,} расхождений {bad} (чанков {badc}), карт высот {hm_bad} | наш {t_ours:.1f} с, Java {t_java:.1f} с'
           + ('' if not bad else '  ' + json.dumps(pairs.most_common(4), ensure_ascii=False)), flush=True)
-    return bad
+    if stats:
+        print('      блоки: ' + ', '.join(f'{k}:{v}' for k, v in sorted(stats.items())), flush=True)
+    return bad + hm_bad
 
 
 def main():
@@ -125,6 +146,7 @@ def main():
     ap.add_argument('--java-opts', default='-Xmx3g')
     ap.add_argument('--tmp', default=os.environ.get('TMPDIR', '/tmp'))
     ap.add_argument('--keep', action='store_true')
+    ap.add_argument('--stats', default='', help='имена блоков (префикс после minecraft:) через запятую: напечатать, сколько их в сравниваемой области')
     ap.add_argument('--report')
     a = ap.parse_args()
     rows = []

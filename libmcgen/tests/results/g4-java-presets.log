@@ -1,0 +1,27 @@
+26.3 overworld large_biomes s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.6 с, Java 25 с
+26.3 overworld large_biomes s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.5 с, Java 2 с
+26.3 overworld amplified s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 30 с
+26.3 overworld amplified s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 1.6 с, Java 3 с
+26.3 overworld caves s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 1.5 с, Java 33 с
+26.3 overworld caves s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.5 с, Java 2 с
+26.3 overworld floating_islands s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.5 с, Java 31 с
+26.3 overworld floating_islands s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 1 с
+26.1 overworld large_biomes s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.9 с, Java 27 с
+26.1 overworld large_biomes s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 4 с
+26.1 overworld amplified s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 1.3 с, Java 27 с
+26.1 overworld amplified s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.8 с, Java 2 с
+26.1 overworld caves s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.6 с, Java 29 с
+26.1 overworld caves s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.4 с, Java 2 с
+26.1 overworld floating_islands s=12345 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.6 с, Java 27 с
+26.1 overworld floating_islands s=8675309 (-2,-2) 4x4 surface+carve блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.8 с, Java 1 с
+   чанк (0,-2): 451 расхождений, первые (x,y,z): (14,50,-18), (14,50,-17), (15,50,-17), (13,51,-19)
+   чанк (1,-2): 114 расхождений, первые (x,y,z): (16,51,-17), (16,52,-18), (16,52,-17), (17,52,-17)
+   чанк (-2,-1): 392 расхождений, первые (x,y,z): (-26,49,-1), (-25,49,-1), (-27,50,-2), (-26,50,-1)
+26.4-snapshot-2 overworld large_biomes s=12345 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 4109 (чанков 8) | наш 1.2 с, Java 35 с  [[["minecraft:water[level=0]", "minecraft:packed_ice"], 1761], [["minecraft:air", "minecraft:packed_ice"], 124]]
+26.4-snapshot-2 overworld large_biomes s=8675309 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 1 с
+26.4-snapshot-2 overworld amplified s=12345 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 1.2 с, Java 39 с
+26.4-snapshot-2 overworld amplified s=8675309 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 2 с
+26.4-snapshot-2 overworld caves s=12345 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.8 с, Java 32 с
+26.4-snapshot-2 overworld caves s=8675309 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.6 с, Java 1 с
+26.4-snapshot-2 overworld floating_islands s=12345 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.7 с, Java 32 с
+26.4-snapshot-2 overworld floating_islands s=8675309 (-2,-2) 4x4 carve_raw     блоков 1,572,864 расхождений 0 (чанков 0) | наш 0.8 с, Java 1 с

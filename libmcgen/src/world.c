@@ -211,6 +211,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
 
 void mcgen_world_free(McWorld *w) {
     if (!w) return;
+    features_world_free(w);
     carvers_world_free(w);
     surface_world_free(w);
     veins_free(w);

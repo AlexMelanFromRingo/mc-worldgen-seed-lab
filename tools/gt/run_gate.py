@@ -144,6 +144,7 @@ def main():
     ap.add_argument('--accuracy', default=ACCURACY)
     ap.add_argument('--stages', type=lambda s: int(s, 0), default=None, help='переопределить маску стадий')
     ap.add_argument('--variant', default=None, help='переопределить вариант эталона')
+    ap.add_argument('--mask-flow', action='store_true', help='маскировать растекание жидкостей (для библиотек без --pp-margin); по умолчанию — строго, с --pp-margin margin-1')
     ap.add_argument('--veins-mask', action='store_true', help='G2: вместо --tweak ore_veins=0 маскировать состояния жил руды')
     ap.add_argument('--png-dir', default=None, help='сохранять PNG-карты расхождений для FAIL-строк')
     ap.add_argument('--margin', type=int, default=None, help='переопределить margin (чанков вокруг области эталона)')
@@ -202,6 +203,9 @@ def main():
                 continue
         mg = a.margin if a.margin is not None else G.get('margin', 0)
         rr = c['radius'] + mg
+        # растекание жидкостей игра делает только в чанках, у которых все 8 соседей FULL (кольца эталона 0..r+1): CLI --pp-margin K (K = margin-1)
+        extra_c = extra + ([] if (a.mask_flow or lib) else ['--pp-margin', str(max(mg - 1, 0))])
+        strict = not (a.mask_flow or lib)
         cx0, cz0, n = c['cx'] - rr, c['cz'] - rr, 2 * rr + 1
         dump = f'{dumpdir}/{name}.mcr'
         t = time.monotonic()
@@ -209,7 +213,8 @@ def main():
             if lib:
                 lib.dump(DIM_FULL[c['dim']], c['seed'], cx0, cz0, n, n, G['stages'], dump, tweaks); rc, msg = 0, ''
             else:
-                rc, _, msg = run_cli(a.cli, a.version, c['dim'], c['seed'], cx0, cz0, n, n, G['stages'], dump, a.threads, extra)
+                rc, _, msg = run_cli(a.cli, a.version, c['dim'], c['seed'], cx0, cz0, n, n, G['stages'], dump, a.threads,
+                                     list(extra) + ['--pp-margin', str(max(0, mg - 1))])   # растекание только в тикающих чанках игры (G2–G4: margin−1)
         except Exception as e:
             rc, msg = 1, f'{type(e).__name__}: {e}'
         row['gen_s'] = round(time.monotonic() - t, 1)
@@ -219,18 +224,12 @@ def main():
             continue
         try:
             R, o = diff.run(wd, dump, dim=c['dim'], version=a.version, ignore_state=ign, mask_ext=G['mask_ext'], min_match=G['min_match'],
-                            min_status=G.get('min_status', 'minecraft:full'), biomes=True, heightmaps=True, top=a.top, list=5)
+                            min_status=G.get('min_status', 'minecraft:full'), biomes=True, heightmaps=True, top=a.top, list=5,
+                            mask_flow=not strict, stable_with=[w for w in (f'{wd}_rep1', f'{wd}_rep2') if os.path.isdir(w)])
         except Exception as e:
             row['status'] = f'ОШИБКА сравнения: {type(e).__name__}: {e}'; errors += 1; rows.append(row)
             print(f'{name}: {row["status"]}', flush=True)
             continue
-        # второй прогон: строго (только full-чанки, без маски растекания) — точность воспроизведения PostProcessing-жидкостей
-        try:
-            R2, _ = diff.run(wd, dump, dim=c['dim'], version=a.version, ignore_state=ign, mask_ext=G['mask_ext'], min_match=100.0, min_status='minecraft:full',
-                             mask_flow=False, top=3)
-            row['strict_mismatch'] = R2['blocks_mismatch']; row['strict_blocks'] = R2['blocks_compared']
-        except Exception:
-            row['strict_mismatch'] = None
         row.update({k: R[k] for k in ('chunks_compared', 'blocks_compared', 'blocks_mismatch', 'match_pct', 'verdict', 'ext_columns_masked', 'chunks_mismatching',
                                       'pure', 'full', 'blocks_flow_induced', 'blocks_masked_flow')})
         row['samples'] = R.get('samples', [])
@@ -254,13 +253,13 @@ def main():
     L = [f'### {G["title"]}', '',
          f'Версия {a.version}; эталон — вариант `{G["variant"]}` (tools/gt, ванильный сервер); стадии 0x{G["stages"]:x}; порог {G["min_match"]} %; '
          f'маски: ext-биомы {"да" if G["mask_ext"] else "нет"}, жилы руд {"да" if G["mask_veins"] else "нет"}; твики {tweaks or "нет"}. '
-         f'Запуск {time.strftime("%Y-%m-%d %H:%M")}, {"ctypes" if lib else "mcgen-cli"}.', '',
-         '| seed | измерение | область (центр, r=10) | чанков (чистых) | блоков | расхождений (в чистых) | совпадение | строго: расх. в full без масок жидкости | биомы | карты высот (расх.) | растекание (маска) | время, с | итог |',
+         f'Запуск {time.strftime("%Y-%m-%d %H:%M")}, {"ctypes" if lib else "mcgen-cli"}; жидкости: {"маска растекания" if (a.mask_flow or lib) else "строго, CLI --pp-margin " + str(max((a.margin if a.margin is not None else G.get("margin", 0)) - 1, 0))}.', '',
+         '| seed | измерение | область (центр, r=10) | чанков (чистых) | блоков | расхождений (в чистых) | совпадение | расх. в full | биомы | карты высот (расх.) | растекание (маска) | время, с | итог |',
          '|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|']
     for r in rows:
         if 'blocks_compared' in r:
             L.append(f'| {r["seed"]} | {r["dim"]} | {r["label"]} ({r["center"][0]},{r["center"][1]}) | {r["chunks_compared"]} ({r["pure"]["chunks"]}) | {r["blocks_compared"]:,} | '
-                     f'{r["blocks_mismatch"]:,} ({r["pure"]["mismatch"]:,}) | {r["match_pct"]:.5f} % | {r.get("strict_mismatch", "–")} | {r["biomes_pct"]:.3f} % | {r["hm_bad"]} | '
+                     f'{r["blocks_mismatch"]:,} ({r["pure"]["mismatch"]:,}) | {r["match_pct"]:.5f} % | {r["full"]["mismatch"]:,} | {("–" if r["biomes_pct"] != r["biomes_pct"] else format(r["biomes_pct"], ".3f") + " %")} | {r["hm_bad"]} | '
                      f'{r["blocks_masked_flow"] + r["blocks_flow_induced"]:,} | {r["gen_s"]} | {r["status"]} |')
         else:
             L.append(f'| {r["seed"]} | {r["dim"]} | {r["label"]} ({r["center"][0]},{r["center"][1]}) | – | – | – | – | – | – | – | – | {r.get("gen_s", "–")} | {r["status"]} |')

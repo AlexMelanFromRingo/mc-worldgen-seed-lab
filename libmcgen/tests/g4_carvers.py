@@ -22,6 +22,9 @@ DIM_FULL = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether'
 VARIANT = {  # стадии, твики, маска ext-биомов
     'carve_raw': dict(stages='0xb', tweaks=['ore_veins=0'], mask_ext=True),
     'carvers': dict(stages='0xf', tweaks=[], mask_ext=False),
+    # те же сравнения для соседних стадий (проверка порядка растекания жидкостей и т. п.)
+    'raw': dict(stages='0x3', tweaks=['ore_veins=0'], mask_ext=True),
+    'surface': dict(stages='0x7', tweaks=[], mask_ext=False),
 }
 
 
@@ -35,6 +38,7 @@ def main():
     ap.add_argument('--report')
     ap.add_argument('--tmp', default=os.environ.get('TMPDIR', '/tmp'))
     ap.add_argument('--keep', action='store_true', help='не удалять дампы MCR1')
+    ap.add_argument('--cli', default=CLI, help='mcgen-cli (по умолчанию libmcgen/build/mcgen-cli)')
     a = ap.parse_args()
     rows = []
     t0 = time.time()
@@ -54,7 +58,7 @@ def main():
             M = a.margin
             name = os.path.basename(ref)
             out = os.path.join(a.tmp, f'g4-{variant}-{a.version}-{name}.mcr')
-            cmd = [CLI, '--pack', os.path.join(ROOT, 'run', f'pack-{a.version}'), '--version', a.version, '--dim', DIM_FULL[dim],
+            cmd = [a.cli, '--pack', os.path.join(ROOT, 'run', f'pack-{a.version}'), '--version', a.version, '--dim', DIM_FULL[dim],
                    '--preset', m.get('preset', 'normal'), '--seed', str(seed), '--cx0', str(x0 - M), '--cz0', str(z0 - M),
                    '--nx', str(x1 - x0 + 1 + 2 * M), '--nz', str(z1 - z0 + 1 + 2 * M), '--stages', V['stages'], '--threads', str(a.threads),
                    '--pp-margin', str(max(0, M - 1)), '--out', out]
