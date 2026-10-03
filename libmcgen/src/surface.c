@@ -300,7 +300,7 @@ static void load_biome_temps(Comp *k) {
     S->btemp = xcalloc((size_t)(g->nbiomes ? g->nbiomes : 1), sizeof(float));
     S->bfrozen = xcalloc((size_t)(g->nbiomes ? g->nbiomes : 1), 1);
     for (int i = 0; i < g->nbiomes; i++) {
-        if (!S->has_temp && i != S->b_frozen && i != S->b_deep_frozen) continue;
+        /* температуры нужны и стадии FEATURES (Biome.shouldFreeze/shouldSnow — surface_biome_temperature): грузим для всех биомов (W12) */
         const char *nm = g->biome_names[i];
         JsDoc *d = load_ref(g, "biome", nm);
         if (!d) continue;
