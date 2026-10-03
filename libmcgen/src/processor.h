@@ -22,6 +22,7 @@ typedef struct PEnv {
     int pos_x, pos_y, pos_z;                     /* targetPosition (позиция шаблона) */
     int ref_x, ref_y, ref_z;                     /* referencePos */
     i64 level_seed;                              /* ServerLevel.getSeed (для capped) */
+    void *rnd;                                   /* RS* — StructurePlaceSettings.random (фичи fossil/template): getRandom(pos) отдаёт его, а не LCG по позиции; NULL — по позиции */
 } PEnv;
 
 const ProcList *proclist_get(McWorld *w, const char *id);               /* worldgen/processor_list/<id>.json (кэш в мире); NULL если нет */

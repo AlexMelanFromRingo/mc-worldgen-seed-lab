@@ -335,9 +335,10 @@ int proc_block(const Proc *p, PEnv *e, const TInfo *orig, TInfo *cur) {
         return !(p->has_mask && g->state_block[st] < e->bs->nblocks && p->mask[g->state_block[st]]);
     }
     case PK_BLOCK_ROT: {
-        RS rnd; rs_seed_lcg(&rnd, mth_get_seed(cur->x, cur->y, cur->z));
+        RS own; RS *rr = (RS *)e->rnd;                      /* settings.getRandom(pos): общий ГСЧ, если он задан (фичи), иначе LCG по позиции */
+        if (!rr) { rs_seed_lcg(&own, mth_get_seed(cur->x, cur->y, cur->z)); rr = &own; }
         int rottable = !p->has_mask || p->mask[g->state_block[cur->state]];
-        if (rottable && !(rs_float(&rnd) <= p->integrity)) return 0;
+        if (rottable && !(rs_float(rr) <= p->integrity)) return 0;
         return 1;
     }
     case PK_BLOCK_IGNORE: return !p->mask[g->state_block[cur->state]];

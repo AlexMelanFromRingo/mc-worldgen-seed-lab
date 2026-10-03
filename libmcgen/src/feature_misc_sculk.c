@@ -327,7 +327,7 @@ static int valid_move(FCtx *c, const PatchCfg *s, const Cursor *cu, int ox, int 
     for (int i = 0; i < 18; i++) {
         int nx = cu->x + g_nc[idx[i]][0], ny = cu->y + g_nc[idx[i]][1], nz = cu->z + g_nc[idx[i]][2];
         int dsq = (ox - nx) * (ox - nx) + (oz - nz) * (oz - nz);
-        if (dsq <= 144) {
+        if (!c->g->newf || dsq <= 144) {                   /* canMoveToPos — только 26.3+ */
             int tr = fc_get(c, nx, ny, nz);
             if (is_sculk_behaviour(s, c, tr) && movement_unobstructed(c, cu->x, cu->y, cu->z, nx, ny, nz)) {
                 sx = nx; sy = ny; sz = nz;
@@ -351,8 +351,10 @@ static void cursor_update(FCtx *c, const PatchCfg *s, Cursor *cu, int ox, int oy
     if (valid_move(c, s, cu, ox, oz, to)) {
         if (beh == 2) vein_on_discharged(c, s, cur, cu->x, cu->y, cu->z);
         cu->x = to[0]; cu->y = to[1]; cu->z = to[2];
+        /* 26.1/26.2: после перехода курсор гаснет, если ушёл от центра на ≥ 15 по x/z (closerThan(Vec3i(ox, y, oz), 15.0)) */
+        if (!c->g->newf && (cu->x - ox) * (cu->x - ox) + (cu->z - oz) * (cu->z - oz) >= 225) { cu->charge = 0; return; }
         cur = fc_get(c, to[0], to[1], to[2]);
-    } else {
+    } else if (c->g->newf) {                              /* 26.3+: в генерации мира курсор без допустимого хода гаснет */
         if (beh == 2) vein_on_discharged(c, s, cur, cu->x, cu->y, cu->z);
         cu->charge = 0; return;
     }

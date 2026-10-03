@@ -39,6 +39,8 @@ BB tpl_bounding_box(const Template *t, int x, int y, int z, int rot, int mir, in
 void tpl_size(const Template *t, int rot, int *sx, int *sy, int *sz);
 /* StructurePlaceSettings.getRandomPalette(palettes, pos): палитра по RandomSource.create(Mth.getSeed(pos)) */
 const TPal *tpl_palette_at(const Template *t, int x, int y, int z);
+/* то же, но при rnd != NULL (StructurePlaceSettings.random = TSettings.srnd) палитра выбирается ИЗ ЭТОГО ГСЧ: nextInt(число палитр) тратится всегда, даже при одной палитре */
+const TPal *tpl_palette_rs(const Template *t, int x, int y, int z, RS *rnd);
 
 /* BlockState.rotate / mirror (по свойствам блока; кэшируются) */
 int bsx_rotate(const BsTab *bs, int state, int rot);
@@ -50,6 +52,8 @@ typedef struct TSettings {
     int waterlog;                    /* LiquidSettings.APPLY_WATERLOGGING */
     const Proc *const *procs; int nprocs;   /* процессоры в порядке применения */
     int known_shape;                 /* StructurePlaceSettings.knownShape: 1 — без обновления форм после размещения (jigsaw-элементы); 0 (Java по умолчанию) — updateShapeAtEdge + updateFromNeighbourShapes */
+    RS *srnd;                        /* StructurePlaceSettings.random (setRandom): getRandom(pos) отдаёт его — выбор палитры (nextInt всегда) и block_rot; NULL — ГСЧ по позиции (Mth.getSeed). Отдельно от rnd (параметр random placeInWorld) */
+    const TPal *pal_override;        /* внутреннее: палитра уже выбрана (template_place → template_process), повторно ГСЧ не тратить */
     RS *rnd;                         /* ГСЧ записи (placeInWorld(…, random, …)): nextLong() на каждый блок-контейнер с NBT (LootTableSeed); NULL — не тратить */
 } TSettings;
 static inline void tsettings_init(TSettings *s) { memset(s, 0, sizeof *s); s->waterlog = 1; }

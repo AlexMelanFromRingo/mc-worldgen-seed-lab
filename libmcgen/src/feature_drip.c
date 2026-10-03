@@ -1,6 +1,6 @@
 /* feature_drip.c — сталактиты/сталагмиты: speleothem («pointed_dripstone», «sulfur_spike»), speleothem_cluster («dripstone_cluster»),
  * large_dripstone (26.3+). В 26.1/26.2 те же постройки — отдельные классы (PointedDripstoneFeature, DripstoneClusterFeature, LargeDripstoneFeature с config);
- * ветки по p->newf — см. feature_drip_old.c (регистрирует те же имена типов при newf == 0). */
+ * ветки для 26.1/26.2 (прежние классы DripstoneClusterFeature/PointedDripstoneFeature/LargeDripstoneFeature с «config») — разбор ключей конфигурации (jk2). */
 #include "feature_misc.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,14 +70,24 @@ static void sp_grow(FCtx *c, const SpelEnv *e, const SpelStates *ss, int x, int 
     }
 }
 
+/* 26.1/26.2 (DripstoneUtils): блоки закодированы — dripstone_block / pointed_dripstone, замена по тегу dripstone_replaceable_blocks */
 static int sp_parse_env(FParse *p, const Js *cfg, SpelEnv *e, SpelStates *ss) {
-    ss->base_state = bs_from_json(p->bs, js_get(cfg, "base_block")); ss->pointed_state = bs_from_json(p->bs, js_get(cfg, "pointed_block"));
+    if (js_get(cfg, "base_block")) {
+        ss->base_state = bs_from_json(p->bs, js_get(cfg, "base_block")); ss->pointed_state = bs_from_json(p->bs, js_get(cfg, "pointed_block"));
+    } else {
+        int b = bs_block_index(p->bs, "minecraft:dripstone_block"), q = bs_block_index(p->bs, "minecraft:pointed_dripstone");
+        ss->base_state = b < 0 ? -1 : bs_default(p->bs, b); ss->pointed_state = q < 0 ? -1 : bs_default(p->bs, q);
+    }
     if (ss->base_state < 0 || ss->pointed_state < 0) { fp_fail(p, "speleothem: плохие base_block/pointed_block"); return 0; }
     e->base_blk = p->g->state_block[ss->base_state]; e->pointed_blk = p->g->state_block[ss->pointed_state];
     e->water_blk = bs_block_index(p->bs, "minecraft:water"); e->lava_blk = bs_block_index(p->bs, "minecraft:lava");
-    e->replaceable = fp_blockset(p, js_get(cfg, "replaceable_blocks")); if (!e->replaceable) { fp_fail(p, "speleothem: replaceable_blocks"); return 0; }
+    if (js_get(cfg, "replaceable_blocks")) e->replaceable = fp_blockset(p, js_get(cfg, "replaceable_blocks"));
+    else e->replaceable = gen_block_tag(p->g, "minecraft:dripstone_replaceable_blocks");
+    if (!e->replaceable) { fp_fail(p, "speleothem: replaceable_blocks"); return 0; }
     return 1;
 }
+/* ключ нового формата или старого (26.1/26.2) */
+static const Js *jk2(const Js *o, const char *a, const char *b) { const Js *v = js_get(o, a); return v ? v : js_get(o, b); }
 static float cfgf(const Js *o, const char *k, float d) { const Js *v = js_get(o, k); return v ? js_numf(v, d) : d; }
 
 /* ====================================================================== speleothem */
@@ -85,7 +95,8 @@ typedef struct SpelCfg { SpelEnv e; SpelStates ss; float taller, spread_dir, spr
 static void *spel_parse(FParse *p, const Js *cfg) {
     SpelCfg *s = fp_alloc(p, sizeof *s);
     if (!sp_parse_env(p, cfg, &s->e, &s->ss)) return NULL;
-    s->taller = cfgf(cfg, "chance_of_taller_generation", 0.2F); s->spread_dir = cfgf(cfg, "chance_of_directional_spread", 0.7F);
+    { const Js *t = jk2(cfg, "chance_of_taller_generation", "chance_of_taller_dripstone"); s->taller = t ? js_numf(t, 0.2F) : 0.2F; }
+    s->spread_dir = cfgf(cfg, "chance_of_directional_spread", 0.7F);
     s->spread_r2 = cfgf(cfg, "chance_of_spread_radius2", 0.5F); s->spread_r3 = cfgf(cfg, "chance_of_spread_radius3", 0.5F);
     return s;
 }
@@ -133,10 +144,10 @@ static void *cluster_parse(FParse *p, const Js *cfg) {
     s->search_range = js_int(js_get(cfg, "floor_to_ceiling_search_range"), 12);
     s->height = fp_intprov(p, js_get(cfg, "height")); s->radius = fp_intprov(p, js_get(cfg, "radius"));
     s->max_diff = js_int(js_get(cfg, "max_stalagmite_stalactite_height_diff"), 0); s->height_dev = js_int(js_get(cfg, "height_deviation"), 1);
-    s->layer = fp_intprov(p, js_get(cfg, "speleothem_block_layer_thickness"));
+    s->layer = fp_intprov(p, jk2(cfg, "speleothem_block_layer_thickness", "dripstone_block_layer_thickness"));
     s->density = fp_floatprov(p, js_get(cfg, "density")); s->wetness = fp_floatprov(p, js_get(cfg, "wetness"));
-    s->chance_max_dist = cfgf(cfg, "chance_of_speleothem_at_max_distance_from_center", 0.0F);
-    s->max_dist_edge = js_int(js_get(cfg, "max_distance_from_edge_affecting_chance_of_speleothem"), 1);
+    { const Js *v = jk2(cfg, "chance_of_speleothem_at_max_distance_from_center", "chance_of_dripstone_column_at_max_distance_from_center"); s->chance_max_dist = v ? js_numf(v, 0.0F) : 0.0F; }
+    { const Js *v = jk2(cfg, "max_distance_from_edge_affecting_chance_of_speleothem", "max_distance_from_edge_affecting_chance_of_dripstone_column"); s->max_dist_edge = js_int(v, 1); }
     s->max_dist_center = js_int(js_get(cfg, "max_distance_from_center_affecting_height_bias"), 1);
     return s->height && s->radius && s->layer && s->density && s->wetness ? s : NULL;
 }
@@ -240,11 +251,13 @@ static int cluster_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 /* ====================================================================== large_dripstone */
 typedef struct LargeCfg {
     SpelEnv e; int search_range; IntProv *radius; FloatProv *height_scale, *stalactite_blunt, *stalagmite_blunt, *wind_speed; float max_ratio; int min_r_wind; float min_b_wind;
-    int dripstone_state;
+    int dripstone_state; int old;
 } LargeCfg;
 static void *large_parse(FParse *p, const Js *cfg) {
     LargeCfg *s = fp_alloc(p, sizeof *s);
-    s->e.replaceable = fp_blockset(p, js_get(cfg, "replaceable_blocks")); if (!s->e.replaceable) { fp_fail(p, "large_dripstone: replaceable_blocks"); return NULL; }
+    s->e.replaceable = js_get(cfg, "replaceable_blocks") ? fp_blockset(p, js_get(cfg, "replaceable_blocks")) : gen_block_tag(p->g, "minecraft:dripstone_replaceable_blocks");
+    if (!s->e.replaceable) { fp_fail(p, "large_dripstone: replaceable_blocks"); return NULL; }
+    s->old = !p->newf;
     s->e.base_blk = bs_block_index(p->bs, "minecraft:dripstone_block"); s->e.water_blk = bs_block_index(p->bs, "minecraft:water"); s->e.lava_blk = bs_block_index(p->bs, "minecraft:lava");
     s->dripstone_state = bs_default(p->bs, s->e.base_blk);
     s->search_range = js_get(cfg, "floor_to_ceiling_search_range") ? js_int(js_get(cfg, "floor_to_ceiling_search_range"), 30) : 30;
@@ -328,7 +341,7 @@ static int large_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     sg.blunt = (double)floatprov_sample(s->stalagmite_blunt, r); sg.scale = (double)floatprov_sample(s->height_scale, r);
     Wind w; memset(&w, 0, sizeof w);
     if (st.radius >= s->min_r_wind && st.blunt >= (double)s->min_b_wind && sg.radius >= s->min_r_wind && sg.blunt >= (double)s->min_b_wind) {
-        w.has = 1; w.origin_y = oy; w.max_off = 16 - radius;
+        w.has = 1; w.origin_y = oy; w.max_off = s->old ? 0x3fffffff : 16 - radius;      /* 26.1/26.2: смещение ветром не ограничено */
         float speed = floatprov_sample(s->wind_speed, r);
         float dir = frnd_float(r) * (3.1415927F - 0.0F) + 0.0F;      /* Mth.randomBetween(random, 0, (float)Math.PI) */
         w.wx = (double)(fm_cos((double)dir) * speed); w.wz = (double)(fm_sin((double)dir) * speed);
@@ -343,6 +356,10 @@ static int large_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 static const FeatType T_SPEL = { "minecraft:speleothem", spel_parse, spel_place };
 static const FeatType T_CLUSTER = { "minecraft:speleothem_cluster", cluster_parse, cluster_place };
 static const FeatType T_LARGE = { "minecraft:large_dripstone", large_parse, large_place };
+/* 26.1/26.2: те же алгоритмы под прежними именами типов */
+static const FeatType T_POINTED_OLD = { "minecraft:pointed_dripstone", spel_parse, spel_place };
+static const FeatType T_CLUSTER_OLD = { "minecraft:dripstone_cluster", cluster_parse, cluster_place };
 void feature_register_drip(void) {
     feature_register_type(&T_SPEL); feature_register_type(&T_CLUSTER); feature_register_type(&T_LARGE);
+    feature_register_type(&T_POINTED_OLD); feature_register_type(&T_CLUSTER_OLD);
 }

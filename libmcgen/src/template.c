@@ -215,6 +215,11 @@ void tpl_size(const Template *t, int rot, int *sx, int *sy, int *sz) {
     if (rot == ROT_CW90 || rot == ROT_CCW90) { *sx = t->sz; *sz = t->sx; } else { *sx = t->sx; *sz = t->sz; }
     *sy = t->sy;
 }
+const TPal *tpl_palette_rs(const Template *t, int x, int y, int z, RS *rnd) {
+    if (t->npal == 0) return NULL;
+    if (!rnd) return tpl_palette_at(t, x, y, z);
+    return &t->pal[rs_bound(rnd, t->npal)];
+}
 const TPal *tpl_palette_at(const Template *t, int x, int y, int z) {
     if (t->npal == 0) return NULL;
     if (t->npal == 1) return &t->pal[0];
@@ -334,7 +339,7 @@ const Template *template_get(McWorld *w, const char *id) {
 int template_process(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z, int rx, int ry, int rz,
                      const TSettings *s, i64 level_seed, TInfo **out, TInfo **orig_out) {
     const BsTab *bs = bs_get(w->g);
-    const TPal *pal = tpl_palette_at(t, x, y, z);
+    const TPal *pal = s->pal_override ? s->pal_override : tpl_palette_rs(t, x, y, z, s->srnd);
     *out = NULL; if (orig_out) *orig_out = NULL;
     if (!pal) return 0;
     int whole = 0;
@@ -342,7 +347,7 @@ int template_process(FCtx *fc, McWorld *w, const Template *t, int x, int y, int 
     TInfo *po = xmalloc((size_t)(pal->nb ? pal->nb : 1) * sizeof(TInfo)), *oo = xmalloc((size_t)(pal->nb ? pal->nb : 1) * sizeof(TInfo));
     int n = 0;
     PEnv env; memset(&env, 0, sizeof env);
-    env.w = w; env.bs = bs; env.fc = fc; env.pos_x = x; env.pos_y = y; env.pos_z = z; env.ref_x = rx; env.ref_y = ry; env.ref_z = rz; env.level_seed = level_seed;
+    env.w = w; env.bs = bs; env.fc = fc; env.pos_x = x; env.pos_y = y; env.pos_z = z; env.ref_x = rx; env.ref_y = ry; env.ref_z = rz; env.level_seed = level_seed; env.rnd = s->srnd;
     for (int i = 0; i < pal->nb; i++) {
         const TInfo *b = &pal->b[i];
         int wx, wz; tpl_transform(b->x, b->z, s->mir, s->rot, s->px, s->pz, &wx, &wz);
@@ -401,9 +406,10 @@ int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z,
     const BsTab *bs = bs_get(w->g);
     const u8 *rand_blk = s->rnd ? randomizable_blocks(w) : NULL;
     const u8 *lbc = liquid_container_blocks(w);
-    const TPal *pal = tpl_palette_at(t, x, y, z);
+    const TPal *pal = tpl_palette_rs(t, x, y, z, s->srnd);
     if (!pal || pal->nb == 0 || t->sx < 1 || t->sy < 1 || t->sz < 1) return 0;
     TInfo *list = NULL;
+    TSettings s2 = *s; s2.pal_override = pal; s = &s2;       /* палитра выбрана один раз (как getRandomPalette в placeInWorld) */
     int n = template_process(fc, w, t, x, y, z, rx, ry, rz, s, level_seed, &list, NULL);
     int *placed = s->known_shape ? NULL : xmalloc((size_t)(n ? n : 1) * 3 * sizeof(int)); int nplaced = 0;
     /* места, где жидкость была до записи → waterlogging */

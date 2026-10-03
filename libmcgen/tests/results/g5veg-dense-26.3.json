@@ -47,6 +47,17 @@
    ]
   },
   {
+   "feature": "minecraft:brown_mushroom_nether",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 52,
+   "top": []
+  },
+  {
    "feature": "minecraft:brown_mushroom_normal",
    "dim": "overworld",
    "world": "overworld-s-7048155917072976836-c138_-208-r10",
@@ -527,22 +538,11 @@
    "dim": "overworld",
    "world": "overworld-s8675309-c-173_223-r5",
    "blocks": 11894741,
-   "mismatch": 25,
-   "match_pct": 99.99978982308232,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "chunks": 121,
    "effect": 1334,
-   "top": [
-    {
-     "ours": "minecraft:dead_bush",
-     "ref": "minecraft:air",
-     "count": 14
-    },
-    {
-     "ours": "minecraft:air",
-     "ref": "minecraft:dead_bush",
-     "count": 11
-    }
-   ]
+   "top": []
   },
   {
    "feature": "minecraft:patch_dry_grass_badlands",
@@ -626,42 +626,36 @@
    "dim": "overworld",
    "world": "overworld-s8675309-c0_0-r5",
    "blocks": 11894754,
-   "mismatch": 3,
-   "match_pct": 99.99997477879744,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "chunks": 121,
    "effect": 1021,
-   "top": [
-    {
-     "ours": "minecraft:air",
-     "ref": "minecraft:short_grass",
-     "count": 3
-    }
-   ]
+   "top": []
   },
   {
    "feature": "minecraft:patch_grass_jungle",
    "dim": "overworld",
    "world": "overworld-s8675309-c-30_-187-r5",
    "blocks": 11894777,
-   "mismatch": 12295,
-   "match_pct": 99.8966353047224,
+   "mismatch": 9494,
+   "match_pct": 99.92018345530984,
    "chunks": 121,
    "effect": 13013,
    "top": [
     {
      "ours": "minecraft:air",
      "ref": "minecraft:short_grass",
-     "count": 4002
+     "count": 3114
     },
     {
      "ours": "minecraft:short_grass",
      "ref": "minecraft:air",
-     "count": 3976
+     "count": 3087
     },
     {
      "ours": "minecraft:fern",
      "ref": "minecraft:air",
-     "count": 1415
+     "count": 1087
     }
    ]
   },
@@ -681,44 +675,22 @@
    "dim": "overworld",
    "world": "overworld-s-7048155917072976836-c107_-8-r5",
    "blocks": 11894767,
-   "mismatch": 91,
-   "match_pct": 99.9992349576919,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "chunks": 121,
    "effect": 2606,
-   "top": [
-    {
-     "ours": "minecraft:air",
-     "ref": "minecraft:short_grass",
-     "count": 54
-    },
-    {
-     "ours": "minecraft:short_grass",
-     "ref": "minecraft:air",
-     "count": 37
-    }
-   ]
+   "top": []
   },
   {
    "feature": "minecraft:patch_grass_plain",
    "dim": "overworld",
    "world": "overworld-s8675309-c180_-103-r5",
    "blocks": 11894778,
-   "mismatch": 33,
-   "match_pct": 99.99972256733164,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "chunks": 121,
    "effect": 883,
-   "top": [
-    {
-     "ours": "minecraft:short_grass",
-     "ref": "minecraft:air",
-     "count": 18
-    },
-    {
-     "ours": "minecraft:air",
-     "ref": "minecraft:short_grass",
-     "count": 15
-    }
-   ]
+   "top": []
   },
   {
    "feature": "minecraft:patch_grass_savanna",
@@ -736,25 +708,25 @@
    "dim": "overworld",
    "world": "overworld-s-7048155917072976836-c19_-30-r5",
    "blocks": 11894761,
-   "mismatch": 671,
-   "match_pct": 99.99435886101453,
+   "mismatch": 264,
+   "match_pct": 99.99778053548113,
    "chunks": 121,
    "effect": 4834,
    "top": [
     {
      "ours": "minecraft:fern",
      "ref": "minecraft:air",
-     "count": 261
+     "count": 96
     },
     {
      "ours": "minecraft:air",
      "ref": "minecraft:fern",
-     "count": 260
+     "count": 90
     },
     {
      "ours": "minecraft:short_grass",
      "ref": "minecraft:air",
-     "count": 75
+     "count": 39
     }
    ]
   },
@@ -932,6 +904,17 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 329,
+   "top": []
+  },
+  {
+   "feature": "minecraft:red_mushroom_nether",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 52,
    "top": []
   },
   {
@@ -1245,25 +1228,25 @@
    "dim": "overworld",
    "world": "overworld-s8675309-c-74_-52-r5",
    "blocks": 11894784,
-   "mismatch": 22813,
-   "match_pct": 99.80821005240617,
+   "mismatch": 1617,
+   "match_pct": 99.98640580610795,
    "chunks": 121,
    "effect": 22128,
    "top": [
     {
-     "ours": "minecraft:horn_coral_block",
-     "ref": "minecraft:water[level=0]",
-     "count": 1395
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:horn_coral_block",
+     "count": 136
     },
     {
-     "ours": "minecraft:tube_coral_block",
-     "ref": "minecraft:water[level=0]",
-     "count": 1196
+     "ours": "minecraft:water[level=0]",
+     "ref": "minecraft:bubble_coral_block",
+     "count": 101
     },
     {
      "ours": "minecraft:bubble_coral_block",
      "ref": "minecraft:water[level=0]",
-     "count": 1140
+     "count": 83
     }
    ]
   },
@@ -1341,28 +1324,6 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 0,
-   "top": []
-  },
-  {
-   "feature": "minecraft:brown_mushroom_nether",
-   "dim": "the_nether",
-   "world": "nether-s8675309-c60_-60-r5",
-   "blocks": 7929856,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "chunks": 121,
-   "effect": 52,
-   "top": []
-  },
-  {
-   "feature": "minecraft:red_mushroom_nether",
-   "dim": "the_nether",
-   "world": "nether-s8675309-c60_-60-r5",
-   "blocks": 7929856,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "chunks": 121,
-   "effect": 52,
    "top": []
   }
  ]

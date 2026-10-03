@@ -246,6 +246,8 @@ void feature_register_ice(void);
 void feature_register_geode(void);
 void feature_register_drip(void);
 void feature_register_sculk(void);
+void feature_register_tmpl(void);
+void feature_register_old(void);
 void feature_register_misc_all(void) {
     feature_register_type(&T_ROOM); feature_register_type(&T_MAGMA); feature_register_type(&T_FREEZE); feature_register_type(&T_FILL); feature_register_type(&T_VOID);
     feature_register_type(&T_PILE); feature_register_type(&T_REPL);
@@ -255,4 +257,6 @@ void feature_register_misc_all(void) {
     feature_register_geode();
     feature_register_drip();
     feature_register_sculk();
+    feature_register_tmpl();
+    feature_register_old();
 }

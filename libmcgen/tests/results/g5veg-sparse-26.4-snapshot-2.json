@@ -40,7 +40,7 @@
     0,
     0,
     421,
-    7,
+    0,
     0,
     101
    ],
@@ -48,8 +48,8 @@
    "feature": "minecraft:patch_grass_normal",
    "dim": "overworld",
    "blocks": 43352037,
-   "mismatch": 7,
-   "match_pct": 99.99998385312321,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "effect": 1887
   },
   {

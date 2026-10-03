@@ -16,7 +16,7 @@ subprocess.run(['gcc', '-O2', '-std=gnu11', f'-I{ROOT}/libmcgen/src', f'-I{ROOT}
 if not os.path.exists(exe):
     # feature_veg_hash.c тянет feature.h → нужна библиотека целиком
     subprocess.run(['gcc', '-O2', '-std=gnu11', f'-I{ROOT}/libmcgen/src', f'-I{ROOT}/libmcgen/include', f'-I{ROOT}/engine', '-o', exe, f'{ROOT}/libmcgen/tests/g5_veg_hash.c',
-                    f'{ROOT}/libmcgen/build/w10/libmcgen.a' if os.path.exists(f'{ROOT}/libmcgen/build/w10/libmcgen.a') else f'{ROOT}/libmcgen/build/libmcgen.a', '-lm', '-lpthread'], check=True)
+                    os.environ.get('MCGEN_LIB') or f'{ROOT}/libmcgen/build/libmcgen.a', '-lm', '-lpthread'], check=True)
 sets = []
 for k in range(a.sets):
     kind = k % 4

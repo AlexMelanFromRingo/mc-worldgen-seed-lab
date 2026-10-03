@@ -5,6 +5,23 @@
    "iso": [
     9,
     0,
+    15,
+    0,
+    1,
+    3
+   ],
+   "variant": "featuresparse:minecraft:bamboo@16",
+   "feature": "minecraft:bamboo",
+   "dim": "overworld",
+   "blocks": 43352038,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 4316
+  },
+  {
+   "iso": [
+    9,
+    0,
     187,
     3,
     1,
@@ -34,6 +51,23 @@
    "mismatch": 2,
    "match_pct": 99.99999538660354,
    "effect": 251
+  },
+  {
+   "iso": [
+    0,
+    0,
+    495,
+    8445,
+    0,
+    129
+   ],
+   "variant": "featuresparse:minecraft:bamboo_vegetation@4",
+   "feature": "minecraft:bamboo_vegetation",
+   "dim": "overworld",
+   "blocks": 43352043,
+   "mismatch": 8445,
+   "match_pct": 99.98051994919824,
+   "effect": 164507
   },
   {
    "iso": [
@@ -71,6 +105,23 @@
   },
   {
    "iso": [
+    9,
+    0,
+    484,
+    316,
+    1,
+    122
+   ],
+   "variant": "featuresparse:minecraft:crimson_forest_vegetation@4",
+   "feature": "minecraft:crimson_forest_vegetation",
+   "dim": "the_nether",
+   "blocks": 28901376,
+   "mismatch": 316,
+   "match_pct": 99.99890662645267,
+   "effect": 7363
+  },
+  {
+   "iso": [
     45,
     0,
     228,
@@ -85,6 +136,40 @@
    "mismatch": 1002,
    "match_pct": 99.99653303704294,
    "effect": 19791
+  },
+  {
+   "iso": [
+    45,
+    0,
+    55,
+    0,
+    5,
+    14
+   ],
+   "variant": "featuresparse:minecraft:crimson_fungi@48",
+   "feature": "minecraft:crimson_fungi",
+   "dim": "the_nether",
+   "blocks": 28901376,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 7309
+  },
+  {
+   "iso": [
+    45,
+    0,
+    49,
+    0,
+    5,
+    12
+   ],
+   "variant": "featuresparse:minecraft:flower_cherry@16",
+   "feature": "minecraft:flower_cherry",
+   "dim": "overworld",
+   "blocks": 43352030,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 1836
   },
   {
    "iso": [
@@ -136,6 +221,23 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 0
+  },
+  {
+   "iso": [
+    9,
+    0,
+    489,
+    2,
+    1,
+    108
+   ],
+   "variant": "featuresparse:minecraft:flower_flower_forest@4",
+   "feature": "minecraft:flower_flower_forest",
+   "dim": "overworld",
+   "blocks": 43352034,
+   "mismatch": 2,
+   "match_pct": 99.99999538660632,
+   "effect": 2930
   },
   {
    "iso": [
@@ -241,6 +343,40 @@
   },
   {
    "iso": [
+    18,
+    0,
+    0,
+    0,
+    2,
+    2
+   ],
+   "variant": "featuresparse:minecraft:flower_warm@4",
+   "feature": "minecraft:flower_warm",
+   "dim": "overworld",
+   "blocks": 43352044,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 19
+  },
+  {
+   "iso": [
+    36,
+    0,
+    0,
+    0,
+    4,
+    4
+   ],
+   "variant": "featuresparse:minecraft:forest_flowers@4",
+   "feature": "minecraft:forest_flowers",
+   "dim": "overworld",
+   "blocks": 43352029,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 86
+  },
+  {
+   "iso": [
     63,
     0,
     71,
@@ -343,6 +479,23 @@
   },
   {
    "iso": [
+    27,
+    0,
+    0,
+    0,
+    3,
+    3
+   ],
+   "variant": "featuresparse:minecraft:patch_berry_rare@1",
+   "feature": "minecraft:patch_berry_rare",
+   "dim": "overworld",
+   "blocks": 165248951,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 55
+  },
+  {
+   "iso": [
     0,
     0,
     0,
@@ -357,6 +510,40 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 0
+  },
+  {
+   "iso": [
+    45,
+    0,
+    200,
+    0,
+    5,
+    35
+   ],
+   "variant": "featuresparse:minecraft:patch_bush@4",
+   "feature": "minecraft:patch_bush",
+   "dim": "overworld",
+   "blocks": 43351960,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 124
+  },
+  {
+   "iso": [
+    54,
+    0,
+    12,
+    0,
+    6,
+    8
+   ],
+   "variant": "featuresparse:minecraft:patch_cactus_decorated@1",
+   "feature": "minecraft:patch_cactus_decorated",
+   "dim": "overworld",
+   "blocks": 165248925,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 22
   },
   {
    "iso": [
@@ -428,10 +615,27 @@
   },
   {
    "iso": [
+    81,
+    0,
+    144,
+    0,
+    9,
+    32
+   ],
+   "variant": "featuresparse:minecraft:patch_dead_bush_badlands@16",
+   "feature": "minecraft:patch_dead_bush_badlands",
+   "dim": "overworld",
+   "blocks": 43352041,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 318
+  },
+  {
+   "iso": [
     0,
     0,
     541,
-    3,
+    0,
     0,
     140
    ],
@@ -439,9 +643,60 @@
    "feature": "minecraft:patch_dead_bush_badlands",
    "dim": "overworld",
    "blocks": 43352041,
-   "mismatch": 3,
-   "match_pct": 99.99999307991058,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "effect": 1392
+  },
+  {
+   "iso": [
+    54,
+    0,
+    116,
+    0,
+    6,
+    24
+   ],
+   "variant": "featuresparse:minecraft:patch_dry_grass_badlands@4",
+   "feature": "minecraft:patch_dry_grass_badlands",
+   "dim": "overworld",
+   "blocks": 43352041,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 215
+  },
+  {
+   "iso": [
+    45,
+    0,
+    252,
+    0,
+    5,
+    44
+   ],
+   "variant": "featuresparse:minecraft:patch_dry_grass_desert@4",
+   "feature": "minecraft:patch_dry_grass_desert",
+   "dim": "overworld",
+   "blocks": 43352019,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 470
+  },
+  {
+   "iso": [
+    117,
+    0,
+    116,
+    0,
+    13,
+    30
+   ],
+   "variant": "featuresparse:minecraft:patch_firefly_bush_near_water@1",
+   "feature": "minecraft:patch_firefly_bush_near_water",
+   "dim": "overworld",
+   "blocks": 165248903,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 64
   },
   {
    "iso": [
@@ -513,10 +768,27 @@
   },
   {
    "iso": [
+    81,
+    0,
+    195,
+    80,
+    9,
+    41
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_jungle@16",
+   "feature": "minecraft:patch_grass_jungle",
+   "dim": "overworld",
+   "blocks": 43352041,
+   "mismatch": 80,
+   "match_pct": 99.99981546428229,
+   "effect": 3748
+  },
+  {
+   "iso": [
     0,
     0,
     531,
-    3564,
+    723,
     0,
     126
    ],
@@ -524,16 +796,33 @@
    "feature": "minecraft:patch_grass_jungle",
    "dim": "overworld",
    "blocks": 43352041,
-   "mismatch": 3564,
-   "match_pct": 99.99177893377615,
+   "mismatch": 723,
+   "match_pct": 99.99833225845123,
    "effect": 11837
+  },
+  {
+   "iso": [
+    63,
+    0,
+    91,
+    0,
+    7,
+    22
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_meadow@16",
+   "feature": "minecraft:patch_grass_meadow",
+   "dim": "overworld",
+   "blocks": 43351995,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 608
   },
   {
    "iso": [
     0,
     0,
     402,
-    6,
+    0,
     0,
     101
    ],
@@ -541,16 +830,33 @@
    "feature": "minecraft:patch_grass_meadow",
    "dim": "overworld",
    "blocks": 43351995,
-   "mismatch": 6,
-   "match_pct": 99.99998615980648,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "effect": 2703
+  },
+  {
+   "iso": [
+    99,
+    0,
+    70,
+    0,
+    11,
+    23
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_normal@16",
+   "feature": "minecraft:patch_grass_normal",
+   "dim": "overworld",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 369
   },
   {
    "iso": [
     0,
     0,
     421,
-    7,
+    0,
     0,
     101
    ],
@@ -558,16 +864,33 @@
    "feature": "minecraft:patch_grass_normal",
    "dim": "overworld",
    "blocks": 43352037,
-   "mismatch": 7,
-   "match_pct": 99.99998385312321,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "effect": 1887
+  },
+  {
+   "iso": [
+    45,
+    0,
+    61,
+    0,
+    5,
+    14
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_plain@16",
+   "feature": "minecraft:patch_grass_plain",
+   "dim": "overworld",
+   "blocks": 43352050,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 499
   },
   {
    "iso": [
     9,
     0,
     218,
-    46,
+    0,
     1,
     53
    ],
@@ -575,8 +898,8 @@
    "feature": "minecraft:patch_grass_plain",
    "dim": "overworld",
    "blocks": 43352050,
-   "mismatch": 46,
-   "match_pct": 99.99989389198434,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "effect": 1355
   },
   {
@@ -598,10 +921,27 @@
   },
   {
    "iso": [
+    126,
+    0,
+    66,
+    0,
+    14,
+    24
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_taiga@16",
+   "feature": "minecraft:patch_grass_taiga",
+   "dim": "overworld",
+   "blocks": 43352032,
+   "mismatch": 1,
+   "match_pct": 99.99999769330304,
+   "effect": 854
+  },
+  {
+   "iso": [
     9,
     0,
     509,
-    193,
+    29,
     1,
     124
    ],
@@ -609,9 +949,26 @@
    "feature": "minecraft:patch_grass_taiga",
    "dim": "overworld",
    "blocks": 43352032,
-   "mismatch": 193,
-   "match_pct": 99.99955480748861,
+   "mismatch": 29,
+   "match_pct": 99.99993310578844,
    "effect": 4296
+  },
+  {
+   "iso": [
+    18,
+    0,
+    473,
+    0,
+    2,
+    125
+   ],
+   "variant": "featuresparse:minecraft:patch_grass_taiga_2@4",
+   "feature": "minecraft:patch_grass_taiga_2",
+   "dim": "overworld",
+   "blocks": 43352043,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 621
   },
   {
    "iso": [
@@ -663,6 +1020,40 @@
    "mismatch": 2,
    "match_pct": 99.99999538660354,
    "effect": 70
+  },
+  {
+   "iso": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "variant": "featuresparse:minecraft:patch_melon_sparse@8",
+   "feature": "minecraft:patch_melon_sparse",
+   "dim": "overworld",
+   "blocks": 43352059,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 0
+  },
+  {
+   "iso": [
+    54,
+    0,
+    0,
+    0,
+    6,
+    6
+   ],
+   "variant": "featuresparse:minecraft:patch_pumpkin@1",
+   "feature": "minecraft:patch_pumpkin",
+   "dim": "overworld",
+   "blocks": 165248903,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 42
   },
   {
    "iso": [
@@ -724,6 +1115,23 @@
     0,
     0
    ],
+   "variant": "featuresparse:minecraft:patch_soul_fire@4",
+   "feature": "minecraft:patch_soul_fire",
+   "dim": "the_nether",
+   "blocks": 28901376,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 0
+  },
+  {
+   "iso": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
    "variant": "featuresparse:minecraft:patch_sugar_cane@4",
    "feature": "minecraft:patch_sugar_cane",
    "dim": "overworld",
@@ -748,6 +1156,23 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 2
+  },
+  {
+   "iso": [
+    9,
+    0,
+    14,
+    0,
+    1,
+    3
+   ],
+   "variant": "featuresparse:minecraft:patch_sugar_cane_badlands@1",
+   "feature": "minecraft:patch_sugar_cane_badlands",
+   "dim": "overworld",
+   "blocks": 165248925,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 16
   },
   {
    "iso": [
@@ -870,6 +1295,23 @@
   },
   {
    "iso": [
+    27,
+    0,
+    316,
+    0,
+    3,
+    71
+   ],
+   "variant": "featuresparse:minecraft:patch_waterlily@4",
+   "feature": "minecraft:patch_waterlily",
+   "dim": "overworld",
+   "blocks": 43351965,
+   "mismatch": 2,
+   "match_pct": 99.99999538659897,
+   "effect": 362
+  },
+  {
+   "iso": [
     0,
     0,
     0,
@@ -881,6 +1323,23 @@
    "feature": "minecraft:red_mushroom_normal",
    "dim": "overworld",
    "blocks": 43352043,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 0
+  },
+  {
+   "iso": [
+    36,
+    0,
+    0,
+    0,
+    4,
+    4
+   ],
+   "variant": "featuresparse:minecraft:rooted_azalea_tree@2",
+   "feature": "minecraft:rooted_azalea_tree",
+   "dim": "overworld",
+   "blocks": 43352008,
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 0
@@ -921,6 +1380,23 @@
   },
   {
    "iso": [
+    45,
+    0,
+    113,
+    0,
+    5,
+    22
+   ],
+   "variant": "featuresparse:minecraft:seagrass_deep@16",
+   "feature": "minecraft:seagrass_deep",
+   "dim": "overworld",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 1305
+  },
+  {
+   "iso": [
     0,
     0,
     293,
@@ -952,6 +1428,23 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 2406
+  },
+  {
+   "iso": [
+    36,
+    0,
+    246,
+    0,
+    4,
+    43
+   ],
+   "variant": "featuresparse:minecraft:seagrass_deep_warm@16",
+   "feature": "minecraft:seagrass_deep_warm",
+   "dim": "overworld",
+   "blocks": 43352045,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 4407
   },
   {
    "iso": [
@@ -1003,6 +1496,23 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 620
+  },
+  {
+   "iso": [
+    36,
+    0,
+    0,
+    0,
+    4,
+    4
+   ],
+   "variant": "featuresparse:minecraft:seagrass_swamp@16",
+   "feature": "minecraft:seagrass_swamp",
+   "dim": "overworld",
+   "blocks": 43352037,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 139
   },
   {
    "iso": [
@@ -1111,7 +1621,7 @@
     18,
     0,
     163,
-    889,
+    801,
     2,
     28
    ],
@@ -1119,9 +1629,26 @@
    "feature": "minecraft:warm_ocean_vegetation",
    "dim": "overworld",
    "blocks": 43352054,
-   "mismatch": 889,
-   "match_pct": 99.99794934745191,
+   "mismatch": 801,
+   "match_pct": 99.99815233668052,
    "effect": 5338
+  },
+  {
+   "iso": [
+    36,
+    0,
+    463,
+    0,
+    4,
+    106
+   ],
+   "variant": "featuresparse:minecraft:warped_forest_vegetation@4",
+   "feature": "minecraft:warped_forest_vegetation",
+   "dim": "the_nether",
+   "blocks": 28901376,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "effect": 4353
   },
   {
    "iso": [
@@ -1176,227 +1703,6 @@
   },
   {
    "iso": [
-    0,
-    0,
-    402,
-    12,
-    0,
-    101
-   ],
-   "variant": "featuresparse:minecraft:wildflowers_meadow@4",
-   "feature": "minecraft:wildflowers_meadow",
-   "dim": "overworld",
-   "blocks": 43351995,
-   "mismatch": 12,
-   "match_pct": 99.99997231961298,
-   "effect": 1728
-  },
-  {
-   "iso": [
-    9,
-    0,
-    15,
-    0,
-    1,
-    3
-   ],
-   "variant": "featuresparse:minecraft:bamboo@16",
-   "feature": "minecraft:bamboo",
-   "dim": "overworld",
-   "blocks": 43352038,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 4316
-  },
-  {
-   "iso": [
-    45,
-    0,
-    55,
-    0,
-    5,
-    14
-   ],
-   "variant": "featuresparse:minecraft:crimson_fungi@48",
-   "feature": "minecraft:crimson_fungi",
-   "dim": "the_nether",
-   "blocks": 28901376,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 7309
-  },
-  {
-   "iso": [
-    45,
-    0,
-    49,
-    0,
-    5,
-    12
-   ],
-   "variant": "featuresparse:minecraft:flower_cherry@16",
-   "feature": "minecraft:flower_cherry",
-   "dim": "overworld",
-   "blocks": 43352030,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 1836
-  },
-  {
-   "iso": [
-    81,
-    0,
-    144,
-    0,
-    9,
-    32
-   ],
-   "variant": "featuresparse:minecraft:patch_dead_bush_badlands@16",
-   "feature": "minecraft:patch_dead_bush_badlands",
-   "dim": "overworld",
-   "blocks": 43352041,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 318
-  },
-  {
-   "iso": [
-    81,
-    0,
-    195,
-    397,
-    9,
-    41
-   ],
-   "variant": "featuresparse:minecraft:patch_grass_jungle@16",
-   "feature": "minecraft:patch_grass_jungle",
-   "dim": "overworld",
-   "blocks": 43352041,
-   "mismatch": 397,
-   "match_pct": 99.99908424150088,
-   "effect": 3748
-  },
-  {
-   "iso": [
-    63,
-    0,
-    91,
-    4,
-    7,
-    22
-   ],
-   "variant": "featuresparse:minecraft:patch_grass_meadow@16",
-   "feature": "minecraft:patch_grass_meadow",
-   "dim": "overworld",
-   "blocks": 43351995,
-   "mismatch": 4,
-   "match_pct": 99.99999077320433,
-   "effect": 608
-  },
-  {
-   "iso": [
-    99,
-    0,
-    70,
-    0,
-    11,
-    23
-   ],
-   "variant": "featuresparse:minecraft:patch_grass_normal@16",
-   "feature": "minecraft:patch_grass_normal",
-   "dim": "overworld",
-   "blocks": 43352037,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 369
-  },
-  {
-   "iso": [
-    45,
-    0,
-    61,
-    0,
-    5,
-    14
-   ],
-   "variant": "featuresparse:minecraft:patch_grass_plain@16",
-   "feature": "minecraft:patch_grass_plain",
-   "dim": "overworld",
-   "blocks": 43352050,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 499
-  },
-  {
-   "iso": [
-    126,
-    0,
-    66,
-    42,
-    14,
-    24
-   ],
-   "variant": "featuresparse:minecraft:patch_grass_taiga@16",
-   "feature": "minecraft:patch_grass_taiga",
-   "dim": "overworld",
-   "blocks": 43352032,
-   "mismatch": 43,
-   "match_pct": 99.99990081203114,
-   "effect": 854
-  },
-  {
-   "iso": [
-    45,
-    0,
-    113,
-    0,
-    5,
-    22
-   ],
-   "variant": "featuresparse:minecraft:seagrass_deep@16",
-   "feature": "minecraft:seagrass_deep",
-   "dim": "overworld",
-   "blocks": 43352037,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 1305
-  },
-  {
-   "iso": [
-    36,
-    0,
-    246,
-    0,
-    4,
-    43
-   ],
-   "variant": "featuresparse:minecraft:seagrass_deep_warm@16",
-   "feature": "minecraft:seagrass_deep_warm",
-   "dim": "overworld",
-   "blocks": 43352045,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 4407
-  },
-  {
-   "iso": [
-    36,
-    0,
-    0,
-    0,
-    4,
-    4
-   ],
-   "variant": "featuresparse:minecraft:seagrass_swamp@16",
-   "feature": "minecraft:seagrass_swamp",
-   "dim": "overworld",
-   "blocks": 43352037,
-   "mismatch": 0,
-   "match_pct": 100.0,
-   "effect": 139
-  },
-  {
-   "iso": [
     63,
     0,
     91,
@@ -1411,6 +1717,23 @@
    "mismatch": 0,
    "match_pct": 100.0,
    "effect": 381
+  },
+  {
+   "iso": [
+    0,
+    0,
+    402,
+    12,
+    0,
+    101
+   ],
+   "variant": "featuresparse:minecraft:wildflowers_meadow@4",
+   "feature": "minecraft:wildflowers_meadow",
+   "dim": "overworld",
+   "blocks": 43351995,
+   "mismatch": 12,
+   "match_pct": 99.99997231961298,
+   "effect": 1728
   }
  ]
 }

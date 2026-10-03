@@ -11,7 +11,7 @@
 | W6 Эталоны (tools/gt) | `a6156045dff329959` | `tools/gt`, `run/gt`, `docs/blender/ground-truth.md`, `accuracy.md` | в работе: варианты carve_raw, 26.1/26.2/26.4, «одна фича/структура» |
 | W2 Поверхность (G3) | `a468f63f23ac4aa63` | `libmcgen/src/surface*`, `docs/blender/surface.md` | **завершён**: G3 26.3 31/31 PASS (2,09·10⁹ блоков; независимая проверка Overworld s8675309 PASS); 26.1/26.2/26.4 и пресеты — Java-эталон на классах игры (0 расхождений); 26.4: carvedTopBlock встроен (`surface_apply_chunk_ex`) |
 | W3 Карверы (G4) | `a8319bcd54fb7c8f1` | `libmcgen/src/carver*`, `docs/blender/carvers.md` | **завершён**: G4 26.3 30/30 и G4c 30/30 (серверные эталоны, 50 436 чанков); 26.1/26.2/26.4 — Java-эталон на классах игры (0 расхождений, кроме 131 блока dirt↔grass в 26.4 — правка у W2); потоки: md5 одинаков при 1/5/12; открытое: порядок растекания жидкостей на границе чанков (1 блок на 4·10⁹, допущение W1) |
-| W10 Растительность (G5-veg) | `af94de8374614ce41` | `libmcgen/src/feature_veg*`, `feature_patch*`, `feature_water*` | возобновлён 13:52 (остановлен по квоте 10:12) |
+| W10 Растительность (G5-veg) | `af94de8374614ce41` | `libmcgen/src/feature_veg*`, `feature_patch*`, `feature_water*` | **завершён 19:58**: block_column, bamboo, vines, vegetation_patch, corals, root_system, huge_fungus…; HashSet-порядок воспроизведён (2999/3000 с настоящей Java); поправка WG-высот (снимок после terrain); 26.2/26.4 изоляция 100 %; `docs/blender/features-veg.md` |
 | W11 Деревья/грибы (G5-trees) | `aef1152622091e251` | `libmcgen/src/feature_tree*`, `feature_mushroom*` | **завершён 19:50**: tree/fallen_tree/huge_mushroom; одиночные деревья 45/45 = 100 % (margin 1), 26.4 23/23; плотные леса упираются в недетерминизм игры (41 % клеток ствол/листва между двумя прогонами игры); `docs/blender/features-trees.md` |
 | W12 Подземные/ледяные/особые + Nether/End (G5-misc) | `a0b3bab7d2844bbdf` | `libmcgen/src/feature_misc*`, `feature_geode*`, `feature_drip*`, `feature_ice*`, `feature_nether*`, `feature_end*` | возобновлён 19:55 с приоритетной задачей: freeze_top_layer (снег/лёд завышены: ice→water 121 800 блоков, snow→air 18–88 тыс.) |
 | W7 GPU (G9): CUDA биомы/климат → TERRAIN/LOD → UI «Compute» | `a9106d7bf9f25dc63` | `libmcgen/gpu`, `libmcgen/src/gpu_bridge*`, `core/gpu.py`, `docs/blender/gpu.md` | запущен 19:50 (sonnet, без суб-агентов) |
@@ -46,6 +46,7 @@
 Всегда: отвечай пользователю по-русски, фиксируй только измеренное; не раскрывай секретов.
 
 ## 4. Журнал вех
+* 2026-10-03 20:20: W10 завершён. Полный G5 core (независимо): 10/12 PASS; Overworld 99,889/99,923/99,976 %, Nether 99,830/99,946/99,957 %, End 100 %; остаток — недетерминизм игры (плотные леса/грибные блоки), сколк/мох/глина у W12.
 * 2026-10-03 19:50: запущен W7 (GPU, G9; спека §3.6).
 * 2026-10-03 20:10: W12 нашёл причину ice/snow: surface.c:load_biome_temps грузил температуры биомов только при has_temp/frozen_ocean (у остальных 0.0 → «везде холодно»); исправлено. Независимая проверка G5 Overworld: s12345 99,589→99,889 %, s8675309 99,542→99,923 % (PASS). W12 продолжает список (Nether/End/дрипстоун/геоды/комнаты/окаменелости).
 * 2026-10-03 19:55: W11 завершён. Полный G5 core (run_gate): Overworld 99,54–99,61 % (главное расхождение — снег/лёд freeze_top_layer → задача W12), Nether 99,83–99,96 %, End 100 %. Возобновлён W12.
