@@ -4,10 +4,11 @@
 #   make crack                      все GPU/CPU-инструменты восстановления seed в crack/bin/ (нужен nvcc; ARCH=sm_86 для другой карты)
 #   make crack-cpu                  то же без CUDA (g++ + OpenMP)
 #   make oracle V=26.3              эталон на реальном коде Mojang (нужен `make setup`, JDK 25)
+#   make libmcgen                   библиотека генератора мира (libmcgen/build/libmcgen.so, mcgen-cli); make libmcgen-all — 4 платформы (zig); make addon — расширение Blender
 ARCH ?= sm_89
 V    ?= 26.1 26.2 26.3
 
-.PHONY: setup mcquery crack crack-cpu oracle clean
+.PHONY: setup mcquery crack crack-cpu oracle libmcgen libmcgen-all addon clean
 setup:
 	python3 tools/fetch_game.py $(V)
 
@@ -28,6 +29,15 @@ crack-cpu:
 
 oracle:
 	oracle/build.sh $(firstword $(V))
+
+libmcgen:
+	$(MAKE) -C libmcgen
+
+libmcgen-all:
+	python3 libmcgen/build.py --targets all
+
+addon: libmcgen-all
+	python3 tools/build_extension.py
 
 clean:
 	rm -f tools/mcquery
