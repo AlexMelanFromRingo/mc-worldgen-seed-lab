@@ -1,0 +1,619 @@
+{
+ "version": "26.3",
+ "features": [
+  {
+   "feature": "birch_tall",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks2": 4816868,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_birch",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894754,
+   "mism0": 1,
+   "blocks2": 4816868,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_badlands",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894741,
+   "mism0": 175,
+   "blocks2": 4816878,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_taiga",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894778,
+   "mism0": 2100,
+   "blocks2": 4816892,
+   "mism2": 1205,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_old_growth_pine_taiga",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894761,
+   "mism0": 6704,
+   "blocks2": 4816880,
+   "mism2": 2311,
+   "mism2_stable": 0,
+   "noise_ref_rep1": 6811
+  },
+  {
+   "feature": "trees_old_growth_spruce_taiga",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894761,
+   "mism0": 0,
+   "blocks2": 4816880,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_jungle",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894783,
+   "mism0": 51999,
+   "blocks2": 4816896,
+   "mism2": 15439,
+   "mism2_stable": 1405,
+   "noise_ref_rep1": 103676
+  },
+  {
+   "feature": "trees_sparse_jungle",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894777,
+   "mism0": 4,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_savanna",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks2": 4816891,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_swamp",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_mangrove",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894767,
+   "mism0": 273203,
+   "blocks2": 4816879,
+   "mism2": 107392,
+   "mism2_stable": 61280,
+   "noise_ref_rep1": 171668
+  },
+  {
+   "feature": "trees_cherry",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks2": 4816891,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_flower_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894781,
+   "mism0": 1444,
+   "blocks2": 4816894,
+   "mism2": 1197,
+   "mism2_stable": 0,
+   "noise_ref_rep1": 2215
+  },
+  {
+   "feature": "trees_birch_and_oak_leaf_litter",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894754,
+   "mism0": 32625,
+   "blocks2": 4816868,
+   "mism2": 14475,
+   "mism2_stable": 2311,
+   "noise_ref_rep1": 30836
+  },
+  {
+   "feature": "dark_forest_vegetation",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894767,
+   "mism0": 6259,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": 0,
+   "noise_ref_rep1": 124
+  },
+  {
+   "feature": "trees_snowy",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894781,
+   "mism0": 0,
+   "blocks2": 4816893,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_windswept_hills",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_grove",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894775,
+   "mism0": 2009,
+   "blocks2": 4816892,
+   "mism2": 350,
+   "mism2_stable": 0,
+   "noise_ref_rep1": 2752
+  },
+  {
+   "feature": "trees_meadow",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 43352024,
+   "mism0": 0,
+   "blocks2": 28409819,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_dappled_forest",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894775,
+   "mism0": 19567,
+   "blocks2": 4816895,
+   "mism2": 13070,
+   "mism2_stable": 5686,
+   "noise_ref_rep1": 10203
+  },
+  {
+   "feature": "trees_water",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894770,
+   "mism0": 0,
+   "blocks2": 4816892,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_plains",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks2": 4816891,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "trees_windswept_savanna",
+   "dim": "overworld",
+   "seed": -7048155917072976836,
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "mushroom_island_vegetation",
+   "dim": "overworld",
+   "seed": 8675309,
+   "blocks0": 11894774,
+   "mism0": 0,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": 0,
+   "noise_ref_rep1": 0
+  },
+  {
+   "feature": "rooted_azalea_tree",
+   "dim": "overworld",
+   "seed": 12345,
+   "blocks0": 11894767,
+   "mism0": 0,
+   "blocks2": 4816896,
+   "mism2": 0,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  },
+  {
+   "feature": "crimson_fungi",
+   "dim": "the_nether",
+   "seed": 8675309,
+   "blocks0": 7929856,
+   "mism0": 24698,
+   "blocks2": 3211264,
+   "mism2": 9154,
+   "mism2_stable": 8435,
+   "noise_ref_rep1": 14343
+  },
+  {
+   "feature": "warped_fungi",
+   "dim": "the_nether",
+   "seed": 12345,
+   "blocks0": 7929856,
+   "mism0": 16416,
+   "blocks2": 3211264,
+   "mism2": 4424,
+   "mism2_stable": null,
+   "noise_ref_rep1": null
+  }
+ ],
+ "custom": [
+  {
+   "name": "acacia",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962618,
+   "mism1": 0
+  },
+  {
+   "name": "birch",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "birch_bees_0002",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "birch_bees_0002_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "birch_bees_002",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "birch_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "cherry",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962618,
+   "mism1": 0
+  },
+  {
+   "name": "cherry_bees_005",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962618,
+   "mism1": 0
+  },
+  {
+   "name": "dark_oak",
+   "blocks0": 11894767,
+   "mism0": 0,
+   "blocks1": 7962611,
+   "mism1": 0
+  },
+  {
+   "name": "dark_oak_leaf_litter",
+   "blocks0": 11894767,
+   "mism0": 0,
+   "blocks1": 7962611,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_birch_tree",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_jungle_tree",
+   "blocks0": 11894783,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_oak_tree",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_poplar_tree",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_spruce_tree",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962620,
+   "mism1": 0
+  },
+  {
+   "name": "fallen_super_birch_tree",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fancy_oak",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fancy_oak_bees",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fancy_oak_bees_0002_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fancy_oak_bees_002",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "fancy_oak_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "jungle_bush",
+   "blocks0": 11894783,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "jungle_tree",
+   "blocks0": 11894783,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "mangrove",
+   "blocks0": 11894767,
+   "mism0": 0,
+   "blocks1": 7962607,
+   "mism1": 0
+  },
+  {
+   "name": "mega_jungle_tree",
+   "blocks0": 11894783,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "mega_pine",
+   "blocks0": 11894761,
+   "mism0": 0,
+   "blocks1": 7962608,
+   "mism1": 0
+  },
+  {
+   "name": "mega_spruce",
+   "blocks0": 11894761,
+   "mism0": 0,
+   "blocks1": 7962608,
+   "mism1": 0
+  },
+  {
+   "name": "oak",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "oak_bees_0002_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "oak_bees_002",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "oak_leaf_litter",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "orange_poplar",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "orange_poplar_leaf_litter",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "pale_oak",
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "pale_oak_creaking",
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "pine",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962620,
+   "mism1": 0
+  },
+  {
+   "name": "red_poplar",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "red_poplar_leaf_litter",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "spruce",
+   "blocks0": 11894778,
+   "mism0": 0,
+   "blocks1": 7962620,
+   "mism1": 0
+  },
+  {
+   "name": "super_birch_bees",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "super_birch_bees_0002",
+   "blocks0": 11894754,
+   "mism0": 0,
+   "blocks1": 7962594,
+   "mism1": 0
+  },
+  {
+   "name": "swamp_oak",
+   "blocks0": 11894784,
+   "mism0": 0,
+   "blocks1": 7962624,
+   "mism1": 0
+  },
+  {
+   "name": "tall_mangrove",
+   "blocks0": 11894767,
+   "mism0": 0,
+   "blocks1": 7962607,
+   "mism1": 0
+  },
+  {
+   "name": "yellow_poplar",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  },
+  {
+   "name": "yellow_poplar_leaf_litter",
+   "blocks0": 11894775,
+   "mism0": 4,
+   "blocks1": 7962621,
+   "mism1": 0
+  }
+ ]
+}

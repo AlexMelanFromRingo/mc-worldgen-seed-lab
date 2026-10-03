@@ -1,0 +1,42 @@
+[
+ {
+  "feature": "minecraft:trees_swamp",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": -64,
+  "cz": 238,
+  "radius": 5
+ },
+ {
+  "feature": "minecraft:trees_savanna",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 47,
+  "cz": 133,
+  "radius": 5
+ },
+ {
+  "feature": "minecraft:trees_cherry",
+  "dim": "overworld",
+  "seed": -7048155917072976836,
+  "cx": 25,
+  "cz": 61,
+  "radius": 5
+ },
+ {
+  "feature": "minecraft:trees_snowy",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 192,
+  "cz": 155,
+  "radius": 5
+ },
+ {
+  "feature": "minecraft:trees_old_growth_spruce_taiga",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": -202,
+  "cz": -231,
+  "radius": 5
+ }
+]

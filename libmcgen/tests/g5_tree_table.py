@@ -39,23 +39,23 @@ def main():
     rows = []
     for f in FEATS:
         ws = [d.rstrip('/') for d in sorted(glob.glob(f'{ROOT}/run/gt/{v}/feature_minecraft_{f}/*/')) if '_rep' not in d and os.path.exists(d + 'manifest.json')]
-        if not ws: continue
-        wd = ws[0]; m = json.load(open(wd + '/manifest.json'))
-        if not m.get('ok'): continue
-        out = tempfile.mktemp(suffix='.mcr')
-        if not gen(f'{ROOT}/run/pack-{v}', v, m, f'minecraft:{f}', out): continue
-        dim = m['dim']; reps = sorted(glob.glob(wd + '_rep*'))
-        n0, m0 = diff(['--ref', wd, '--mcr', out], dim, v, 0)
-        n2, m2 = diff(['--ref', wd, '--mcr', out], dim, v, 2)
-        st = [x for r in reps for x in ('--stable-with', r)]
-        _, s2 = diff(['--ref', wd, '--mcr', out], dim, v, 2, st) if reps else (None, None)
-        noise = None
-        if reps:
-            x0, z0, x1, z1 = m['area_chunks']
-            _, noise = diff(['--ref', wd, '--vs-world', reps[0], '--cx0', str(x0), '--cz0', str(z0), '--nx', str(x1 - x0 + 1), '--nz', str(z1 - z0 + 1)], dim, v, 0)
-        os.remove(out)
-        rows.append(dict(feature=f, dim=dim, seed=m['seed'], blocks0=n0, mism0=m0, blocks2=n2, mism2=m2, mism2_stable=s2, noise_ref_rep1=noise))
-        print(f"{f:34s} m0 {m0:>8,}/{n0:>11,}  m2 {m2:>8,}  m2 stable {s2 if s2 is not None else '-':>8}  шум ref↔rep1 {noise if noise is not None else '-'}", flush=True)
+        for wd in ws:
+            m = json.load(open(wd + '/manifest.json'))
+            if not m.get('ok'): continue
+            out = tempfile.mktemp(suffix='.mcr')
+            if not gen(f'{ROOT}/run/pack-{v}', v, m, f'minecraft:{f}', out): continue
+            dim = m['dim']; reps = sorted(glob.glob(wd + '_rep*'))
+            n0, m0 = diff(['--ref', wd, '--mcr', out], dim, v, 0)
+            n2, m2 = diff(['--ref', wd, '--mcr', out], dim, v, 2)
+            st = [x for r in reps for x in ('--stable-with', r)]
+            _, s2 = diff(['--ref', wd, '--mcr', out], dim, v, 2, st) if reps else (None, None)
+            noise = None
+            if reps:
+                x0, z0, x1, z1 = m['area_chunks']
+                _, noise = diff(['--ref', wd, '--vs-world', reps[0], '--cx0', str(x0), '--cz0', str(z0), '--nx', str(x1 - x0 + 1), '--nz', str(z1 - z0 + 1)], dim, v, 0)
+            os.remove(out)
+            rows.append(dict(feature=f, dim=dim, seed=m['seed'], area=m['center_chunk'], blocks0=n0, mism0=m0, blocks2=n2, mism2=m2, mism2_stable=s2, noise_ref_rep1=noise))
+            print(f"{f:34s} s{m['seed']} {m['center_chunk']} m0 {m0:>8,}/{n0:>11,}  m2 {m2:>8,}  m2 stable {s2 if s2 is not None else '-':>8}  шум ref↔rep1 {noise if noise is not None else '-'}", flush=True)
     cust = []
     ov = f'{ROOT}/run/gt/_tree_overlay/{v}'
     if os.path.isdir(ov):

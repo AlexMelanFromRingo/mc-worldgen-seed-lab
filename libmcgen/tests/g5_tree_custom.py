@@ -12,12 +12,22 @@ DIMS = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether', 't
 
 
 def custom_dir(v):
-    return f'{ROOT}/tools/gt/custom' + ('' if v == '26.3' else '-' + v)
+    return f'{ROOT}/tools/gt/custom'      # общий для версий; файлы с фичами, которых нет в паке версии, пропускаются
+
+
+def version_specs(v):
+    base = f'{ROOT}/run/pack-{v}/data/minecraft/worldgen'
+    cfg = f'{base}/feature' if os.path.isdir(f'{base}/feature') else f'{base}/configured_feature'
+    out = {}
+    for f in sorted(glob.glob(custom_dir(v) + '/*.json')):
+        n = os.path.basename(f)[:-5]
+        if os.path.exists(f'{cfg}/{n}.json'): out[n] = json.load(open(f))
+    return out
 
 
 def build_overlay(v):
     src = f'{ROOT}/run/pack-{v}'; dst = f'{ROOT}/run/gt/_tree_overlay/{v}'
-    specs = {os.path.basename(f)[:-5]: json.load(open(f)) for f in sorted(glob.glob(custom_dir(v) + '/*.json'))}
+    specs = version_specs(v)
     if os.path.exists(dst): shutil.rmtree(dst)
     os.makedirs(dst + '/data/minecraft/worldgen')
     for e in os.listdir(src):
@@ -49,7 +59,7 @@ def main():
     v = a.version
     ov = f'{ROOT}/run/gt/_tree_overlay/{v}'
     if a.rebuild or not os.path.isdir(ov): ov, specs = build_overlay(v)
-    else: specs = {os.path.basename(f)[:-5]: json.load(open(f)) for f in sorted(glob.glob(custom_dir(v) + '/*.json'))}
+    else: specs = version_specs(v)
     names = a.names or sorted(specs)
     tot = bad = 0
     for n in names:

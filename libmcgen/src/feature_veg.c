@@ -348,6 +348,7 @@ static int fungus_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 typedef struct RootCfg {
     Placed *tree; int req_space, level_dist, max_dev, root_radius; const u8 *root_repl; BSProv *root_prov;
     int root_attempts, col_max, hang_radius, hang_span; BSProv *hang_prov; int hang_attempts, water_allowed; BPred *allowed;
+    int hm_check;                 /* 26.2+: placeDirtAndTree прерывается, если WORLD_SURFACE ниже позиции; в 26.1 проверки нет */
 } RootCfg;
 static void *root_parse(FParse *p, const Js *cfg) {
     RootCfg *s = fp_alloc(p, sizeof *s);
@@ -366,6 +367,7 @@ static void *root_parse(FParse *p, const Js *cfg) {
     s->hang_attempts = js_int(js_get(cfg, "hanging_root_placement_attempts"), 1);
     s->water_allowed = js_int(js_get(cfg, "allowed_vertical_water_for_tree"), 1);
     s->allowed = fp_bpred(p, js_get(cfg, "allowed_tree_position")); if (!s->allowed) return NULL;
+    s->hm_check = p->version >= V26_2;
     return s;
 }
 static int root_space_for_tree(FCtx *c, const RootCfg *s, int x, int y, int z) {
@@ -390,7 +392,7 @@ static int root_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     int wy = oy, done = 0;
     for (int y = 0; y < s->col_max; y++) {
         wy++;
-        if (fc_height(c, HM_WORLD_SURFACE, ox, oz) < wy) break;
+        if (s->hm_check && fc_height(c, HM_WORLD_SURFACE, ox, oz) < wy) break;
         if (bpred_test(c, s->allowed, ox, wy, oz) && root_space_for_tree(c, s, ox, wy, oz)) {
             int below = fc_get(c, ox, wy - 1, oz);
             int fl = BS_FL_TYPE(c->bs->fluid[fc_get(c, ox, wy - 1, oz)]);
