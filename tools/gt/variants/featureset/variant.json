@@ -1,0 +1,11 @@
+{
+ "name": "featureset:<имя набора>",
+ "title": "Набор фич",
+ "doc": "Параметрический вариант: `featureset:g5_overworld` (список placed_feature из tools/gt/featuresets/<имя>.json). Как feature:<id>, но у биомов остаются все фичи из списка (порядок и шаги — как в ванили): проверка совместной работы и порядка шагов. surface включён, карверов и построек нет.",
+ "parametric": "featureset",
+ "generate_structures": false,
+ "terrain_rule": "full",
+ "carvers": false,
+ "features": "only_list",
+ "structures": false
+}

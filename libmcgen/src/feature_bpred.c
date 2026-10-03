@@ -226,12 +226,22 @@ int ruletest_test(FCtx *c, const RuleTest *r, int st, int x, int y, int z) {
 }
 
 /* ====================================================================== BlockState.canSurvive
- * Классы, которым нужна проверка (VegetationBlock и потомки: основание — тег supports_vegetation). Остальные классы пока «выживают»
- * (реализуют группы фич растительности/деревьев/подземных: дописывать сюда по классу блока из block_flags.json). */
+ * Потомки VegetationBlock: основание — тег поддержки класса/блока (BlockBehaviour: mayPlaceOn). Нестандартные классы (грибы, морская трава и огурцы,
+ * кувшинка, листовая подстилка, посевы со светом, пропагулы, дриплиф) пока «выживают» — их дописывает группа «растительность»: добавить ветку ниже. */
+static const struct { const char *cls; const char *tag; } SURV_CLS[] = {
+    { "NetherSproutsBlock", "minecraft:supports_nether_sprouts" }, { "NetherWartBlock", "minecraft:supports_nether_wart" },
+    { "AzaleaBlock", "minecraft:supports_azalea" }, { "DryVegetationBlock", "minecraft:supports_dry_vegetation" },
+    { "WitherRoseBlock", "minecraft:supports_wither_rose" }, { NULL, NULL } };
+static const struct { const char *block; const char *tag; } SURV_BLK[] = {          /* NetherRootsBlock / NetherFungusBlock — тег по блоку */
+    { "minecraft:crimson_roots", "minecraft:supports_crimson_roots" }, { "minecraft:warped_roots", "minecraft:supports_warped_roots" },
+    { "minecraft:crimson_fungus", "minecraft:supports_crimson_fungus" }, { "minecraft:warped_fungus", "minecraft:supports_warped_fungus" }, { NULL, NULL } };
+static const char *PLAIN_VEG[] = { "SaplingBlock", "FlowerBlock", "TallGrassBlock", "FernBlock", "TallFlowerBlock", "BushBlock", "FireflyBushBlock", "EyeblossomBlock",
+                                   "FlowerBedBlock", "ShortDryGrassBlock", "TallDryGrassBlock", NULL };
 int block_can_survive(FCtx *c, int st, int x, int y, int z) {
     const BsTab *bs = c->bs;
     const BsBlock *bb = &bs->blk[c->g->state_block[st]];
     if (!bb->cls) return 1;
+    const char *tag = NULL;
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         const char *half = NULL; bs_get_prop(bs, st, "half", &half);
         if (half && !strcmp(half, "upper")) {          /* верхняя половина: снизу — нижняя половина того же блока */
@@ -239,12 +249,16 @@ int block_can_survive(FCtx *c, int st, int x, int y, int z) {
             return c->g->state_block[below] == c->g->state_block[st] && bs_get_prop(bs, below, "half", &half) && !strcmp(half, "lower");
         }
     }
-    if (!strcmp(bb->cls, "SaplingBlock") || !strcmp(bb->cls, "FlowerBlock") || !strcmp(bb->cls, "TallGrassBlock") || !strcmp(bb->cls, "FernBlock") ||
-        !strcmp(bb->cls, "DoublePlantBlock") || !strcmp(bb->cls, "TallFlowerBlock")) {
-        static _Thread_local const McGen *gg; static _Thread_local const u8 *tag;
-        if (gg != c->g) { gg = c->g; tag = gen_block_tag(c->g, "minecraft:supports_vegetation"); }
-        int below = fc_get(c, x, y - 1, z);
-        return tag[c->g->state_block[below]] != 0;
-    }
-    return 1;
+    for (int i = 0; SURV_CLS[i].cls && !tag; i++) if (!strcmp(bb->cls, SURV_CLS[i].cls)) tag = SURV_CLS[i].tag;
+    for (int i = 0; SURV_BLK[i].block && !tag; i++) if (!strcmp(bb->name, SURV_BLK[i].block)) tag = SURV_BLK[i].tag;
+    for (int i = 0; PLAIN_VEG[i] && !tag; i++) if (!strcmp(bb->cls, PLAIN_VEG[i])) tag = "minecraft:supports_vegetation";
+    if (!tag && (!strcmp(bb->cls, "DoublePlantBlock"))) tag = "minecraft:supports_vegetation";
+    if (!tag) return 1;
+    static _Thread_local const McGen *cg; static _Thread_local const char *ck[16]; static _Thread_local const u8 *cv[16]; static _Thread_local int cn;
+    if (cg != c->g) { cg = c->g; cn = 0; }
+    const u8 *t = NULL;
+    for (int i = 0; i < cn; i++) if (ck[i] == tag) { t = cv[i]; break; }          /* теги — строковые литералы: ключ по указателю */
+    if (!t) { t = gen_block_tag(c->g, tag); if (cn < 16) { ck[cn] = tag; cv[cn++] = t; } }
+    int below = fc_get(c, x, y - 1, z);
+    return t[c->g->state_block[below]] != 0;
 }

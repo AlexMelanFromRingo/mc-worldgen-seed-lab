@@ -7,11 +7,21 @@
 """
 import argparse, glob, json, os, subprocess, sys, tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+IMPL = set()
 CLI = None   # копия mcgen-cli на время прогона (можно пересобирать библиотеку параллельно)
 DIMS = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether', 'the_nether': 'minecraft:the_nether', 'end': 'minecraft:the_end', 'the_end': 'minecraft:the_end'}
-IMPL = {'minecraft:ore', 'minecraft:scattered_ore', 'minecraft:disk', 'minecraft:block_blob', 'minecraft:spring_feature', 'minecraft:lake',
-        'minecraft:simple_block', 'minecraft:sequence', 'minecraft:simple_random_selector', 'minecraft:random_selector', 'minecraft:random_boolean_selector',
-        'minecraft:weighted_random_selector', 'minecraft:no_op'}   # типы, реализованные в libmcgen (расширять по мере готовности)
+def implemented(v):
+    """placed_feature, полностью реализованные в libmcgen (impl=1 в выгрузке MCGEN_FEATURES_DUMP_ORDER), по всем измерениям"""
+    ids = set()
+    for dim in ('minecraft:overworld', 'minecraft:the_nether', 'minecraft:the_end'):
+        f = tempfile.mktemp(suffix='.json', dir='/tmp')
+        subprocess.run([CLI, '--pack', f'{ROOT}/run/pack-{v}', '--version', v, '--dim', dim, '--seed', '1', '--cx0', '0', '--cz0', '0', '--nx', '1', '--nz', '1', '--stages', '0x13',
+                        '--threads', '1', '--out', f + '.mcr'], env=dict(os.environ, MCGEN_FEATURES_DUMP_ORDER=f), capture_output=True)
+        if os.path.exists(f):
+            ids |= {x['id'] for x in json.load(open(f))['placed'] if x['impl'] == 1}
+            os.remove(f)
+        if os.path.exists(f + '.mcr'): os.remove(f + '.mcr')
+    return ids
 
 
 def feature_type(v, fid):
@@ -54,6 +64,8 @@ def main():
     import shutil
     CLI = tempfile.mktemp(prefix='mcgen-cli-', dir='/tmp'); shutil.copy(f'{ROOT}/libmcgen/build/mcgen-cli', CLI)
     only = {x if ':' in x else 'minecraft:' + x for x in a.only.split(',') if x}
+    global IMPL
+    IMPL = implemented(a.version)
     rows, bad = [], 0
     for fdir in sorted(glob.glob(f'{ROOT}/run/gt/{a.version}/feature_*')):
         for wd in sorted(glob.glob(fdir + '/*/')):
@@ -64,7 +76,7 @@ def main():
             if not m.get('ok') or not m['variant'].startswith('feature:'): continue
             fid = m['variant'][len('feature:'):]
             if only and fid not in only: continue
-            if not only and feature_type(a.version, fid) not in IMPL: continue
+            if not only and fid not in IMPL: continue
             d = run_one(a.version, wd, fid, a.pp_margin, a.threads, a.stages)
             ctl = run_one(a.version, wd, fid, a.pp_margin, a.threads, hex(int(a.stages, 16) & ~16)) if a.control else {}   # без FEATURES: сколько блоков фича меняет в эталоне
             if 'error' in d and 'blocks_compared' not in d:

@@ -1,0 +1,432 @@
+# full-26.1-amplified.log
+26.1 overworld s=12345 (-154,20) 4x4 desert                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 13.9 с
+      блоки: bedrock:12348, deepslate:264610, gravel:1048, sandstone:18471, water:28669
+26.1 overworld s=12345 (104,-146) 4x4 frozen_ocean           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.9 с
+      блоки: bedrock:12316, deepslate:257335, gravel:3964, packed_ice:17982, snow_block:446, water:59023
+26.1 overworld s=12345 (-24,44) 4x4 snowy_slopes           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.5 с
+      блоки: bedrock:12319, deepslate:265216, powder_snow:1407, snow_block:4644, water:411
+26.1 overworld s=12345 (-30,-40) 4x4 jagged_peaks           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.5 с
+      блоки: bedrock:12376, deepslate:248803, powder_snow:177, snow_block:4682, water:713
+26.1 overworld s=12345 (-6,-222) 4x4 swamp                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.9 с
+      блоки: bedrock:12359, deepslate:264382, gravel:381, water:18060
+26.1 overworld s=12345 (-180,100) 4x4 badlands               блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.1 с
+      блоки: bedrock:12319, deepslate:255463, deepslate_iron_ore:77, gravel:836, orange_terracotta:683, sandstone:27304, terracotta:1077, water:35887
+26.1 overworld s=12345 (66,-222) 4x4 windswept_hills        блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.7 с
+      блоки: bedrock:12216, deepslate:261069, water:15088
+26.1 overworld s=12345 (-104,-222) 4x4 plains                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.2 с
+      блоки: bedrock:12260, deepslate:257637, deepslate_iron_ore:351, gravel:583, water:49317
+26.1 overworld s=12345 (80,-222) 4x4 ocean                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.0 с
+      блоки: bedrock:12332, deepslate:250668, gravel:2776, sandstone:696, water:51112
+26.1 overworld s=12345 (-168,-222) 4x4 forest                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.3 с
+      блоки: bedrock:12282, deepslate:258018
+26.1 overworld s=12345 (20,-212) 4x4 taiga                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.8 с
+      блоки: bedrock:12251, deepslate:266215, deepslate_iron_ore:81, gravel:591, water:19755
+26.1 overworld s=8675309 (-64,-118) 4x4 desert                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.1 с
+      блоки: bedrock:12369, coarse_dirt:169, deepslate:264109, deepslate_iron_ore:314, orange_terracotta:9291, sandstone:20923, terracotta:23011, water:682
+26.1 overworld s=8675309 (142,36) 4x4 frozen_ocean           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.7 с
+      блоки: bedrock:12304, deepslate:215882, gravel:3839, packed_ice:657, water:64058
+26.1 overworld s=8675309 (156,-134) 4x4 snowy_slopes           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.1 с
+      блоки: bedrock:12227, deepslate:254273, deepslate_iron_ore:49, powder_snow:214, snow_block:7607, water:2038
+26.1 overworld s=8675309 (154,-134) 4x4 jagged_peaks           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.0 с
+      блоки: bedrock:12261, deepslate:260043, powder_snow:214, snow_block:6002, water:3876
+26.1 overworld s=8675309 (198,104) 4x4 swamp                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.4 с
+      блоки: bedrock:12302, deepslate:267665, water:1074
+26.1 overworld s=8675309 (-22,-92) 4x4 badlands               блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.2 с
+      блоки: bedrock:12317, coarse_dirt:426, deepslate:221458, deepslate_iron_ore:187, orange_terracotta:100891, terracotta:217625, water:5753
+26.1 overworld s=8675309 (172,84) 4x4 windswept_hills        блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.3 с
+      блоки: bedrock:12291, deepslate:256527, water:26685
+26.1 overworld s=8675309 (-180,-222) 4x4 plains                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.0 с
+      блоки: bedrock:12319, deepslate:242179, gravel:75, water:26752
+26.1 overworld s=8675309 (4,-222) 4x4 ocean                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 0.9 с
+      блоки: bedrock:12327, deepslate:243989, gravel:3964, water:60229
+26.1 overworld s=8675309 (-192,-222) 4x4 forest                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.1 с
+      блоки: bedrock:12303, deepslate:264825, water:66107
+26.1 overworld s=8675309 (-222,-222) 4x4 taiga                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.0 с
+      блоки: bedrock:12266, deepslate:253557, gravel:1154, water:55848
+ИТОГО: областей 22, блоков 34,603,008, расхождений 0
+# full-26.1-caves.log
+26.1 overworld s=12345: биом desert не найден в ±220 чанков
+26.1 overworld s=12345: биом frozen_ocean не найден в ±220 чанков
+26.1 overworld s=12345: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=12345: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=12345: биом swamp не найден в ±220 чанков
+26.1 overworld s=12345: биом badlands не найден в ±220 чанков
+26.1 overworld s=12345: биом windswept_hills не найден в ±220 чанков
+26.1 overworld s=12345: биом plains не найден в ±220 чанков
+26.1 overworld s=12345: биом ocean не найден в ±220 чанков
+26.1 overworld s=12345: биом forest не найден в ±220 чанков
+26.1 overworld s=12345: биом taiga не найден в ±220 чанков
+26.1 overworld s=8675309: биом desert не найден в ±220 чанков
+26.1 overworld s=8675309: биом frozen_ocean не найден в ±220 чанков
+26.1 overworld s=8675309: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=8675309: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=8675309: биом swamp не найден в ±220 чанков
+26.1 overworld s=8675309: биом badlands не найден в ±220 чанков
+26.1 overworld s=8675309: биом windswept_hills не найден в ±220 чанков
+26.1 overworld s=8675309: биом plains не найден в ±220 чанков
+26.1 overworld s=8675309: биом ocean не найден в ±220 чанков
+26.1 overworld s=8675309: биом forest не найден в ±220 чанков
+26.1 overworld s=8675309: биом taiga не найден в ±220 чанков
+ИТОГО: областей 0, блоков 0, расхождений 0
+# full-26.1-end.log
+26.1 end       s=12345 (-15,-65) 6x6 the_end                блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 18.9 с
+26.1 end       s=12345 (-131,-163) 6x6 end_highlands          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.1 с
+26.1 end       s=12345 (-163,-163) 6x6 end_midlands           блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 0.9 с
+26.1 end       s=12345 (-157,-163) 6x6 small_end_islands      блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 1.4 с, Java 0.8 с
+26.1 end       s=12345 (-161,-163) 6x6 end_barrens            блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 0.7 с
+26.1 end       s=8675309 (-17,-65) 6x6 the_end                блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.7 с
+26.1 end       s=8675309 (-129,-163) 6x6 end_highlands          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 2.0 с, Java 0.8 с
+26.1 end       s=8675309 (-131,-163) 6x6 end_midlands           блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 0.9 с
+26.1 end       s=8675309 (-163,-163) 6x6 small_end_islands      блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 0.7 с
+26.1 end       s=8675309 (-159,-163) 6x6 end_barrens            блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.4 с
+26.1 end       s=-7048155917072976836 (-15,-65) 6x6 the_end                блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.3 с
+26.1 end       s=-7048155917072976836 (-151,-163) 6x6 end_highlands          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.3 с
+26.1 end       s=-7048155917072976836 (-149,-163) 6x6 end_midlands           блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.3 с
+26.1 end       s=-7048155917072976836 (-163,-163) 6x6 small_end_islands      блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.3 с
+26.1 end       s=-7048155917072976836 (-155,-163) 6x6 end_barrens            блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.3 с
+ИТОГО: областей 15, блоков 35,389,440, расхождений 0
+# full-26.1-floating_islands.log
+26.1 overworld s=12345: биом desert не найден в ±220 чанков
+26.1 overworld s=12345: биом frozen_ocean не найден в ±220 чанков
+26.1 overworld s=12345: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=12345: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=12345: биом swamp не найден в ±220 чанков
+26.1 overworld s=12345: биом badlands не найден в ±220 чанков
+26.1 overworld s=12345: биом windswept_hills не найден в ±220 чанков
+26.1 overworld s=12345: биом plains не найден в ±220 чанков
+26.1 overworld s=12345: биом ocean не найден в ±220 чанков
+26.1 overworld s=12345: биом forest не найден в ±220 чанков
+26.1 overworld s=12345: биом taiga не найден в ±220 чанков
+26.1 overworld s=8675309: биом desert не найден в ±220 чанков
+26.1 overworld s=8675309: биом frozen_ocean не найден в ±220 чанков
+26.1 overworld s=8675309: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=8675309: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=8675309: биом swamp не найден в ±220 чанков
+26.1 overworld s=8675309: биом badlands не найден в ±220 чанков
+26.1 overworld s=8675309: биом windswept_hills не найден в ±220 чанков
+26.1 overworld s=8675309: биом plains не найден в ±220 чанков
+26.1 overworld s=8675309: биом ocean не найден в ±220 чанков
+26.1 overworld s=8675309: биом forest не найден в ±220 чанков
+26.1 overworld s=8675309: биом taiga не найден в ±220 чанков
+ИТОГО: областей 0, блоков 0, расхождений 0
+# full-26.1-large_biomes.log
+26.1 overworld s=12345: биом desert не найден в ±220 чанков
+26.1 overworld s=12345 (-166,-222) 4x4 frozen_ocean           блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 16.9 с
+      блоки: bedrock:12254, deepslate:255752, gravel:2669, packed_ice:2970, water:43129
+26.1 overworld s=12345: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=12345: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=12345 (-144,82) 4x4 swamp                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.2 с
+      блоки: bedrock:12308, deepslate:261294, gravel:949, water:31498
+26.1 overworld s=12345: биом badlands не найден в ±220 чанков
+26.1 overworld s=12345 (-164,68) 4x4 windswept_hills        блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.0 с
+      блоки: bedrock:12318, deepslate:260011, deepslate_iron_ore:57, gravel:1641, sandstone:15, water:30879
+26.1 overworld s=12345 (-154,72) 4x4 plains                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.4 с
+      блоки: bedrock:12174, deepslate:267646, gravel:775, water:1482
+26.1 overworld s=12345 (-220,164) 4x4 ocean                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.3 с
+      блоки: bedrock:12355, deepslate:257029, gravel:4096, water:67852
+26.1 overworld s=12345 (-166,70) 4x4 forest                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.0 с
+      блоки: bedrock:12171, deepslate:259749, gravel:2293, water:45734
+26.1 overworld s=12345 (-222,94) 4x4 taiga                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 2.1 с
+      блоки: bedrock:12339, deepslate:251188, deepslate_iron_ore:5, gravel:1836, water:60590
+26.1 overworld s=8675309: биом desert не найден в ±220 чанков
+26.1 overworld s=8675309: биом frozen_ocean не найден в ±220 чанков
+26.1 overworld s=8675309: биом snowy_slopes не найден в ±220 чанков
+26.1 overworld s=8675309: биом jagged_peaks не найден в ±220 чанков
+26.1 overworld s=8675309 (-170,-204) 4x4 swamp                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 1.2 с, Java 1.2 с
+      блоки: bedrock:12323, deepslate:263568, water:174
+26.1 overworld s=8675309: биом badlands не найден в ±220 чанков
+26.1 overworld s=8675309 (-166,-220) 4x4 windswept_hills        блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.0 с
+      блоки: bedrock:12253, deepslate:258216, gravel:35, water:6454
+26.1 overworld s=8675309 (-222,-222) 4x4 plains                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.4 с
+      блоки: bedrock:12266, deepslate:253319
+26.1 overworld s=8675309 (144,-62) 4x4 ocean                  блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 0.7 с
+      блоки: bedrock:12282, deepslate:268299, gravel:4059, water:61606
+26.1 overworld s=8675309 (-12,-222) 4x4 forest                 блоков 1,572,864 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 0.7 с
+      блоки: bedrock:12328, deepslate:265240, water:572
+26.1 overworld s=8675309: биом taiga не найден в ±220 чанков
+ИТОГО: областей 12, блоков 18,874,368, расхождений 0
+# full-26.1-nether.log
+26.1 nether    s=12345 (-163,-163) 6x6 nether_wastes          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 17.5 с
+      блоки: bedrock:55161, gravel:888, lava:14448, netherrack:954220, soul_sand:69, warped_nylium:813
+26.1 nether    s=12345 (-145,-163) 6x6 soul_sand_valley       блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.8 с
+      блоки: bedrock:55286, gravel:636, lava:46082, netherrack:595766, soul_sand:40924, soul_soil:46636
+26.1 nether    s=12345 (-125,-163) 6x6 crimson_forest         блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.1 с
+      блоки: bedrock:55243, crimson_nylium:10040, gravel:62, lava:17657, netherrack:685871, soul_sand:11546, soul_soil:17947
+26.1 nether    s=12345 (-103,-163) 6x6 warped_forest          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.0 с
+      блоки: bedrock:55382, crimson_nylium:2191, lava:54581, netherrack:667628, warped_nylium:7820
+26.1 nether    s=12345 (-73,-163) 6x6 basalt_deltas          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.1 с
+      блоки: basalt:50154, bedrock:55467, blackstone:11823, gravel:2414, lava:27624, netherrack:724453, soul_sand:1638
+26.1 nether    s=8675309 (-153,-163) 6x6 nether_wastes          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.1 с
+      блоки: basalt:21493, bedrock:55289, blackstone:4073, gravel:62, lava:63828, netherrack:571853, soul_sand:415
+26.1 nether    s=8675309 (-127,-163) 6x6 soul_sand_valley       блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 1.3 с
+      блоки: basalt:23139, bedrock:55317, blackstone:4854, gravel:426, lava:62975, netherrack:541094, soul_sand:23860, soul_soil:15655
+26.1 nether    s=8675309 (-75,-163) 6x6 crimson_forest         блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.3 с
+      блоки: bedrock:55167, crimson_nylium:3268, gravel:3, lava:87601, netherrack:405004, soul_sand:28972, soul_soil:22556
+26.1 nether    s=8675309 (53,-161) 6x6 warped_forest          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.7 с
+      блоки: basalt:30136, bedrock:55433, blackstone:10471, gravel:5, lava:56025, netherrack:754152, warped_nylium:4197
+26.1 nether    s=8675309 (-163,-163) 6x6 basalt_deltas          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.9 с
+      блоки: basalt:74607, bedrock:55439, blackstone:19261, gravel:1563, lava:48364, netherrack:521237
+26.1 nether    s=-7048155917072976836 (-159,-163) 6x6 nether_wastes          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 0.6 с
+      блоки: bedrock:55185, lava:81507, netherrack:365243, warped_nylium:1455
+26.1 nether    s=-7048155917072976836 (-47,-163) 6x6 soul_sand_valley       блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.7 с
+      блоки: bedrock:55118, gravel:1466, lava:32962, netherrack:778068, soul_sand:51070, soul_soil:38509
+26.1 nether    s=-7048155917072976836 (-151,-163) 6x6 crimson_forest         блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.6 с
+      блоки: bedrock:55355, crimson_nylium:9807, gravel:9, lava:42734, netherrack:672381
+26.1 nether    s=-7048155917072976836 (-163,-163) 6x6 warped_forest          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.3 с, Java 0.6 с
+      блоки: bedrock:55390, lava:31010, netherrack:569069, soul_sand:929, warped_nylium:5304
+26.1 nether    s=-7048155917072976836 (31,-163) 6x6 basalt_deltas          блоков 2,359,296 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 0.8 с
+      блоки: basalt:45350, bedrock:55346, blackstone:12662, gravel:1862, lava:44925, netherrack:517811, soul_sand:1764
+ИТОГО: областей 15, блоков 35,389,440, расхождений 0
+# full-26.1-ow.log
+26.1 overworld s=12345 (103,-147) 6x6 frozen_ocean           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 22.0 с
+      блоки: bedrock:27661, deepslate:582781, gravel:7495, packed_ice:38327, sandstone:2994, snow_block:675, water:122659
+26.1 overworld s=12345 (95,-147) 6x6 deep_frozen_ocean      блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.3 с, Java 3.8 с
+      блоки: bedrock:27639, deepslate:580687, deepslate_iron_ore:767, gravel:8906, packed_ice:27047, snow_block:337, water:230953
+26.1 overworld s=12345 (-171,107) 6x6 eroded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.9 с
+      блоки: bedrock:27597, deepslate:553984, deepslate_iron_ore:656, orange_terracotta:27887, sandstone:39126, terracotta:70487, water:2491
+26.1 overworld s=12345 (-181,99) 6x6 badlands               блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.0 с
+      блоки: bedrock:27639, deepslate:567573, deepslate_iron_ore:521, gravel:73, orange_terracotta:991, sandstone:64964, terracotta:4066, water:14462
+26.1 overworld s=12345: биом wooded_badlands не найден в ±220 чанков
+26.1 overworld s=12345 (47,-73) 6x6 ice_spikes             блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.9 с
+      блоки: bedrock:27552, deepslate:584980, deepslate_iron_ore:17, snow_block:4897
+26.1 overworld s=12345: биом mushroom_fields не найден в ±220 чанков
+26.1 overworld s=12345 (-7,-223) 6x6 swamp                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.3 с
+      блоки: bedrock:27643, deepslate:592070, gravel:85, water:26459
+26.1 overworld s=12345 (-105,-95) 6x6 mangrove_swamp         блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 2.9 с
+      блоки: bedrock:27639, deepslate:601857, mud:6852, water:351
+26.1 overworld s=12345 (-31,-41) 6x6 jagged_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.7 с, Java 2.6 с
+      блоки: bedrock:27708, deepslate:559390, powder_snow:136, snow_block:7394
+26.1 overworld s=12345 (3,-107) 6x6 frozen_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 3.4 с
+      блоки: bedrock:27514, deepslate:461879, ice:12, packed_ice:2527, powder_snow:2, snow_block:4111
+26.1 overworld s=12345 (-25,43) 6x6 snowy_slopes           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 1.9 с
+      блоки: bedrock:27593, deepslate:589886, powder_snow:1503, snow_block:11746, water:5024
+26.1 overworld s=12345 (-63,-43) 6x6 stony_peaks            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.9 с
+      блоки: bedrock:27525, deepslate:514742, water:2112
+26.1 overworld s=12345 (99,71) 6x6 windswept_gravelly_hills блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 2.0 с
+      блоки: bedrock:27714, deepslate:572383, gravel:10766, water:10101
+26.1 overworld s=12345 (-45,-223) 6x6 windswept_hills        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.8 с
+      блоки: bedrock:27526, deepslate:597675, deepslate_iron_ore:321, gravel:309, water:16288
+26.1 overworld s=12345 (39,-211) 6x6 old_growth_pine_taiga  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.1 с
+      блоки: bedrock:27689, coarse_dirt:337, deepslate:590007, gravel:39, podzol:266, water:21822
+26.1 overworld s=12345 (-189,-209) 6x6 grove                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.0 с
+      блоки: bedrock:27722, deepslate:593479, powder_snow:61, snow_block:1640, water:185
+26.1 overworld s=12345 (109,-145) 6x6 snowy_beach            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.0 с
+      блоки: bedrock:27704, deepslate:574948, gravel:1443, packed_ice:24374, sandstone:7515, snow_block:139, water:57117
+26.1 overworld s=12345 (77,-223) 6x6 beach                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.8 с
+      блоки: bedrock:27787, deepslate:566104, gravel:5123, sandstone:2147, water:100111
+26.1 overworld s=12345 (-215,-223) 6x6 stony_shore            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 2.1 с
+      блоки: bedrock:27819, deepslate:537976, gravel:2389, water:61955
+26.1 overworld s=12345 (-155,19) 6x6 desert                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.2 с, Java 3.2 с
+      блоки: bedrock:27637, deepslate:593818, sandstone:46631, water:15837
+26.1 overworld s=12345 (-217,-223) 6x6 savanna                блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.5 с
+      блоки: bedrock:27816, deepslate:542622, gravel:1194, sandstone:1, water:56604
+26.1 overworld s=12345 (-159,-223) 6x6 jungle                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 3.2 с
+      блоки: bedrock:27718, deepslate:565959, water:10955
+26.1 overworld s=12345 (41,-213) 6x6 dark_forest            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.5 с
+      блоки: bedrock:27687, coarse_dirt:330, deepslate:580856, gravel:33, podzol:257, water:18967
+26.1 overworld s=12345 (-41,-105) 6x6 cherry_grove           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.6 с
+      блоки: bedrock:27632, deepslate:582156, gravel:275, water:9743
+26.1 overworld s=12345 (-131,-167) 6x6 pale_garden            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.7 с
+      блоки: bedrock:27505, deepslate:591647, deepslate_iron_ore:451, water:7671
+26.1 overworld s=12345: биом sulfur_caves не найден в ±220 чанков
+26.1 overworld s=12345 (-147,-223) 6x6 dripstone_caves        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.1 с
+      блоки: bedrock:27579, deepslate:588229, water:1376
+26.1 overworld s=8675309 (141,35) 6x6 frozen_ocean           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.0 с
+      блоки: bedrock:27636, deepslate:522725, gravel:7691, packed_ice:801, water:142471
+26.1 overworld s=8675309 (81,-11) 6x6 deep_frozen_ocean      блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.6 с
+      блоки: bedrock:27688, deepslate:590586, gravel:9202, packed_ice:12572, snow_block:7, water:237975
+26.1 overworld s=8675309 (-181,201) 6x6 eroded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.0 с
+      блоки: bedrock:27597, deepslate:588181, deepslate_iron_ore:722, gravel:2639, orange_terracotta:17191, red_sandstone:27, terracotta:33973, water:107327
+26.1 overworld s=8675309 (-23,-93) 6x6 badlands               блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.4 с
+      блоки: bedrock:27587, deepslate:541478, deepslate_iron_ore:258, gravel:131, orange_terracotta:60893, red_sandstone:3, terracotta:22161, water:48440
+26.1 overworld s=8675309 (-63,-119) 6x6 wooded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.2 с, Java 4.8 с
+      блоки: bedrock:27802, coarse_dirt:1027, deepslate:570082, deepslate_iron_ore:769, orange_terracotta:11613, sandstone:15119, terracotta:25763, water:282
+26.1 overworld s=8675309: биом ice_spikes не найден в ±220 чанков
+26.1 overworld s=8675309 (45,-215) 6x6 mushroom_fields        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 1.5 с
+      блоки: bedrock:27660, deepslate:585029, deepslate_iron_ore:125, gravel:5177, mycelium:3005, water:134887
+26.1 overworld s=8675309 (197,103) 6x6 swamp                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 4.5 с
+      блоки: bedrock:27641, deepslate:581976, water:1393
+26.1 overworld s=8675309 (-161,-101) 6x6 mangrove_swamp         блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 1.9 с
+      блоки: bedrock:27524, deepslate:594046, mud:13696, water:1189
+26.1 overworld s=8675309 (173,-223) 6x6 jagged_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.5 с
+      блоки: bedrock:27667, deepslate:541332, snow_block:6108, water:2347
+26.1 overworld s=8675309 (173,-117) 6x6 frozen_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 2.1 с
+      блоки: bedrock:27677, deepslate:593445, ice:323, packed_ice:12073, powder_snow:645, snow_block:12943, water:2453
+26.1 overworld s=8675309 (155,-135) 6x6 snowy_slopes           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.1 с
+      блоки: bedrock:27582, deepslate:578411, deepslate_iron_ore:120, powder_snow:319, snow_block:6895, water:22825
+26.1 overworld s=8675309 (183,-223) 6x6 stony_peaks            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.5 с
+      блоки: bedrock:27541, deepslate:580431, snow_block:1358
+26.1 overworld s=8675309: биом windswept_gravelly_hills не найден в ±220 чанков
+26.1 overworld s=8675309 (171,83) 6x6 windswept_hills        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 3.1 с
+      блоки: bedrock:27605, deepslate:569268, deepslate_iron_ore:8, water:717
+26.1 overworld s=8675309 (199,-37) 6x6 old_growth_pine_taiga  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.9 с
+      блоки: bedrock:27706, coarse_dirt:1742, deepslate:560208, deepslate_iron_ore:69, gravel:209, podzol:1624, water:11965
+26.1 overworld s=8675309 (171,-223) 6x6 grove                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.5 с
+      блоки: bedrock:27620, deepslate:564399, deepslate_iron_ore:38, snow_block:4794, water:1841
+26.1 overworld s=8675309 (149,35) 6x6 snowy_beach            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.3 с, Java 2.2 с
+      блоки: bedrock:27702, deepslate:574685, gravel:576, packed_ice:12077, sandstone:6409, snow_block:584, water:19603
+26.1 overworld s=8675309 (-161,-207) 6x6 beach                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 2.1 с
+      блоки: bedrock:27704, deepslate:590316, deepslate_iron_ore:190, gravel:120, sandstone:1387, water:24452
+26.1 overworld s=8675309 (-143,-223) 6x6 stony_shore            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 2.0 с
+      блоки: bedrock:27677, deepslate:593626, deepslate_iron_ore:65, gravel:5766, water:64326
+26.1 overworld s=8675309 (-65,-119) 6x6 desert                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.4 с
+      блоки: bedrock:27680, coarse_dirt:415, deepslate:590446, deepslate_iron_ore:447, orange_terracotta:7529, sandstone:34715, terracotta:17216, water:79
+26.1 overworld s=8675309 (-3,-183) 6x6 savanna                блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.1 с
+      блоки: bedrock:27966, deepslate:503184, gravel:403, sandstone:14, water:48745
+26.1 overworld s=8675309 (179,-219) 6x6 jungle                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.2 с
+      блоки: bedrock:27676, deepslate:557117, snow_block:1204, water:3670
+26.1 overworld s=8675309 (-115,-223) 6x6 dark_forest            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.5 с
+      блоки: bedrock:27714, deepslate:531273, deepslate_iron_ore:270, water:1982
+26.1 overworld s=8675309 (-153,-223) 6x6 cherry_grove           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.7 с
+      блоки: bedrock:27795, deepslate:573646, deepslate_iron_ore:207
+26.1 overworld s=8675309 (-113,-213) 6x6 pale_garden            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.8 с
+      блоки: bedrock:27671, deepslate:575511, deepslate_iron_ore:83, water:1054
+26.1 overworld s=8675309: биом sulfur_caves не найден в ±220 чанков
+26.1 overworld s=8675309 (-213,-223) 6x6 dripstone_caves        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.7 с
+      блоки: bedrock:27642, coarse_dirt:896, deepslate:558224, podzol:3447, water:1705
+26.1 overworld s=-7048155917072976836 (-175,-223) 6x6 frozen_ocean           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.8 с
+      блоки: bedrock:27589, deepslate:556042, gravel:5246, packed_ice:14868, water:144408
+26.1 overworld s=-7048155917072976836 (13,-223) 6x6 deep_frozen_ocean      блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.5 с
+      блоки: bedrock:27487, deepslate:595009, deepslate_iron_ore:696, gravel:9197, packed_ice:25329, water:156311
+26.1 overworld s=-7048155917072976836 (197,-187) 6x6 eroded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.3 с
+      блоки: bedrock:27498, deepslate:537158, orange_terracotta:5251, terracotta:21064, water:5213
+26.1 overworld s=-7048155917072976836 (185,-185) 6x6 badlands               блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 2.1 с
+      блоки: bedrock:27812, deepslate:574424, deepslate_iron_ore:645, gravel:1814, orange_terracotta:5644, terracotta:32661, water:40345
+26.1 overworld s=-7048155917072976836 (153,-137) 6x6 wooded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.5 с
+      блоки: bedrock:27608, deepslate:595627, gravel:1006, orange_terracotta:20990, red_sandstone:8, sandstone:3634, terracotta:20924, water:50364
+26.1 overworld s=-7048155917072976836 (-3,-201) 6x6 ice_spikes             блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.4 с
+      блоки: bedrock:27509, deepslate:574043, deepslate_iron_ore:977, gravel:6, snow_block:3150, water:5597
+26.1 overworld s=-7048155917072976836: биом mushroom_fields не найден в ±220 чанков
+26.1 overworld s=-7048155917072976836 (31,-125) 6x6 swamp                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.4 с
+      блоки: bedrock:27453, deepslate:585773, gravel:2371, sandstone:1441, water:54934
+26.1 overworld s=-7048155917072976836 (85,-101) 6x6 mangrove_swamp         блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.6 с
+      блоки: bedrock:27643, deepslate:561005, deepslate_iron_ore:832, mud:7697, water:12481
+26.1 overworld s=-7048155917072976836 (157,-213) 6x6 jagged_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.8 с
+      блоки: bedrock:27877, deepslate:428709, deepslate_iron_ore:116, powder_snow:246, snow_block:11365, water:248
+26.1 overworld s=-7048155917072976836 (-193,-139) 6x6 frozen_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.6 с
+      блоки: bedrock:27667, deepslate:481065, deepslate_iron_ore:36, ice:788, packed_ice:2435, powder_snow:1423, snow_block:19934, water:614
+26.1 overworld s=-7048155917072976836 (-93,-223) 6x6 snowy_slopes           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.7 с
+      блоки: bedrock:27690, deepslate:568175, gravel:56, powder_snow:2185, snow_block:22493, water:7878
+26.1 overworld s=-7048155917072976836 (195,-195) 6x6 stony_peaks            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.1 с
+      блоки: bedrock:27599, deepslate:597348, water:25
+26.1 overworld s=-7048155917072976836 (5,-79) 6x6 windswept_gravelly_hills блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 2.5 с
+      блоки: bedrock:27618, deepslate:585409, gravel:2297, water:38241
+26.1 overworld s=-7048155917072976836 (79,-201) 6x6 windswept_hills        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.7 с
+      блоки: bedrock:27658, deepslate:449454, gravel:4565, water:104177
+26.1 overworld s=-7048155917072976836 (93,-221) 6x6 old_growth_pine_taiga  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.6 с
+      блоки: bedrock:27620, coarse_dirt:474, deepslate:577425, gravel:1061, podzol:2345, sandstone:68, water:37261
+26.1 overworld s=-7048155917072976836 (-69,-223) 6x6 grove                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.2 с
+      блоки: bedrock:27596, deepslate:584745, powder_snow:1213, snow_block:6745, water:5
+26.1 overworld s=-7048155917072976836 (-167,-223) 6x6 snowy_beach            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.1 с
+      блоки: bedrock:27627, deepslate:585160, gravel:2927, packed_ice:15463, sandstone:4575, snow_block:424, water:73931
+26.1 overworld s=-7048155917072976836 (101,-223) 6x6 beach                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.4 с
+      блоки: bedrock:27616, coarse_dirt:3, deepslate:575709, gravel:3158, sandstone:12468, water:56935
+26.1 overworld s=-7048155917072976836 (149,-213) 6x6 stony_shore            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.4 с
+      блоки: bedrock:27565, deepslate:487452, deepslate_iron_ore:268, gravel:3372, water:94609
+26.1 overworld s=-7048155917072976836 (217,-177) 6x6 desert                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.6 с
+      блоки: bedrock:27714, deepslate:596806, deepslate_iron_ore:24, orange_terracotta:2776, red_sandstone:5, sandstone:67994, terracotta:8109, water:12650
+26.1 overworld s=-7048155917072976836 (167,-215) 6x6 savanna                блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.7 с
+      блоки: bedrock:27652, deepslate:588169, deepslate_iron_ore:887, gravel:2330, water:50207
+26.1 overworld s=-7048155917072976836 (203,-217) 6x6 jungle                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.9 с
+      блоки: bedrock:27537, deepslate:581842, gravel:3208, water:56821
+26.1 overworld s=-7048155917072976836 (99,-203) 6x6 dark_forest            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.6 с
+      блоки: bedrock:27755, coarse_dirt:59, deepslate:536878, deepslate_iron_ore:305, gravel:119, podzol:25, water:17732
+26.1 overworld s=-7048155917072976836 (-187,-137) 6x6 cherry_grove           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.4 с
+      блоки: bedrock:27701, deepslate:591475, deepslate_iron_ore:1, ice:13, powder_snow:200, snow_block:10119
+26.1 overworld s=-7048155917072976836 (179,119) 6x6 pale_garden            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.1 с
+      блоки: bedrock:27661, deepslate:579621, deepslate_iron_ore:2087
+26.1 overworld s=-7048155917072976836: биом sulfur_caves не найден в ±220 чанков
+26.1 overworld s=-7048155917072976836 (191,-221) 6x6 dripstone_caves        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.6 с
+      блоки: bedrock:27730, deepslate:508885, deepslate_iron_ore:53, water:23560
+26.1 overworld s=424242 (205,-201) 6x6 frozen_ocean           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 1.5 с
+      блоки: bedrock:27658, deepslate:575398, deepslate_iron_ore:166, gravel:3505, packed_ice:262, sandstone:3008, water:50794
+26.1 overworld s=424242 (211,43) 6x6 deep_frozen_ocean      блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.3 с
+      блоки: bedrock:27632, deepslate:520927, deepslate_iron_ore:745, gravel:9211, packed_ice:28054, snow_block:431, water:164478
+26.1 overworld s=424242 (-135,159) 6x6 eroded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.5 с
+      блоки: bedrock:27636, deepslate:582956, deepslate_iron_ore:98, gravel:2172, orange_terracotta:13446, terracotta:19176, water:45251
+26.1 overworld s=424242 (-155,121) 6x6 badlands               блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.3 с
+      блоки: bedrock:27645, deepslate:552512, gravel:3982, orange_terracotta:12925, red_sandstone:3, sandstone:23976, terracotta:23445, water:91811
+26.1 overworld s=424242 (-157,89) 6x6 wooded_badlands        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.0 с
+      блоки: bedrock:27650, deepslate:575467, gravel:1955, orange_terracotta:13256, terracotta:19883, water:64212
+26.1 overworld s=424242 (181,65) 6x6 ice_spikes             блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 2.0 с
+      блоки: bedrock:27770, deepslate:564209, gravel:70, packed_ice:2011, sandstone:8464, snow_block:974, water:44355
+26.1 overworld s=424242: биом mushroom_fields не найден в ±220 чанков
+26.1 overworld s=424242 (-31,-223) 6x6 swamp                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.7 с
+      блоки: bedrock:27647, deepslate:581833, gravel:142, sandstone:6752, water:31296
+26.1 overworld s=424242 (-81,81) 6x6 mangrove_swamp         блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.5 с
+      блоки: bedrock:27593, deepslate:561184, gravel:581, mud:10126, water:197601
+26.1 overworld s=424242 (95,-173) 6x6 jagged_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.4 с
+      блоки: bedrock:27550, deepslate:602339, powder_snow:1344, snow_block:14690, water:4658
+26.1 overworld s=424242 (67,-89) 6x6 frozen_peaks           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.3 с
+      блоки: bedrock:27518, deepslate:578668, deepslate_iron_ore:631, ice:114, packed_ice:2896, powder_snow:1, snow_block:5992, water:12
+26.1 overworld s=424242 (-107,-203) 6x6 snowy_slopes           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.8 с
+      блоки: bedrock:27621, deepslate:579009, deepslate_iron_ore:682, powder_snow:34, snow_block:9218, water:6398
+26.1 overworld s=424242 (71,-91) 6x6 stony_peaks            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 1.8 с
+      блоки: bedrock:27567, deepslate:555443, water:51
+26.1 overworld s=424242 (47,-223) 6x6 windswept_gravelly_hills блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.7 с
+      блоки: bedrock:27655, deepslate:445185, gravel:11923, water:33863
+26.1 overworld s=424242 (-37,-223) 6x6 windswept_hills        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.6 с
+      блоки: bedrock:27668, deepslate:595794, gravel:156, water:7898
+26.1 overworld s=424242 (27,-179) 6x6 old_growth_pine_taiga  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 1.5 с
+      блоки: bedrock:27545, coarse_dirt:1, deepslate:558010, gravel:2668, podzol:398, sandstone:7539, water:50704
+26.1 overworld s=424242 (101,-171) 6x6 grove                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.6 с
+      блоки: bedrock:27741, deepslate:597371, powder_snow:4790, snow_block:9517, water:11
+26.1 overworld s=424242 (207,-215) 6x6 snowy_beach            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 1.9 с
+      блоки: bedrock:27585, deepslate:529096, deepslate_iron_ore:217, sandstone:4932, water:28826
+26.1 overworld s=424242 (-201,-223) 6x6 beach                  блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 1.8 с
+      блоки: bedrock:27705, deepslate:547786, deepslate_iron_ore:325, gravel:1960, sandstone:17484, water:72779
+26.1 overworld s=424242 (-205,-223) 6x6 stony_shore            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 1.6 с
+      блоки: bedrock:27620, deepslate:561851, deepslate_iron_ore:204, gravel:3244, sandstone:4504, water:81256
+26.1 overworld s=424242 (-163,93) 6x6 desert                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.3 с
+      блоки: bedrock:27649, deepslate:594679, deepslate_iron_ore:309, gravel:1264, orange_terracotta:4083, red_sandstone:1, sandstone:40306, terracotta:5693, water:39676
+26.1 overworld s=424242 (-155,-223) 6x6 savanna                блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.4 с
+      блоки: bedrock:27537, deepslate:517404, deepslate_iron_ore:476, gravel:1536, sandstone:8445, water:75356
+26.1 overworld s=424242 (-71,-59) 6x6 jungle                 блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.4 с
+      блоки: bedrock:27637, deepslate:578096, gravel:975, sandstone:1913, water:39050
+26.1 overworld s=424242 (117,-171) 6x6 dark_forest            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 2.4 с
+      блоки: bedrock:27771, deepslate:524235, gravel:2551, water:89724
+26.1 overworld s=424242 (149,-219) 6x6 cherry_grove           блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 2.3 с
+      блоки: bedrock:27746, deepslate:596353, deepslate_iron_ore:67, water:29
+26.1 overworld s=424242 (119,-141) 6x6 pale_garden            блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 2.6 с
+      блоки: bedrock:27767, deepslate:578974, gravel:114, water:4340
+26.1 overworld s=424242: биом sulfur_caves не найден в ±220 чанков
+26.1 overworld s=424242 (169,-223) 6x6 dripstone_caves        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.2 с, Java 2.6 с
+      блоки: bedrock:27719, deepslate:564266, water:20999
+ИТОГО: областей 102, блоков 360,972,288, расхождений 0
+# pre-26.1.log
+caves 26.1 overworld s=12345 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.3 с, Java 26.3 с
+caves       блоки: bedrock:55299, deepslate:477270, grass_block:11975, stone:615386, water:170317
+caves 26.1 overworld s=12345 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 22.8 с
+caves       блоки: bedrock:55220, deepslate:319618, grass_block:11488, stone:698842, water:368886
+caves 26.1 overworld s=12345 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 20.3 с
+caves       блоки: bedrock:55239, deepslate:221121, grass_block:3015, stone:195615, water:625568
+caves 26.1 overworld s=8675309 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.4 с, Java 24.3 с
+caves       блоки: bedrock:55244, deepslate:315195, grass_block:11933, stone:387372, water:445252
+caves 26.1 overworld s=8675309 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.6 с, Java 27.4 с
+caves       блоки: bedrock:55172, deepslate:316490, grass_block:11848, stone:540615, water:408835
+caves 26.1 overworld s=8675309 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 34.3 с
+caves       блоки: bedrock:55326, deepslate:343480, grass_block:12261, stone:698380, water:286225
+caves 26.1 overworld s=-7048155917072976836 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 29.8 с
+caves       блоки: bedrock:55332, deepslate:251829, grass_block:15643, stone:305689, water:551404
+caves 26.1 overworld s=-7048155917072976836 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.7 с, Java 29.0 с
+caves       блоки: bedrock:55362, deepslate:590983, grass_block:5898, stone:792680, water:106257
+caves 26.1 overworld s=-7048155917072976836 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 30.4 с
+caves       блоки: bedrock:55101, deepslate:434588, grass_block:12064, stone:435770, water:199953
+floating_islands 26.1 overworld s=12345 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 25.2 с
+floating_islands       блоки: grass_block:11464, stone:508402
+floating_islands 26.1 overworld s=12345 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 28.1 с
+floating_islands       блоки: grass_block:21696, stone:830663
+floating_islands 26.1 overworld s=12345 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.8 с, Java 28.1 с
+floating_islands       блоки: grass_block:12522, stone:282735
+floating_islands 26.1 overworld s=8675309 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 32.3 с
+floating_islands       блоки: grass_block:14786, stone:326262
+floating_islands 26.1 overworld s=8675309 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.9 с, Java 38.2 с
+floating_islands       блоки: grass_block:19359, stone:623856
+floating_islands 26.1 overworld s=8675309 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.1 с, Java 32.3 с
+floating_islands       блоки: grass_block:21374, stone:602351
+floating_islands 26.1 overworld s=-7048155917072976836 (0,0) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.5 с, Java 31.8 с
+floating_islands       блоки: grass_block:20494, stone:527733
+floating_islands 26.1 overworld s=-7048155917072976836 (60,-60) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 0.7 с, Java 32.0 с
+floating_islands       блоки: grass_block:18623, stone:1002781
+floating_islands 26.1 overworld s=-7048155917072976836 (-120,90) 6x6                        блоков 3,538,944 расхождений 0 (чанков 0), карт высот 0 | наш 1.0 с, Java 22.0 с
+floating_islands       блоки: grass_block:12981, stone:311804

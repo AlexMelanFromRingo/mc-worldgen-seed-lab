@@ -1,0 +1,456 @@
+{
+ "26.1": {
+  "overworld/amplified": {
+   "areas": 22,
+   "blocks": 34603008,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "desert",
+    "forest",
+    "frozen_ocean",
+    "jagged_peaks",
+    "ocean",
+    "plains",
+    "snowy_slopes",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "end/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "end_barrens",
+    "end_highlands",
+    "end_midlands",
+    "small_end_islands",
+    "the_end"
+   ]
+  },
+  "overworld/large_biomes": {
+   "areas": 12,
+   "blocks": 18874368,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "forest",
+    "frozen_ocean",
+    "ocean",
+    "plains",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "nether/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "basalt_deltas",
+    "crimson_forest",
+    "nether_wastes",
+    "soul_sand_valley",
+    "warped_forest"
+   ]
+  },
+  "overworld/normal": {
+   "areas": 102,
+   "blocks": 360972288,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "beach",
+    "cherry_grove",
+    "dark_forest",
+    "deep_frozen_ocean",
+    "desert",
+    "dripstone_caves",
+    "eroded_badlands",
+    "frozen_ocean",
+    "frozen_peaks",
+    "grove",
+    "ice_spikes",
+    "jagged_peaks",
+    "jungle",
+    "mangrove_swamp",
+    "mushroom_fields",
+    "old_growth_pine_taiga",
+    "pale_garden",
+    "savanna",
+    "snowy_beach",
+    "snowy_slopes",
+    "stony_peaks",
+    "stony_shore",
+    "swamp",
+    "windswept_gravelly_hills",
+    "windswept_hills",
+    "wooded_badlands"
+   ]
+  },
+  "overworld/caves": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  },
+  "overworld/floating_islands": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  }
+ },
+ "26.2": {
+  "overworld/amplified": {
+   "areas": 22,
+   "blocks": 34603008,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "desert",
+    "forest",
+    "frozen_ocean",
+    "jagged_peaks",
+    "ocean",
+    "plains",
+    "snowy_slopes",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "end/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "end_barrens",
+    "end_highlands",
+    "end_midlands",
+    "small_end_islands",
+    "the_end"
+   ]
+  },
+  "overworld/large_biomes": {
+   "areas": 12,
+   "blocks": 18874368,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "forest",
+    "frozen_ocean",
+    "ocean",
+    "plains",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "nether/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "basalt_deltas",
+    "crimson_forest",
+    "nether_wastes",
+    "soul_sand_valley",
+    "warped_forest"
+   ]
+  },
+  "overworld/normal": {
+   "areas": 106,
+   "blocks": 375128064,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "beach",
+    "cherry_grove",
+    "dark_forest",
+    "deep_frozen_ocean",
+    "desert",
+    "dripstone_caves",
+    "eroded_badlands",
+    "frozen_ocean",
+    "frozen_peaks",
+    "grove",
+    "ice_spikes",
+    "jagged_peaks",
+    "jungle",
+    "mangrove_swamp",
+    "mushroom_fields",
+    "old_growth_pine_taiga",
+    "pale_garden",
+    "savanna",
+    "snowy_beach",
+    "snowy_slopes",
+    "stony_peaks",
+    "stony_shore",
+    "sulfur_caves",
+    "swamp",
+    "windswept_gravelly_hills",
+    "windswept_hills",
+    "wooded_badlands"
+   ]
+  },
+  "overworld/caves": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  },
+  "overworld/floating_islands": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  }
+ },
+ "26.3": {
+  "overworld/amplified": {
+   "areas": 22,
+   "blocks": 34603008,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "desert",
+    "forest",
+    "frozen_ocean",
+    "jagged_peaks",
+    "ocean",
+    "plains",
+    "snowy_slopes",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "end/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "end_barrens",
+    "end_highlands",
+    "end_midlands",
+    "small_end_islands",
+    "the_end"
+   ]
+  },
+  "overworld/large_biomes": {
+   "areas": 12,
+   "blocks": 18874368,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "forest",
+    "frozen_ocean",
+    "ocean",
+    "plains",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "nether/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "basalt_deltas",
+    "crimson_forest",
+    "nether_wastes",
+    "soul_sand_valley",
+    "warped_forest"
+   ]
+  },
+  "overworld/normal": {
+   "areas": 106,
+   "blocks": 375128064,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "beach",
+    "cherry_grove",
+    "dark_forest",
+    "deep_frozen_ocean",
+    "desert",
+    "dripstone_caves",
+    "eroded_badlands",
+    "frozen_ocean",
+    "frozen_peaks",
+    "grove",
+    "ice_spikes",
+    "jagged_peaks",
+    "jungle",
+    "mangrove_swamp",
+    "mushroom_fields",
+    "old_growth_pine_taiga",
+    "pale_garden",
+    "savanna",
+    "snowy_beach",
+    "snowy_slopes",
+    "stony_peaks",
+    "stony_shore",
+    "sulfur_caves",
+    "swamp",
+    "windswept_gravelly_hills",
+    "windswept_hills",
+    "wooded_badlands"
+   ]
+  },
+  "overworld/caves": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  },
+  "overworld/floating_islands": {
+   "areas": 9,
+   "blocks": 31850496,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  }
+ },
+ "26.4-snapshot-2": {
+  "overworld/amplified": {
+   "areas": 22,
+   "blocks": 34603008,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "desert",
+    "forest",
+    "frozen_ocean",
+    "jagged_peaks",
+    "ocean",
+    "plains",
+    "snowy_slopes",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "end/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "end_barrens",
+    "end_highlands",
+    "end_midlands",
+    "small_end_islands",
+    "the_end"
+   ]
+  },
+  "overworld/large_biomes": {
+   "areas": 12,
+   "blocks": 18874368,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "forest",
+    "frozen_ocean",
+    "ocean",
+    "plains",
+    "swamp",
+    "taiga",
+    "windswept_hills"
+   ]
+  },
+  "nether/normal": {
+   "areas": 15,
+   "blocks": 35389440,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "basalt_deltas",
+    "crimson_forest",
+    "nether_wastes",
+    "soul_sand_valley",
+    "warped_forest"
+   ]
+  },
+  "overworld/normal": {
+   "areas": 106,
+   "blocks": 375128064,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "badlands",
+    "beach",
+    "cherry_grove",
+    "dark_forest",
+    "deep_frozen_ocean",
+    "desert",
+    "dripstone_caves",
+    "eroded_badlands",
+    "frozen_ocean",
+    "frozen_peaks",
+    "grove",
+    "ice_spikes",
+    "jagged_peaks",
+    "jungle",
+    "mangrove_swamp",
+    "mushroom_fields",
+    "old_growth_pine_taiga",
+    "pale_garden",
+    "savanna",
+    "snowy_beach",
+    "snowy_slopes",
+    "stony_peaks",
+    "stony_shore",
+    "sulfur_caves",
+    "swamp",
+    "windswept_gravelly_hills",
+    "windswept_hills",
+    "wooded_badlands"
+   ]
+  },
+  "overworld/snapshot": {
+   "areas": 18,
+   "blocks": 63700992,
+   "mismatch": 0,
+   "hm_mismatch": 0,
+   "labels": [
+    "-"
+   ]
+  }
+ }
+}

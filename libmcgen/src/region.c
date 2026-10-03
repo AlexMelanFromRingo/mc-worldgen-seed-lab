@@ -175,11 +175,11 @@ static void worker(void *arg) {
                 mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
                 break;
             }
-            if (sc && surface_apply_chunk(w, sc, cx, cz, blk, bio, terrain_marks_rw(t), e, sizeof e)) {
+            if (sc && surface_apply_chunk_ex(w, sc, cx, cz, blk, bio, terrain_marks_rw(t), t, (j->stages & MC_STAGE_CARVERS) != 0, e, sizeof e)) {
                 mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
                 break;
             }
-            if (j->stages & MC_STAGE_CARVERS) {   /* после TERRAIN (и SURFACE) на том же контексте: aquifer и кэши чанка (carver.h) */
+            if ((j->stages & MC_STAGE_CARVERS) && !(sc && surface_carves_inside(w))) {   /* после TERRAIN (и SURFACE) на том же контексте: aquifer и кэши чанка (carver.h); 26.4 с SURFACE — карвинг внутри прохода поверхности (surface.c) */
                 if (carvers_apply_chunk(w, t, cx, cz, blk, terrain_marks_rw(t), e, sizeof e)) {
                     mutex_lock(j->lock); if (!j->failed) { j->failed = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock);
                     break;
@@ -214,7 +214,7 @@ static int halo_surface(View *v, int cx, int cz, uint16_t *blocks, char *e, size
     uint8_t *hb = xmalloc((size_t)(w->height / 4) * 16);
     if (v->bx) sctx_reset_caches(v->bx);
     world_chunk_biomes(w, v->bx, cx, cz, hb);
-    int rc = surface_apply_chunk(w, v->sc, cx, cz, blocks, hb, terrain_marks_rw(v->t), e, el);
+    int rc = surface_apply_chunk_ex(w, v->sc, cx, cz, blocks, hb, terrain_marks_rw(v->t), v->t, (v->r->stages & MC_STAGE_CARVERS) != 0, e, el);
     free(hb);
     return rc;
 }
@@ -230,7 +230,7 @@ static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     char e[256] = {0};
     if (terrain_fill_chunk(v->w, v->t, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
     else if ((r->stages & MC_STAGE_SURFACE) && halo_surface(v, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
-    else if ((r->stages & MC_STAGE_CARVERS) && carvers_apply_chunk(v->w, v->t, cx, cz, h->blocks, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
+    else if ((r->stages & MC_STAGE_CARVERS) && !((r->stages & MC_STAGE_SURFACE) && surface_carves_inside(v->w)) && carvers_apply_chunk(v->w, v->t, cx, cz, h->blocks, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
     ppmarks_copy(&h->marks, terrain_marks(v->t));
     h->next = v->halo[b]; v->halo[b] = h;
     if (marks) *marks = &h->marks;

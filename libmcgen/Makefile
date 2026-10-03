@@ -46,6 +46,7 @@ test: all tests
 	./build/tests/biome_cells $(PACK) 26.3 minecraft:the_nether 12345 -4 -4 8
 	python3 tests/nbt_check.py --version 26.3
 	python3 tests/tweaks_effect.py --version 26.3 --n 4
+	python3 tests/g5_order.py --versions 26.3     # FeatureSorter против выгрузки игры (стадия FEATURES)
 
 clean:
 	rm -rf build

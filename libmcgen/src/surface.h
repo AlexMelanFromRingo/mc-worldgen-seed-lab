@@ -22,8 +22,16 @@ void surface_ctx_free(SurfCtx *c);
 
 /* Применить SURFACE к чанку (cx, cz): blocks — [y][z][x] (height мира), уже заполненный стадией TERRAIN;
  * chunk_biomes — «сырые» биомы этого чанка (клетки 4×4×4, [qy][qz][qx], как mcgen_region_biomes), соседние чанки
- * запрашиваются через world_biome_cell; marks — пометки пост-обработки жидкостей (дописываются, может быть NULL). */
+ * запрашиваются через world_biome_cell; marks — пометки пост-обработки жидкостей (дописываются, может быть NULL).
+ * 26.4-snapshot-2: карвинг встроен в проход поверхности (ChunkTerrainBuilder.fillColumn). carve != 0 (запрошена стадия CARVERS) —
+ * проход сам вырезает по маске карверов (carvers_mask_alloc) через aquifer последнего заполненного чанка t (terrain_carve_substance),
+ * с логикой carvedTopBlock; отдельный carvers_apply_chunk для 26.4 при SURFACE не вызывается. В остальных версиях carve игнорируется. */
 int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks,
                         char *err, size_t errlen);
+/* то же + карвинг внутри прохода (26.4-snapshot-2): t — TerrainCtx, на котором только что заполнен этот чанк; carve — запрошена стадия CARVERS.
+ * Для 26.4 при SURFACE вызывающий НЕ вызывает carvers_apply_chunk (surface_carves_inside); для остальных версий t/carve игнорируются. */
+int surface_apply_chunk_ex(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks,
+                           TerrainCtx *t, int carve, char *err, size_t errlen);
+static inline int surface_carves_inside(const McWorld *w) { return w->g->version >= V26_4; }
 
 #endif

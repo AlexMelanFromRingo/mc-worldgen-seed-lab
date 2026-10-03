@@ -16,6 +16,7 @@
  */
 #include "surface.h"
 #include "df_old.h"
+#include "carver.h"
 #include "mcgen_tweaks_table.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -390,6 +391,7 @@ struct SurfCtx {
     int bx, by, bz, gradx, gradz, sdepth, above, below, wh, minsl, minsl_ok, biome, biome_ok, cur;
     double sec; int sec_ok;
     int top_mode;                      /* topMaterial: preliminary surface — объём 1×1×1 */
+    const u8 *cmask; int cmmin, cmh;   /* 26.4: маска карверов чанка (NULL — нет) */
     /* кэш биомов клеток */
     u64 ck[CELLC]; u8 cv[CELLC];
     /* кэш «размытия» BiomeManager по угловым клеткам (fiddle зависит только от клетки и seed) */
@@ -512,6 +514,7 @@ static inline int get_block(const SurfCtx *c, int col, int y) {
 }
 
 /* Heightmap.update(WORLD_SURFACE_WG): поставили состояние st в y */
+static inline int is_carved(const SurfCtx *c, int col, int y);
 static void hm_update(SurfCtx *c, int col, int y, int st) {
     int first = c->first[col];
     if (y <= first - 2) return;
@@ -735,8 +738,10 @@ static void frozen_extension(SurfCtx *c, int col, int bx, int bz, int height, in
         cond = (is_air(c, st) && y < jm_d2i(ext_top) && rnd_next_double(&r) > 0.01) ||
                (gen_is_block(g, st, g->blk_water) && y > jm_d2i(ext_bottom) && y < sea && (S->newf || ext_bottom != 0.0) && rnd_next_double(&r) > 0.15);
         if (cond) {
-            if (snow_depth <= max_snow && y > min_snow_h) { set_block(c, col, y, S->st_snow); snow_depth++; }
-            else set_block(c, col, y, S->st_packed_ice);
+            /* 26.4: BlockColumn.setBlock не пишет в вырезанные карверами блоки; счётчик снега растёт в любом случае */
+            int skip = c->cmask && is_carved(c, col, y);
+            if (snow_depth <= max_snow && y > min_snow_h) { if (!skip) set_block(c, col, y, S->st_snow); snow_depth++; }
+            else if (!skip) set_block(c, col, y, S->st_packed_ice);
         }
     }
 }
@@ -761,7 +766,26 @@ static int load_chunk(SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_
     return 0;
 }
 
-int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks, char *err, size_t errlen) {
+/* маска карверов чанка (26.4): [(x*16+z)*mh + (y - mmin)] */
+static inline int is_carved(const SurfCtx *c, int col, int y) {
+    if (!c->cmask || y < c->cmmin || y >= c->cmmin + c->cmh) return 0;
+    return c->cmask[(size_t)((col & 15) * 16 + (col >> 4)) * (size_t)c->cmh + (size_t)(y - c->cmmin)];
+}
+/* запись блока мимо BlockColumn.setBlock (ChunkTerrainBuilder.setBlock): пометка пост-обработки — по явному признаку */
+static void put_block(SurfCtx *c, int col, int y, int st, int mark) {
+    if (y < c->minY || y > c->maxY) return;
+    c->blk[((size_t)(y - c->minY) * 16 + (col >> 4)) * 16 + (col & 15)] = (uint16_t)st;
+    hm_update(c, col, y, st);
+    if (mark && c->marks) ppmarks_add(c->marks, (y - c->minY) >> 4, col & 15, y & 15, col >> 4);
+}
+
+int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks,
+                        char *err, size_t errlen) {
+    return surface_apply_chunk_ex(w, c, cx, cz, blocks, chunk_biomes, marks, NULL, 0, err, errlen);
+}
+
+int surface_apply_chunk_ex(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks, const uint8_t *chunk_biomes, PPMarks *marks,
+                           TerrainCtx *t, int carve, char *err, size_t errlen) {
     SurfWorld *S = w->surface;
     if (!S || !S->root) return MCGEN_OK;
     const McGen *g = w->g;
@@ -770,7 +794,20 @@ int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks
     if (c->x) sctx_reset_caches(c->x);
     int legacy = w->ns->legacy_random;
     int minY = c->minY, maxY = c->maxY;
-    for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
+    /* 26.4: карвинг внутри прохода (ChunkTerrainBuilder.fillColumn) */
+    uint8_t *cmask = NULL;
+    c->cmask = NULL;
+    if (carve && S->v264 && t) {
+        int mmin = 0, mh = 0;
+        char e[256] = {0};
+        cmask = carvers_mask_alloc(w, cx, cz, &mmin, &mh, e, sizeof e);
+        if (cmask) { c->cmask = cmask; c->cmmin = mmin; c->cmh = mh; }
+    }
+    const u8 *uncarv = cmask ? gen_block_tag(g, "minecraft:uncarvable") : NULL;
+    int blk_dirt = cmask ? g->state_block[gen_state_id(g, "minecraft:dirt")] : -1;
+    for (int a = 0; a < 256; a++) {
+        /* 26.3: x снаружи, z внутри; 26.4 (ChunkTerrainBuilder.fillChunk): z снаружи, x внутри — порядок важен только для 26.3 (карта высот) */
+        int x = S->v264 ? a & 15 : a >> 4, z = S->v264 ? a >> 4 : a & 15;
         int bx = cx * 16 + x, bz = cz * 16 + z, col = z * 16 + x;
         int start = c->first[col];
         int sbio = biome_at(c, bx, (old && legacy) ? 0 : start, bz);
@@ -781,11 +818,12 @@ int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks
         int gz = hf[(z + 1 < 15 ? z + 1 : 15) * 16 + x] - hf[(z - 1 > 0 ? z - 1 : 0) * 16 + x];
         update_xz(c, bx, bz, gx, gz);
         if (S->root) {
-            int stone_above = 0, water_h = INT_MIN, next_ceil = INT_MAX;
+            int stone_above = 0, water_h = INT_MIN, next_ceil = INT_MAX, carved_top = 0;
             for (int y = height; y >= minY; y--) {
                 int cur = get_block(c, col, y);
-                if (is_air(c, cur)) { stone_above = 0; water_h = INT_MIN; }
-                else if (is_fluid(c, cur)) { if (water_h == INT_MIN) water_h = y + 1; }
+                int carved = cmask ? is_carved(c, col, y) : 0;
+                if (is_air(c, cur)) { stone_above = 0; water_h = INT_MIN; carved_top &= carved; }
+                else if (is_fluid(c, cur)) { if (water_h == INT_MIN) water_h = y + 1; carved_top &= carved; }
                 else {
                     if (next_ceil >= y) {
                         /* 26.3: просмотр до minY − 1 (void_air) => потолок minY; 26.4: NoiseColumn.getCeilingBelowIndex — без «пустоты» под миром */
@@ -801,6 +839,19 @@ int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks
                     if (old ? cur == S->defb : (y >= minY && y <= maxY)) {
                         c->cur = cur;
                         int st = eval_rule(c, S->root);
+                        if (carved && (st < 0 || !uncarv[g->state_block[st]])) {
+                            int sched = 0;
+                            int sub = terrain_carve_substance(t, bx, y, bz, &sched);
+                            if (sub >= 0) {      /* AIR — блок вырезан (в игре не записывается), жидкость — записывается; −1 (SOLID) — обычный путь */
+                                carved_top |= stone_above == 1;
+                                put_block(c, col, y, sub, sched && is_fluid(c, sub));
+                                continue;
+                            }
+                        }
+                        if (carved_top) {
+                            if (st >= 0 && g->state_block[st] == blk_dirt) { update_y(c, 1, stone_below, water_h, y); st = eval_rule(c, S->root); }
+                            carved_top = 0;
+                        }
                         if (st >= 0) set_block(c, col, y, st);
                     }
                 }
@@ -808,7 +859,8 @@ int surface_apply_chunk(McWorld *w, SurfCtx *c, int cx, int cz, uint16_t *blocks
         }
         if (sbio == S->b_frozen || sbio == S->b_deep_frozen) frozen_extension(c, col, bx, bz, start, sbio);
     }
-    (void)g; (void)err; (void)errlen;
+    free(cmask); c->cmask = NULL;
+    (void)err; (void)errlen;
     return MCGEN_OK;
 }
 

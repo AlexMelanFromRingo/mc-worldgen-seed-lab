@@ -17,3 +17,5 @@
 26.4-snapshot-2 overworld normal s=12345 (20,-40) 12x12 carve_raw     блоков 14,155,776 расхождений 0 (чанков 0) | наш 0.7 с, Java 9 с
 26.4-snapshot-2 overworld normal s=8675309 (20,-40) 12x12 carve_raw     блоков 14,155,776 расхождений 0 (чанков 0) | наш 0.6 с, Java 2 с
 26.4-snapshot-2 overworld normal s=-7048155917072976836 (20,-40) 12x12 carve_raw     блоков 14,155,776 расхождений 0 (чанков 0) | наш 0.5 с, Java 2 с
+26.4-snapshot-2 nether    normal s=12345 (30,-50) 12x12 carve_raw     блоков 9,437,184 расхождений 0 (чанков 0) | наш 0.3 с, Java 14 с
+26.4-snapshot-2 nether    normal s=8675309 (30,-50) 12x12 carve_raw     блоков 9,437,184 расхождений 0 (чанков 0) | наш 0.3 с, Java 1 с

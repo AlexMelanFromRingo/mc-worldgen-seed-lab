@@ -310,9 +310,9 @@ static void dec_worker(void *arg) {
     for (;;) {
         mutex_lock(j->lock); int k = j->next++; mutex_unlock(j->lock);
         if (k >= j->count) break;
-        /* k-й чанк волны t: перебор iz по возрастанию (ix = t − 3·iz внутри [0, nx)) */
+        /* k-й чанк волны t: перебор ix по возрастанию (iz = t − 3·ix внутри [0, nz)) */
         int iz = 0, ix = 0, seen = -1;
-        for (iz = 0; iz < j->nz; iz++) { ix = j->t - 3 * iz; if (ix >= 0 && ix < j->nx && ++seen == k) break; }
+        for (ix = 0; ix < j->nx; ix++) { iz = j->t - 3 * ix; if (iz >= 0 && iz < j->nz && ++seen == k) break; }
         decorate_chunk(&c, j->cx0 + ix, j->cz0 + iz);
     }
     mutex_lock(j->lock); j->done += c.n_chunks; j->calls += c.n_calls; j->skipped += c.n_skipped; mutex_unlock(j->lock);
@@ -376,18 +376,26 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         if (nth == 1) prime_worker(&pj);
         else { McThread **th = xcalloc((size_t)nth, sizeof(McThread *)); for (int i = 0; i < nth; i++) th[i] = thread_start(prime_worker, &pj); for (int i = 0; i < nth; i++) thread_join(th[i]); free(th); }
         mutex_free(pj.lock);
-        /* декорация: чанки региона и кольцо вокруг него (их фичи заходят в регион); порядок — построчно (z, затем x), параллельно волнами.
-         * MCGEN_FEATURES_SEQ=<zx|xz|zx-|xz-|ring> — последовательный обход другим порядком (эксперимент). */
+        /* декорация: чанки региона и кольцо вокруг него (их фичи заходят в регион); порядок — как у forceload (x внешний, z внутренний), параллельно волнами.
+         * MCGEN_FEATURES_SEQ=<xz|zx|zx-|xz-|ring|xzw> — последовательный обход другим порядком (эксперимент). */
         int total = (info.nx + 2) * (info.nz + 2);
         double t_dec0 = now_sec();
         DecJob dj; memset(&dj, 0, sizeof dj);
         dj.c = &c; dj.lock = mutex_new(); dj.cx0 = info.cx0 - 1; dj.cz0 = info.cz0 - 1; dj.nx = info.nx + 2; dj.nz = info.nz + 2;
         int seq = getenv("MCGEN_FEATURES_SEQ") != NULL;
         if (seq) {
-            const char *ord = getenv("MCGEN_FEATURES_SEQ");           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
-            if (!strcmp(ord, "xz")) { for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) decorate_chunk(&c, cx, cz); }
-            else if (!strcmp(ord, "zx-")) { for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) decorate_chunk(&c, cx, cz); }
+            const char *ord = getenv("MCGEN_FEATURES_SEQ"); if (!ord || !*ord) ord = "xz";           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
+            if (!strcmp(ord, "zx-")) { for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) decorate_chunk(&c, cx, cz); }
             else if (!strcmp(ord, "xz-")) { for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) decorate_chunk(&c, cx, cz); }
+            else if (!strcmp(ord, "xzw") || !strcmp(ord, "xzw_last") || !strcmp(ord, "xzw_first")) {
+                /* порядок билетов forceload W6: окна 16×16 от угла области (x внешний, z внутренний), внутри окна x, затем z; чанки вне области — до/после */
+                int last = !strcmp(ord, "xzw_last"), first = !strcmp(ord, "xzw_first");
+                int x0 = dj.cx0 + 1, z0 = dj.cz0 + 1, x1 = dj.cx0 + dj.nx - 2, z1 = dj.cz0 + dj.nz - 2;
+                if (first) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_chunk(&c, cx, cz); }
+                for (int ax = x0; ax <= x1; ax += 16) for (int az = z0; az <= z1; az += 16)
+                    for (int cx = ax; cx <= (ax + 15 < x1 ? ax + 15 : x1); cx++) for (int cz = az; cz <= (az + 15 < z1 ? az + 15 : z1); cz++) decorate_chunk(&c, cx, cz);
+                if (last || (!first && !last)) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_chunk(&c, cx, cz); }
+            }
             else if (!strcmp(ord, "ring")) {      /* от центра наружу по кольцам */
                 int mx = dj.cx0 + dj.nx / 2, mz = dj.cz0 + dj.nz / 2, rmax = dj.nx > dj.nz ? dj.nx : dj.nz;
                 for (int rr = 0; rr <= rmax; rr++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) {
@@ -395,15 +403,16 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                     if (d == rr) decorate_chunk(&c, cx, cz);
                 }
             }
-            else for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) decorate_chunk(&c, cx, cz);
+            else if (!strcmp(ord, "zx")) { for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) decorate_chunk(&c, cx, cz); }
+            else for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) decorate_chunk(&c, cx, cz);
             g_stats.chunks += c.n_chunks; g_stats.placed_calls += c.n_calls; g_stats.unimpl_skipped += c.n_skipped;
         } else {
-            /* волновой фронт: чанки с равным t = ix + 3·iz не пересекаются окнами 3×3 (|dx| ≥ 3), а все пересекающиеся «более ранние» чанки
-             * порядка (z, затем x) имеют меньшее t — результат идентичен последовательному обходу при любом числе потоков */
-            int tmax = (dj.nx - 1) + 3 * (dj.nz - 1);
+            /* волновой фронт: чанки с равным t = iz + 3·ix не пересекаются окнами 3×3 (|dx| ≥ 3), а все пересекающиеся «более ранние» чанки
+             * порядка (x, затем z) имеют меньшее t — результат идентичен последовательному обходу при любом числе потоков */
+            int tmax = (dj.nz - 1) + 3 * (dj.nx - 1);
             for (int t = 0; t <= tmax && !rc; t++) {
                 dj.t = t; dj.next = 0; dj.count = 0;
-                for (int iz = 0; iz < dj.nz; iz++) { int ix = t - 3 * iz; if (ix >= 0 && ix < dj.nx) dj.count++; }
+                for (int ix = 0; ix < dj.nx; ix++) { int iz = t - 3 * ix; if (iz >= 0 && iz < dj.nz) dj.count++; }
                 if (dj.count == 0) continue;
                 int nthr = nt < dj.count ? nt : dj.count; if (nthr < 1) nthr = 1;
                 if (nthr == 1) dec_worker(&dj);

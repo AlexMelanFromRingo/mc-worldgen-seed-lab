@@ -38,7 +38,7 @@ def parse_variant(name):
     if spec.get('parametric'):
         if not param:
             raise SystemExit(f'вариант {base} параметрический: {base}:<id>')
-        if ':' not in param:
+        if ':' not in param and spec['parametric'] != 'featureset':
             param = 'minecraft:' + param
     elif param:
         raise SystemExit(f'вариант {base} без параметров')
@@ -128,6 +128,7 @@ def build(version, variant, out_dir):
         ov['material_rule'] = len(material_ids)
         ov['noise_settings'] = n_ns
 
+    fset = set(json.load(open(f'{ROOT}/tools/gt/featuresets/{param}.json'))) if spec['features'] == 'only_list' else set()
     # --- биомы: карверы и фичи ----------------------------------------------------------------------------------------------
     n_biomes = 0
     if not spec['carvers'] or spec['features'] is not True:
@@ -145,9 +146,14 @@ def build(version, variant, out_dir):
             elif spec['features'] == 'only':
                 b['features'] = [[x for x in step if x == param] for step in b.get('features', [])]
                 ch = True
+            elif spec['features'] == 'only_list':
+                b['features'] = [[x for x in step if x in fset] for step in b.get('features', [])]
+                ch = True
             if ch:
                 _dump(f'{dp}/biome/{name}', b); n_biomes += 1
         ov['biome'] = n_biomes
+        if spec['features'] == 'only_list':
+            ov['feature_set'] = f'{param} ({len(fset)} фич)'
         if spec['features'] == 'only':
             pf = f'{wg}/placed_feature/{_rid(param)}.json'
             if not os.path.exists(pf):

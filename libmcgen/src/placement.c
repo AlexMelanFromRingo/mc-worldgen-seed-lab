@@ -146,6 +146,7 @@ static int placed_run(FCtx *c, const Placed *pf, int idx, int x, int y, int z, i
     PlcVec out; plc_init(&out);
     int dummy = 0;
     pm_run(c, pf->mods[idx], x, y, z, &out, biome_check ? pf : NULL, &dummy);
+    if (c->fw->debug) { const char *tr = getenv("MCGEN_TRACE_PM"); if (tr && pf->id && strstr(pf->id, tr)) { fprintf(stderr, "[pm] %s mod#%d kind=%d in(%d,%d,%d) -> %d", pf->id, idx, pf->mods[idx] ? *(int *)pf->mods[idx] : -1, x, y, z, out.n); if (out.n) fprintf(stderr, " first(%d,%d,%d)", out.v[0], out.v[1], out.v[2]); fprintf(stderr, "\n"); } }
     int any = 0;
     for (int i = 0; i < out.n; i++) any |= placed_run(c, pf, idx + 1, out.v[i * 3], out.v[i * 3 + 1], out.v[i * 3 + 2], biome_check);
     plc_free(&out);
@@ -180,6 +181,7 @@ static void pm_run(FCtx *c, const PMod *m, int x, int y, int z, PlcVec *out, con
     case PM_HEIGHTMAP: { int h = fc_height(c, m->hm, x, z); if (h > c->min_y) plc_add(out, x, h, z); break; }
     case PM_BIOME: {
         int b = fc_biome(c, x, y, z);
+        if (c->fw->debug && getenv("MCGEN_TRACE_BIOME") && top) fprintf(stderr, "[biome] %s (%d,%d,%d): %s -> %s\n", top->id, x, y, z, c->g->biome_names[b], (top->index >= 0 && ((c->fw->biome_has[b][top->index >> 6] >> (top->index & 63)) & 1)) ? "да" : "НЕТ");
         if (!top || (top->index >= 0 && (c->fw->biome_has[b][top->index >> 6] >> (top->index & 63)) & 1)) plc_add(out, x, y, z);
         break;
     }
