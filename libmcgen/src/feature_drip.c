@@ -1,6 +1,6 @@
-/* feature_drip.c — сталактиты/сталагмиты: speleothem («pointed_dripstone», «sulfur_spike»), speleothem_cluster («dripstone_cluster»),
- * large_dripstone (26.3+). В 26.1/26.2 те же постройки — отдельные классы (PointedDripstoneFeature, DripstoneClusterFeature, LargeDripstoneFeature с config);
- * ветки для 26.1/26.2 (прежние классы DripstoneClusterFeature/PointedDripstoneFeature/LargeDripstoneFeature с «config») — разбор ключей конфигурации (jk2). */
+/* feature_drip.c — сталактиты/сталагмиты: speleothem («pointed_dripstone», «sulfur_spike»), speleothem_cluster («dripstone_cluster»), large_dripstone.
+ * 26.1 — прежние классы PointedDripstoneFeature/DripstoneClusterFeature (имена типов pointed_dripstone/dripstone_cluster, другие ключи config: jk2) и
+ * LargeDripstoneFeature без replaceable_blocks и без ограничения смещения ветра; 26.2 — уже speleothem*, как в 26.3 (ключи — в обёртке config). */
 #include "feature_misc.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -257,7 +257,7 @@ static void *large_parse(FParse *p, const Js *cfg) {
     LargeCfg *s = fp_alloc(p, sizeof *s);
     s->e.replaceable = js_get(cfg, "replaceable_blocks") ? fp_blockset(p, js_get(cfg, "replaceable_blocks")) : gen_block_tag(p->g, "minecraft:dripstone_replaceable_blocks");
     if (!s->e.replaceable) { fp_fail(p, "large_dripstone: replaceable_blocks"); return NULL; }
-    s->old = !p->newf;
+    s->old = p->version == V26_1;         /* смещение ветра без ограничения — только 26.1 (26.2 уже с maxOffset) */
     s->e.base_blk = bs_block_index(p->bs, "minecraft:dripstone_block"); s->e.water_blk = bs_block_index(p->bs, "minecraft:water"); s->e.lava_blk = bs_block_index(p->bs, "minecraft:lava");
     s->dripstone_state = bs_default(p->bs, s->e.base_blk);
     s->search_range = js_get(cfg, "floor_to_ceiling_search_range") ? js_int(js_get(cfg, "floor_to_ceiling_search_range"), 30) : 30;
@@ -341,7 +341,7 @@ static int large_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     sg.blunt = (double)floatprov_sample(s->stalagmite_blunt, r); sg.scale = (double)floatprov_sample(s->height_scale, r);
     Wind w; memset(&w, 0, sizeof w);
     if (st.radius >= s->min_r_wind && st.blunt >= (double)s->min_b_wind && sg.radius >= s->min_r_wind && sg.blunt >= (double)s->min_b_wind) {
-        w.has = 1; w.origin_y = oy; w.max_off = s->old ? 0x3fffffff : 16 - radius;      /* 26.1/26.2: смещение ветром не ограничено */
+        w.has = 1; w.origin_y = oy; w.max_off = s->old ? 0x3fffffff : 16 - radius;      /* 26.1: смещение ветром не ограничено */
         float speed = floatprov_sample(s->wind_speed, r);
         float dir = frnd_float(r) * (3.1415927F - 0.0F) + 0.0F;      /* Mth.randomBetween(random, 0, (float)Math.PI) */
         w.wx = (double)(fm_cos((double)dir) * speed); w.wz = (double)(fm_sin((double)dir) * speed);

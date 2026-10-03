@@ -1148,3 +1148,6 @@ void s_volume(SCtx *x, const S *s, float *o, const Vol *v) {
     }
     }
 }
+
+/* экспорт программы для GPU (поток W7) */
+#include "gpu_export_new.inc"

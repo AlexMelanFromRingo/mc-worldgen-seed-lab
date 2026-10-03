@@ -7,6 +7,7 @@
 #include "feature.h"
 void structures_begin_region(McWorld *w);   /* structure.c */
 void structure_shape_update(void *fw, int x, int y, int z);   /* structure_post.c */
+void features_post_chunk(void *fw, McWorld *w, int cx, int cz);  /* feature_miscx.c: пузырьковые столбцы над магмой/песком душ */
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,7 +64,14 @@ static void grid_worker(void *arg) {
         grid_rows(j, iz);
     }
 }
+/* сетка биомов: GPU (libmcgen_cuda, если включена и доступна; результат ≡ CPU побитно), иначе CPU */
+int gpu_try_biome_grid(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out, int force);   /* gpu_bridge.c */
 int mcgen_biome_grid(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out) {
+    if (!w || !out || nx <= 0 || nz <= 0 || step <= 0) return MCGEN_E_ARG;
+    if (gpu_try_biome_grid(w, x0, z0, nx, nz, step, y, out, 0) == 0) return MCGEN_OK;
+    return mcgen_biome_grid_cpu(w, x0, z0, nx, nz, step, y, out);
+}
+int mcgen_biome_grid_cpu(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out) {
     if (!w || !out || nx <= 0 || nz <= 0 || step <= 0) return MCGEN_E_ARG;
     GridJob j = { w, x0, z0, nx, nz, step, y, out, NULL, 0 };
     int nt = cpu_count();
@@ -273,9 +281,9 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
                 int d = cx - cx0; if (cx0 + nx - 1 - cx < d) d = cx0 + nx - 1 - cx;
                 if (cz - cz0 < d) d = cz - cz0;
                 if (cz0 + nz - 1 - cz < d) d = cz0 + nz - 1 - cz;
-                if (d < pp_margin) continue;
+                if (d < pp_margin) { if (r->stages & MC_STAGE_FEATURES) features_post_chunk(&fw, w, cx, cz); continue; }   /* пузыри над магмой есть и у краевых чанков эталона */
             }
-            if (inside) { fluidpp_chunk(&fw, &r->marks[chunk_index(r, cx, cz)], cx, cz, w->min_y); continue; }
+            if (inside) { fluidpp_chunk(&fw, &r->marks[chunk_index(r, cx, cz)], cx, cz, w->min_y); if (r->stages & MC_STAGE_FEATURES) features_post_chunk(&fw, w, cx, cz); continue; }
             /* гало: только пометки в одном блоке от региона */
             PPMarks *m = NULL; view_chunk(&v, cx, cz, &m);
             for (int s = 0; s < m->nsec; s++) for (int k = 0; k < m->n[s]; k++) {

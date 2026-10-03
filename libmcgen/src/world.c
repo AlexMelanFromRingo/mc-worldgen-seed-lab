@@ -152,6 +152,7 @@ static i64 obfuscate_seed(i64 seed) {
 
 static void noise_inst_free(void *p) { NoiseInst *ni = p; if (!ni) return; ns_free(&ni->ns); if (ni->on.first.lev) old_normal_free(&ni->on); free(ni); }
 
+void gpu_world_free(McWorld *w);       /* gpu_bridge.c */
 int tweaks_apply(McWorld *w, const McTweakValue *tw, int n, char *err, size_t errlen);   /* tweaks.c */
 void carvers_world_free(McWorld *w);   /* carver.c */
 
@@ -211,6 +212,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
 
 void mcgen_world_free(McWorld *w) {
     if (!w) return;
+    gpu_world_free(w);   /* gpu_bridge.c */
     features_world_free(w);
     structures_world_free(w);
     carvers_world_free(w);

@@ -131,6 +131,7 @@ struct McWorld {
     void *structures;           /* стадия STRUCTURES (structure*.c, jigsaw.c, template.c): реестры, кэш стартов; строится лениво */
     long struct_run;            /* номер прогона региона со стадией STRUCTURES (сбрасывает состояния частей и ГСЧ региона) */
     int struct_on;              /* Beardifier включён (region.c ставит перед генерацией, если запрошена стадия STRUCTURES) */
+    void *gpu;                  /* GPU-состояние мира (gpu_bridge.c, поток W7): дескриптор libmcgen_cuda и результат самопроверки; лениво */
 };
 void structures_world_free(McWorld *w);  /* structure.c */
 void bs_free(void *tab);                 /* blockstate.c */

@@ -131,6 +131,29 @@ MCGEN_API int mcgen_structure_starts(McWorld *w, int cx0, int cz0, int nx, int n
 /* bounding box piece-й части index-го старта чанка-источника (порядок как в mcgen_structure_starts для одного чанка); 0 — успех */
 MCGEN_API int mcgen_structure_piece_bb(McWorld *w, int chunk_x, int chunk_z, int index, int piece, int bb[6]);
 
+/* ---- вычисления на видеокарте (необязательно; библиотека libmcgen_cuda — спека §3.6, ворота G9) -------------------------------
+ * Без libmcgen_cuda / без устройства NVIDIA / при любой ошибке всё считается на CPU; результат GPU совпадает с CPU побитно
+ * (проверяется самопроверкой при первом использовании мира). По умолчанию режим Auto. */
+enum { MCGEN_COMPUTE_CPU = 0, MCGEN_COMPUTE_GPU = 1, MCGEN_COMPUTE_AUTO = 2 };
+/* путь к libmcgen_cuda (NULL/"" — искать рядом с libmcgen, в MCGEN_CUDA_LIB и в системных путях) */
+MCGEN_API int mcgen_gpu_set_library_path(const char *path);
+/* число устройств CUDA (0 — библиотеки/устройства нет) */
+MCGEN_API int mcgen_gpu_device_count(void);
+MCGEN_API int mcgen_gpu_device_info(int index, char *name, size_t namelen, int *cc_major, int *cc_minor, size_t *mem_mb);
+/* режим вычислений (MCGEN_COMPUTE_*) и устройство (device < 0 — не менять); действует на mcgen_biome_grid и прочие GPU-пути */
+MCGEN_API int mcgen_gpu_set_compute(int mode, int device);
+MCGEN_API int mcgen_gpu_get_compute(void);
+/* статус в виде строк «ключ: значение» (mode, state, device, library, reason/last_fallback, selftest); возврат 1 — GPU готово */
+MCGEN_API int mcgen_gpu_status(char *buf, size_t buflen);
+/* самопроверка GPU = CPU на тестовых мирах версии (Overworld ×3 пресета, Nether, End; npoints случайных точек каждый).
+ * MCGEN_OK — расхождений нет; report — подробности */
+MCGEN_API int mcgen_gpu_selftest(McGen *g, int npoints, char *report, size_t replen);
+/* то же, что mcgen_biome_grid, но строго на GPU (MCGEN_E_UNSUPPORTED, если GPU недоступно) / строго на CPU */
+MCGEN_API int mcgen_gpu_biome_grid(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out);
+MCGEN_API int mcgen_biome_grid_cpu(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out);
+/* биомы в произвольных блоковых точках xyz[3n] строго на GPU (тесты); *n_cpu — сколько точек GPU отдал на пересчёт CPU (может быть NULL) */
+MCGEN_API int mcgen_gpu_biome_points(const McWorld *w, int n, const int *xyz, uint8_t *out, int *n_cpu);
+
 #ifdef __cplusplus
 }
 #endif

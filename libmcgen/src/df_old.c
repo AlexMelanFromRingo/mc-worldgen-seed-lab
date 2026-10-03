@@ -823,3 +823,6 @@ int nchunk_max_prelim_surface(NChunk *c, int minx, int minz, int maxx, int maxz)
     for (int z = minz; z <= maxz; z += 4) for (int x = minx; x <= maxx; x += 4) { int s = nchunk_prelim_surface(c, x, z); if (s > m) m = s; }
     return m;
 }
+
+/* экспорт программы для GPU (поток W7) */
+#include "gpu_export_old.inc"

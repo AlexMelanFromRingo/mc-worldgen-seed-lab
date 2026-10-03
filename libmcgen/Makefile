@@ -11,7 +11,7 @@ CFLAGS  ?= $(OPT) -g
 CFLAGS  += -std=gnu11 -fPIC -ffp-contract=off -fno-fast-math -fvisibility=hidden -Wall -Wextra -Wno-unused-parameter \
            -Wno-unused-function -Wno-comment -Wno-misleading-indentation -Wno-sign-compare -Wno-missing-field-initializers
 CPPFLAGS += -Iinclude -Isrc -Igen -I../engine
-LDLIBS  = -lm -lpthread
+LDLIBS  = -lm -lpthread -ldl
 
 SRC  := $(wildcard src/*.c)
 MESH ?= 1
@@ -20,7 +20,7 @@ SRC  += $(wildcard src/mesh/*.c)
 endif
 SRC  += $(wildcard src/structures/*.c)
 OBJ  := $(patsubst src/%.c,$(B)/obj/%.o,$(SRC))
-HDR  := $(wildcard src/*.h include/*.h gen/*.h ../engine/*.h src/mesh/*.h)
+HDR  := $(wildcard src/*.h src/*.inc include/*.h gen/*.h ../engine/*.h src/mesh/*.h gpu/*.h)
 
 all: $(B)/libmcgen.so $(B)/libmcgen.a $(B)/mcgen-cli
 
