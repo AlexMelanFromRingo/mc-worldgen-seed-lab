@@ -21,6 +21,8 @@ const FeatType *feature_find_type(const char *name) {
 void feature_register_ore(void);        /* feature_ore.c */
 void feature_register_blobs(void);      /* feature_disk.c: disk, block_blob, spring_feature, lake */
 void feature_register_simple(void);     /* feature_misc.c: simple_block, random/weighted selectors … */
+void feature_register_misc_all(void);   /* feature_miscx.c (W12): подземные/ледяные/особые/Nether/End */
+void feature_register_veg(void);        /* feature_veg*.c (W10): растительность */
 void feature_register_all(void) {
     if (g_registered) return;
     g_registered = 1;
@@ -28,6 +30,8 @@ void feature_register_all(void) {
     feature_register_ore();
     feature_register_blobs();
     feature_register_simple();
+    feature_register_misc_all();
+    feature_register_veg();
 }
 
 /* ====================================================================== арена и разбор */
@@ -281,8 +285,9 @@ static void ring_worker(void *arg) {
         if (bx) sctx_reset_caches(bx);
         world_chunk_biomes(w, bx, ch->cx, ch->cz, ch->biomes);
         int rc = terrain_fill_chunk(w, t, ch->cx, ch->cz, ch->blocks, e, sizeof e);
-        if (!rc && sc) rc = surface_apply_chunk(w, sc, ch->cx, ch->cz, ch->blocks, ch->biomes, terrain_marks_rw(t), e, sizeof e);
-        if (!rc && (j->stages & MC_STAGE_CARVERS)) rc = carvers_apply_chunk(w, t, ch->cx, ch->cz, ch->blocks, terrain_marks_rw(t), e, sizeof e);
+        /* как worker() региона: 26.4 с SURFACE — карвинг внутри прохода поверхности (surface_apply_chunk_ex), carvers_apply_chunk не вызывается */
+        if (!rc && sc) rc = surface_apply_chunk_ex(w, sc, ch->cx, ch->cz, ch->blocks, ch->biomes, terrain_marks_rw(t), t, (j->stages & MC_STAGE_CARVERS) != 0, e, sizeof e);
+        if (!rc && (j->stages & MC_STAGE_CARVERS) && !(sc && surface_carves_inside(w))) rc = carvers_apply_chunk(w, t, ch->cx, ch->cz, ch->blocks, terrain_marks_rw(t), e, sizeof e);
         if (rc) { mutex_lock(j->lock); if (!j->fail) { j->fail = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock); break; }
     }
     terrain_ctx_free(t);

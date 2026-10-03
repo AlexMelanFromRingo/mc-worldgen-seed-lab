@@ -62,7 +62,7 @@ def main():
     a = ap.parse_args()
     global CLI
     import shutil
-    CLI = tempfile.mktemp(prefix='mcgen-cli-', dir='/tmp'); shutil.copy(f'{ROOT}/libmcgen/build/mcgen-cli', CLI)
+    CLI = tempfile.mktemp(prefix='mcgen-cli-', dir='/tmp'); shutil.copy(os.environ.get('MCGEN_CLI') or f'{ROOT}/libmcgen/build/mcgen-cli', CLI)
     only = {x if ':' in x else 'minecraft:' + x for x in a.only.split(',') if x}
     global IMPL
     IMPL = implemented(a.version)

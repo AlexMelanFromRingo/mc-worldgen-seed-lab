@@ -237,10 +237,12 @@ static const struct { const char *block; const char *tag; } SURV_BLK[] = {      
     { "minecraft:crimson_fungus", "minecraft:supports_crimson_fungus" }, { "minecraft:warped_fungus", "minecraft:supports_warped_fungus" }, { NULL, NULL } };
 static const char *PLAIN_VEG[] = { "SaplingBlock", "FlowerBlock", "TallGrassBlock", "FernBlock", "TallFlowerBlock", "BushBlock", "FireflyBushBlock", "EyeblossomBlock",
                                    "FlowerBedBlock", "ShortDryGrassBlock", "TallDryGrassBlock", NULL };
+int veg_survive(FCtx *c, int state, int x, int y, int z, int *res);     /* feature_veg.c */
 int block_can_survive(FCtx *c, int st, int x, int y, int z) {
     const BsTab *bs = c->bs;
     const BsBlock *bb = &bs->blk[c->g->state_block[st]];
     if (!bb->cls) return 1;
+    { int vr; if (veg_survive(c, st, x, y, z, &vr)) return vr; }       /* классы растений группы W10 (feature_veg.c) */
     const char *tag = NULL;
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         const char *half = NULL; bs_get_prop(bs, st, "half", &half);

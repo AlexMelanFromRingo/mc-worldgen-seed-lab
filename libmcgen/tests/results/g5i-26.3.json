@@ -233,53 +233,15 @@
    "top": []
   },
   {
-   "feature": "minecraft:lush_caves_clay",
-   "dim": "overworld",
-   "world": "overworld-s12345-c0_0-r5",
-   "blocks": 11894767,
-   "mismatch": 25739,
-   "match_pct": 99.78361072562413,
-   "chunks": 121,
-   "effect": 25739,
-   "top": [
-    {
-     "ours": "minecraft:deepslate[axis=y]",
-     "ref": "minecraft:clay",
-     "count": 21337
-    },
-    {
-     "ours": "minecraft:stone",
-     "ref": "minecraft:clay",
-     "count": 1797
-    },
-    {
-     "ours": "minecraft:deepslate[axis=y]",
-     "ref": "minecraft:water[level=0]",
-     "count": 1415
-    }
-   ]
-  },
-  {
    "feature": "minecraft:nether_sprouts",
    "dim": "the_nether",
    "world": "nether-s12345-c60_-60-r5",
    "blocks": 7929856,
-   "mismatch": 10188,
-   "match_pct": 99.87152351820764,
+   "mismatch": 0,
+   "match_pct": 100.0,
    "chunks": 121,
    "effect": 3223,
-   "top": [
-    {
-     "ours": "minecraft:nether_sprouts",
-     "ref": "minecraft:air",
-     "count": 9416
-    },
-    {
-     "ours": "minecraft:air",
-     "ref": "minecraft:nether_sprouts",
-     "count": 772
-    }
-   ]
+   "top": []
   },
   {
    "feature": "minecraft:ore_ancient_debris_large",
@@ -337,6 +299,28 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_coal_lower",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 8856,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_coal_upper",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_coal_upper",
    "dim": "overworld",
    "world": "overworld-s8675309-c-114_-51-r5",
@@ -345,6 +329,17 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_coal_upper",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 961,
    "top": []
   },
   {
@@ -357,6 +352,23 @@
    "chunks": 121,
    "effect": 6889,
    "top": []
+  },
+  {
+   "feature": "minecraft:ore_copper_large",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-177_86-r5",
+   "blocks": 11894755,
+   "mismatch": 2,
+   "match_pct": 99.99998318586637,
+   "chunks": 121,
+   "effect": 11714,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 2
+    }
+   ]
   },
   {
    "feature": "minecraft:ore_debris_small",
@@ -381,6 +393,17 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_diamond",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 726,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_diamond_buried",
    "dim": "overworld",
    "world": "overworld-s8675309-c-114_-51-r5",
@@ -400,6 +423,39 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 89,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_diamond_medium",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1111,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_diorite_lower",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 86887,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_diorite_upper",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 621,
    "top": []
   },
   {
@@ -436,6 +492,39 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_gold_deltas",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 417,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_gold_extra",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-173_223-r5",
+   "blocks": 11894741,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 4443,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_gold_lower",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 253,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_gold_nether",
    "dim": "the_nether",
    "world": "nether-s-7048155917072976836-c60_-60-r5",
@@ -444,6 +533,17 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 7643,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_granite_lower",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 86851,
    "top": []
   },
   {
@@ -469,6 +569,17 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_gravel_nether",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 19826,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_infested",
    "dim": "overworld",
    "world": "overworld-s12345-c-19_-208-r5",
@@ -477,6 +588,28 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 8359,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_iron_middle",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 4167,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_iron_small",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1464,
    "top": []
   },
   {
@@ -502,6 +635,17 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_lapis_buried",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1540,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_magma",
    "dim": "the_nether",
    "world": "nether-s-7048155917072976836-c60_-60-r5",
@@ -510,6 +654,17 @@
    "match_pct": 100.0,
    "chunks": 121,
    "effect": 17642,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ore_quartz_deltas",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1227,
    "top": []
   },
   {
@@ -535,6 +690,17 @@
    "top": []
   },
   {
+   "feature": "minecraft:ore_redstone_lower",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 2117,
+   "top": []
+  },
+  {
    "feature": "minecraft:ore_soul_sand",
    "dim": "the_nether",
    "world": "nether-s-7048155917072976836-c-7_26-r5",
@@ -557,6 +723,39 @@
    "top": []
   },
   {
+   "feature": "minecraft:spring_closed",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7928413,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1443,
+   "top": []
+  },
+  {
+   "feature": "minecraft:spring_lava",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 11,
+   "top": []
+  },
+  {
+   "feature": "minecraft:spring_lava_frozen",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-19_-208-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
    "feature": "minecraft:spring_lava_frozen",
    "dim": "overworld",
    "world": "overworld-s12345-c0_0-r10",
@@ -576,6 +775,39 @@
    "match_pct": 100.0,
    "chunks": 441,
    "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:spring_lava_frozen",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c180_-103-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:spring_open",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7929842,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 14,
+   "top": []
+  },
+  {
+   "feature": "minecraft:spring_water",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894770,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 11,
    "top": []
   }
  ]
