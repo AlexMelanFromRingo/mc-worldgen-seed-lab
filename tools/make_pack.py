@@ -4,6 +4,7 @@
     run/pack-<V>/data/minecraft/**       датапак игры (worldgen/*.json, structure/*.nbt, tags, loot_table …) из game jar
     run/pack-<V>/reports/blocks.json     все состояния блоков (id, свойства) — генератор данных игры `--reports`
     run/pack-<V>/reports/registries.json реестры (порядок биомов, блоков, …)
+    run/pack-<V>/reports/block_flags.json свойства состояний блоков (libmcgen/tests/g5_blockflags.py; нужен JDK)
     run/pack-<V>/version.json            world_version и т. п.
     run/assets-<V>/assets/minecraft/{blockstates,models,textures,font?}   ресурсы клиента (client jar)
 
@@ -42,6 +43,13 @@ def make(v, assets=True, force=False):
             if os.path.exists(f'{tmp}/reports/{f}'):
                 shutil.copy(f'{tmp}/reports/{f}', f'{out}/reports/{f}')
         shutil.rmtree(tmp, ignore_errors=True)
+        # свойства состояний блоков из настоящих классов игры (isSolid, replaceable, жидкость, sturdy, класс …) — нужны фичам libmcgen
+        bf = f'{ROOT}/libmcgen/tests/g5_blockflags.py'
+        if os.path.exists(bf):
+            try:
+                subprocess.run([sys.executable, bf, v, '--force'], check=True, stdout=subprocess.DEVNULL)
+            except Exception as e:                       # нужен JDK (javac); без файла libmcgen работает по эвристикам имён (G5 не гарантируется)
+                print(f'[{v}] ВНИМАНИЕ: block_flags.json не создан ({e})')
         blocks = json.load(open(f'{out}/reports/blocks.json'))
         nst = sum(len(b['states']) for b in blocks.values())
         open(stamp, 'w').write(f'{n} files, {len(blocks)} blocks, {nst} states\n')
