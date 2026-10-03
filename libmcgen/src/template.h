@@ -49,9 +49,11 @@ typedef struct TSettings {
     const BB *bounds;                /* StructurePlaceSettings.boundingBox: писать только внутри (NULL — без ограничения) */
     int waterlog;                    /* LiquidSettings.APPLY_WATERLOGGING */
     const Proc *const *procs; int nprocs;   /* процессоры в порядке применения */
-    int ignore_known_shape;          /* зарезервировано (knownShape всегда true у построек) */
+    int known_shape;                 /* StructurePlaceSettings.knownShape: 1 — без обновления форм после размещения (jigsaw-элементы); 0 (Java по умолчанию) — updateShapeAtEdge + updateFromNeighbourShapes */
+    RS *rnd;                         /* ГСЧ записи (placeInWorld(…, random, …)): nextLong() на каждый блок-контейнер с NBT (LootTableSeed); NULL — не тратить */
 } TSettings;
 static inline void tsettings_init(TSettings *s) { memset(s, 0, sizeof *s); s->waterlog = 1; }
+void structure_update_after_template(FCtx *fc, const int *placed, int n, int flags);   /* structure_post.c */
 
 /* StructureTemplate.placeInWorld(level, position, referencePos, settings, random, flags): блоки через fc_set (flags 2/18).
  * level_seed — для capped (ServerLevel.getSeed). Возвращает 1, если шаблон не пуст. */

@@ -109,7 +109,15 @@ def main():
                 if k not in ours:
                     continue
                 rp = [piece_key(x) for x in refk[k]['Children']]; op = [our_piece_key(x, rp[i] if i < len(rp) else None) for i, x in enumerate(ours[k]['pieces'])]
-                if rp == op:
+                def norm(l):      # части без шаблона (храмы, хижины, иглу, корабли…) в сохранённом NBT стоят после рисования — сдвинуты по y (ScatteredFeaturePiece.updateAverageGroundHeight); сравниваем размеры по y, а не абсолютные y
+                    out = []
+                    for q in l:
+                        q = dict(q)
+                        if 'pos' not in q and q['id'] not in ('minecraft:ruined_portal',):
+                            b = q['bb']; q['bb'] = [b[0], b[4] - b[1], b[2], b[3], 0, b[5]]
+                        out.append(q)
+                    return out
+                if rp == op or norm(rp) == norm(op):
                     full += 1
                 else:
                     part += 1

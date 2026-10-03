@@ -66,7 +66,6 @@ static int seq_place(FCtx *c, const void *cfg, int x, int y, int z) {
 static int simple_random_place(FCtx *c, const void *cfg, int x, int y, int z) {
     const SelCfg *s = cfg;
     int i = frnd_int_bound(c->rnd, s->n);
-    if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "simple_random n=%d pick=%d at %d %d %d\n", s->n, i, x, y, z);/*DBG*/
     return placed_place(c, s->pf[i], x, y, z, 0);
 }
 static void *random_sel_parse(FParse *p, const Js *cfg) {

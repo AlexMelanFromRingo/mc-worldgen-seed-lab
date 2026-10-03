@@ -170,6 +170,8 @@ struct GenCtx {
 /* ChunkGenerator.getBaseHeight / getFirstFreeHeight / getFirstOccupiedHeight (кэшируется) */
 int gen_first_free_height(GenCtx *c, int x, int z, int hm_type);
 static inline int gen_first_occupied_height(GenCtx *c, int x, int z, int hm_type) { return gen_first_free_height(c, x, z, hm_type) - 1; }
+/* ChunkGenerator.getBaseColumn(x, z): состояния колонки по заполнению шумом (без Beardifier) для y ∈ [*y0, *y0 + n); out — c->height элементов; возвращает n */
+int gen_base_column(GenCtx *c, int x, int z, int *out, int *y0);
 int gen_biome_quart(GenCtx *c, int qx, int qy, int qz);                          /* BiomeResolver.getNoiseBiome (id биома) */
 int gen_biome_valid(GenCtx *c, int qx, int qy, int qz);                          /* validBiome.test(getNoiseBiome) */
 int gen_could_exist_in_column(GenCtx *c, int bx, int bz, int min_y, int max_y);  /* Context.couldStructureExistInColumn */
@@ -252,6 +254,7 @@ void structure_free_refs(StStart **a);
 
 /* WorldGenRegion.getHeight(WORLD_SURFACE_WG | OCEAN_FLOOR_WG, x, z) 26.3+: «первая свободная» y по результату заполнения шумом чанка (кэшируется) */
 int structure_height_wg(McWorld *w, int type, int x, int z);
+int structure_height(FCtx *fc, int type, int x, int z);      /* level.getHeight для построек: WG-карты — снимок после terrain (structures_wg_snapshot), остальные — карты окна фич */
 
 /* перед каждым прогоном региона: вернуть части кэшированных стартов к исходному состоянию (ScatteredFeaturePiece.heightPosition и т. п.) */
 void structures_begin_region(McWorld *w);

@@ -17,7 +17,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--world', required=True); ap.add_argument('--version', default='26.3'); ap.add_argument('--only', default='')
     ap.add_argument('--top', type=int, default=25); ap.add_argument('--list', type=int, default=0); ap.add_argument('--stages', default='0x17')
-    ap.add_argument('--threads', type=int, default=0); ap.add_argument('--keep', default=''); ap.add_argument('--pp-margin', type=int, default=1); ap.add_argument('--margin', type=int, default=0)
+    ap.add_argument('--threads', type=int, default=0); ap.add_argument('--keep', default=''); ap.add_argument('--pp-margin', type=int, default=1); ap.add_argument('--margin', type=int, default=0); ap.add_argument('--stable', action='store_true', help='маска --stable-with по повторным мирам <мир>_rep1, _rep2')
     ap.add_argument('--cli', default=f'{ROOT}/libmcgen/build/mcgen-cli')
     a = ap.parse_args()
     wd = a.world.rstrip('/')
@@ -43,6 +43,8 @@ def main():
     js = out + '.json'
     dcmd = [sys.executable, f'{ROOT}/tools/gt/diff.py', '--ref', wd, '--mcr', out, '--json', js, '--margin', str(a.margin), '--dim', m['dim'].replace('the_', ''),
             '--version', a.version, '--top', str(max(a.top, 200)), '--list', str(a.list)]
+    if a.stable:
+        for rep in sorted(glob.glob(wd + '_rep*')): dcmd += ['--stable-with', rep]
     r = subprocess.run(dcmd, capture_output=True, text=True)
     if a.list: print(r.stdout[-6000:])
     d = json.load(open(js))

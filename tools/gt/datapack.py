@@ -135,6 +135,9 @@ def build(version, variant, out_dir):
     fset = set(json.load(open(f'{ROOT}/tools/gt/featuresets/{param}.json'))) if spec['features'] == 'only_list' else set()
     if spec['features'] == 'custom':
         cf = json.load(open(f'{ROOT}/tools/gt/custom/{param}.json'))
+        cfg = _rid(cf.get('feature') or cf['placed_feature']['feature'])
+        if not any(os.path.exists(f'{wg}/{d}/{cfg}.json') for d in ('feature', 'configured_feature')):
+            raise SystemExit(f'в {version} нет настроенной фичи {cfg} (custom:{param})')
         _dump(f'{dp}/placed_feature/gt_custom_{param}.json', cf['placed_feature'])
         summary['overrides']['custom'] = param
     # --- биомы: карверы и фичи ----------------------------------------------------------------------------------------------

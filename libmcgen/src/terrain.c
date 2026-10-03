@@ -338,6 +338,33 @@ int terrain_column_height_ctx(McWorld *w, TerrainCtx *t, int bx, int bz, int hm_
     return res;
 }
 
+/* NoiseBasedChunkGenerator.getBaseColumn: состояния колонки (bx, bz) по заполнению шумом (без Beardifier; жилы не применяются —
+ * они меняют только твёрдое на твёрдое) для y ∈ [*y0, *y0 + n); out — не меньше w->height элементов. Возвращает n. */
+int terrain_old_column_states(McWorld *w, void *octx, int bx, int bz, int *out, int *y0);    /* terrain_old.c (26.1/26.2) */
+int terrain_column_states_ctx(McWorld *w, TerrainCtx *t, int bx, int bz, int *out, int *y0) {
+    if (!w->g->newf) return terrain_old_column_states(w, t->old, bx, bz, out, y0);
+    int nmin = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
+    int ntop = w->ns->min_y + w->ns->height; if (ntop > w->min_y + w->height) ntop = w->min_y + w->height;
+    int nh = ntop - nmin;
+    *y0 = nmin;
+    if (nh <= 0) return 0;
+    SCtx *x = t->x;
+    sctx_reset_caches(x); sctx_set_beardifier(x, NULL);
+    Vol v = { 1, nh, 1, bx, nmin, bz, 1, 1, 1 };
+    Picker pk; terrain_picker(w, &pk.lava_level, &pk.sea_level);
+    pk.sea_type = w->def_fluid; pk.lava_type = w->g->st_lava;
+    Aq aq; aq_init(&aq, w, x, &v, &pk);
+    float *dens = sctx_acquire(x, vol_size(&v));
+    s_volume(x, w->s_rf[RF_FINAL_DENSITY], dens, &v);
+    for (int y = nh - 1; y >= 0; y--) {          /* сверху вниз, как iterateNoiseColumn */
+        int st = aq_substance(&aq, bx, nmin + y, bz, (double)dens[vol_idx(&v, 0, y, 0)]);
+        out[y] = st < 0 ? w->def_block : st;
+    }
+    sctx_release(x, dens);
+    aq_free(&aq);
+    return nh;
+}
+
 int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *blocks, char *err, size_t errlen) {
     const McGen *g = w->g;
     size_t tot = (size_t)w->height * 256;

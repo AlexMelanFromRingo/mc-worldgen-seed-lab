@@ -397,6 +397,7 @@ struct NChunk {
     WState *ws;
     int *interps; int ninterp;   /* wid интерполяторов в порядке создания */
     int *cells; int ncells;
+    const void *beard;           /* Beardifier чанка (structure.c) или NULL */
     /* кэш предварительной поверхности */
     u64 *ps_key; int *ps_val; u8 *ps_used; int ps_cap, ps_n;
 };
@@ -409,6 +410,7 @@ static inline int cbx(const OCtx *c) { return c->chunk ? c->nc->csx + c->nc->icx
 static inline int cby(const OCtx *c) { return c->chunk ? c->nc->csy + c->nc->icy : c->y; }
 static inline int cbz(const OCtx *c) { return c->chunk ? c->nc->csz + c->nc->icz : c->z; }
 
+double beard_value_d(const void *b, int x, int y, int z);   /* structure.c */
 static double oc(const ON *f, const OCtx *c);
 static void ofill(const ON *f, double *out, int n, NChunk *nc, int prov);
 
@@ -488,7 +490,8 @@ static double oc(const ON *f, const OCtx *c) {
         return r * fabs(old_normal_get(f->nn, cbx(c) / r, cby(c) / r, cbz(c) / r));
     }
     case DF_BLEND_ALPHA: return 1.0;
-    case DF_BLEND_OFFSET: case DF_BEARDIFIER: case W_BEARD: return 0.0;
+    case DF_BLEND_OFFSET: case DF_BEARDIFIER: return 0.0;
+    case W_BEARD: return (c->chunk && c->nc && c->nc->beard) ? beard_value_d(c->nc->beard, cbx(c), cby(c), cbz(c)) : 0.0;    /* Beardifier.compute (structure.c) */
     case DF_ABS: case DF_SQUARE: case DF_CUBE: case DF_HALF_NEGATIVE: case DF_QUARTER_NEGATIVE: case DF_RECIPROCAL: case DF_SQUEEZE:
         return mapped_tr(f->t, oc(f->a, c));
     case DF_CLAMP: return jm_clamp(oc(f->a, c), f->d0, f->d1);
@@ -643,7 +646,10 @@ static void ofill(const ON *f, double *out, int n, NChunk *nc, int prov) {
         s->lac = nc->aicounter;
         return;
     }
-    case W_BEARD: for (int i = 0; i < n; i++) out[i] = 0.0; return;
+    case W_BEARD:
+        if (!nc->beard) { for (int i = 0; i < n; i++) out[i] = 0.0; return; }
+        for (int i = 0; i < n; i++) { prov_for_index(nc, prov, i); out[i] = beard_value_d(nc->beard, cbx(&c), cby(&c), cbz(&c)); }
+        return;
     default: fill_directly(f, out, n, nc, prov); return;   /* SimpleFunction, Noise, Spline, FindTopSurface, FlatCache, CacheAllInCell … */
     }
 }
@@ -687,11 +693,13 @@ int nchunk_block_x(const NChunk *c) { return c->csx + c->icx; }
 int nchunk_block_y(const NChunk *c) { return c->csy + c->icy; }
 int nchunk_block_z(const NChunk *c) { return c->csz + c->icz; }
 
-void nchunk_begin(NChunk *c, int cminx, int cminz, int min_y, int height) {
+void nchunk_begin(NChunk *c, int cminx, int cminz, int min_y, int height) { nchunk_begin_cells(c, cminx, cminz, min_y, height, 0); }
+/* ccxz > 0 — число ячеек по XZ (NoiseChunk.forColumn: 1); 0 — на чанк (16 / cellWidth) */
+void nchunk_begin_cells(NChunk *c, int cminx, int cminz, int min_y, int height, int ccxz) {
     OldWire *o = c->o;
     const NoiseSettings *ns = o->w->ns;
     c->cw = ns->size_h << 2; c->ch = ns->size_v << 2;
-    c->ccxz = 16 / c->cw;
+    c->ccxz = ccxz > 0 ? ccxz : 16 / c->cw;
     c->ccy = jm_floordiv(height, c->ch);
     c->cell_min_y = jm_floordiv(min_y, c->ch);
     c->first_cx = jm_floordiv(cminx, c->cw); c->first_cz = jm_floordiv(cminz, c->cw);
@@ -785,6 +793,7 @@ void nchunk_swap_slices(NChunk *c) {
     for (int k = 0; k < c->ninterp; k++) { WInterp *ip = &c->ws[c->interps[k]].ip; double *t = ip->s0; ip->s0 = ip->s1; ip->s1 = t; }
 }
 void nchunk_stop(NChunk *c) { c->interpolating = 0; }
+void nchunk_set_beard(NChunk *c, const void *beard) { c->beard = beard; }
 double nchunk_full_density(NChunk *c) { OCtx x = { c, 1, 0, 0, 0 }; return oc(c->o->full, &x); }
 double nchunk_router_here(NChunk *c, int field) { OCtx x = { c, 1, 0, 0, 0 }; return oc(c->o->cw[field], &x); }
 double nchunk_router_point(NChunk *c, int field, int x, int y, int z) { OCtx p = { c, 0, x, y, z }; return oc(c->o->cw[field], &p); }

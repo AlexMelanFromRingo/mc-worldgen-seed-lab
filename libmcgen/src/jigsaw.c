@@ -316,9 +316,14 @@ static int elem_place(StCtx *c, PoolElem *e, int x, int y, int z, int rot, int r
     case PE_FEATURE: {
         FWorld *fw = features_world_get(w);
         if (!fw) return 1;
-        if (!e->feat) {
-            FParse fp; memset(&fp, 0, sizeof fp); fp.fw = fw; fp.g = w->g; fp.bs = fw->bs; fp.w = w; fp.version = fw->version; fp.newf = fw->newf;
-            e->feat = fp_placed(&fp, e->feature_js);
+        if (!e->feat) {          /* разбор фич W8 не потокобезопасен: под замком хранилища пулов */
+            JStore *js = jstore(w);
+            mutex_lock(js->lock);
+            if (!e->feat) {
+                FParse fp; memset(&fp, 0, sizeof fp); fp.fw = fw; fp.g = w->g; fp.bs = fw->bs; fp.w = w; fp.version = fw->version; fp.newf = fw->newf;
+                e->feat = fp_placed(&fp, e->feature_js);
+            }
+            mutex_unlock(js->lock);
         }
         if (!e->feat) return 1;
         FCtx fcc = *c->fc; fcc.fw = fw; fcc.rnd = &c->rs->f;          /* FeaturePoolElement: PlacedFeature.place(level, generator, random, pos) на ГСЧ структуры */
@@ -339,7 +344,7 @@ static int elem_place(StCtx *c, PoolElem *e, int x, int y, int z, int rot, int r
     if (e->proj == 1) procs[np++] = proc_gravity(w, HM_WORLD_SURFACE_WG, -1);
     if (e->kind == PE_LEGACY) procs[np++] = proc_builtin(w, PB_STRUCTURE_AND_AIR);
     TSettings s; tsettings_init(&s);
-    s.rot = rot; s.bounds = &c->chunk; s.procs = procs; s.nprocs = np;
+    s.rot = rot; s.bounds = &c->chunk; s.procs = procs; s.nprocs = np; s.rnd = c->rs; s.known_shape = 1;
     s.waterlog = e->liquid_override >= 0 ? e->liquid_override : liquid_apply;
     return template_place(c->fc, w, t, x, y, z, ref_x, ref_y, ref_z, &s, w->seeds.structures, 18);
 }

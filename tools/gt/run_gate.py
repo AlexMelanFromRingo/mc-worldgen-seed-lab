@@ -275,8 +275,8 @@ def main():
     body = '\n'.join(L)
     print('\n' + body)
     if not a.no_doc:
-        replace_section(a.accuracy, a.gate, body)
-        print(f'\nзаписано: {a.accuracy} (секция {a.gate})')
+        replace_section(a.accuracy, a.gate if a.version == '26.3' else f'{a.gate}@{a.version}', body)
+        print(f'\nзаписано: {a.accuracy} (секция {a.gate if a.version == "26.3" else a.gate + "@" + a.version})')
     sys.exit(2 if errors else (1 if any_fail else 0))
 
 

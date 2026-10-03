@@ -3,7 +3,7 @@
 
     python3 libmcgen/tests/g5_veg_probe.py <feature> <x> <y> <z> [--r 6] [--axis z|x] [--version 26.3] [--mcr файл.mcr] [--world <каталог эталона>]
 Печатает срез плоскостью (axis=z: по x горизонтально, по y вертикально, z фиксирован) эталона и дампа; символ — первая буква блока,
-расшифровка легенды ниже. Дамп по умолчанию — <scratch>/o_<feature>.mcr, который пишет dif.sh; можно указать свой --mcr.
+расшифровка легенды ниже. Дамп — --mcr (результат mcgen-cli --out).
 """
 import argparse, glob, json, os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,7 +38,8 @@ def main():
     wd = a.world or sorted(glob.glob(f'{ROOT}/run/gt/{a.version}/feature_minecraft_{fid}/*/'))[0].rstrip('/')
     m = json.load(open(f'{wd}/manifest.json'))
     ref = anvil.World(wd + '/world' if os.path.isdir(wd + '/world') else wd, m['dim'], a.version)
-    mcr = Mcr(a.mcr or glob.glob('/tmp/claude-*/*/*/scratchpad/o_' + fid + '.mcr')[0])
+    if not a.mcr: sys.exit('укажите --mcr <дамп libmcgen> (mcgen-cli --out файл.mcr)')
+    mcr = Mcr(a.mcr)
     legend = {}
 
     def cell(x, y, z):

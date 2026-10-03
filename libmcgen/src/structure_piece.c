@@ -132,8 +132,7 @@ void sp_fill_column_down(StCtx *c, const StPiece *p, int state, int x, int start
     while (sp_replaceable_by_structures(c, fc_get(c->fc, wx, wy, wz)) && wy > c->w->min_y + 1) { fc_set(c->fc, wx, wy, wz, state, 2); wy--; }
 }
 int sp_height(StCtx *c, int hm_type, int wx, int wz) {
-    if (c->w->g->newf && (hm_type == HM_WORLD_SURFACE_WG || hm_type == HM_OCEAN_FLOOR_WG)) return structure_height_wg(c->w, hm_type, wx, wz);
-    return fc_height(c->fc, hm_type, wx, wz);
+    return structure_height(c->fc, hm_type, wx, wz);
 }
 int sp_is_interior(StCtx *c, const StPiece *p, int x, int y, int z) {
     int wx = sp_wx(p, x, z), wy = sp_wy(p, y + 1), wz = sp_wz(p, x, z);

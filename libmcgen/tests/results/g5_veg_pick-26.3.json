@@ -1,0 +1,452 @@
+[
+ {
+  "feature": "minecraft:flower_default",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -705,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_swamp",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_cherry",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 63,
+  "cz": 543,
+  "radius": 10,
+  "share": 0.551,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_meadow",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 411,
+  "cz": 438,
+  "radius": 10,
+  "share": 0.776,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:wildflowers_meadow",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 411,
+  "cz": 438,
+  "radius": 10,
+  "share": 0.776,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:wildflowers_birch_forest",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 384,
+  "cz": 6,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_pale_garden",
+  "dim": "overworld",
+  "seed": -7048155917072976836,
+  "cx": 387,
+  "cz": 513,
+  "radius": 10,
+  "share": 0.347,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:pale_garden_flowers",
+  "dim": "overworld",
+  "seed": -7048155917072976836,
+  "cx": 387,
+  "cz": 513,
+  "radius": 10,
+  "share": 0.347,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_pumpkin",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -741,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 2
+ },
+ {
+  "feature": "minecraft:patch_sugar_cane",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -741,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_sugar_cane_swamp",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_sugar_cane_desert",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -264,
+  "cz": -681,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_sugar_cane_badlands",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 165,
+  "cz": -462,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_tall_grass",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 204,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_tall_grass_2",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -51,
+  "cz": -570,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_sunflower",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 354,
+  "cz": -21,
+  "radius": 10,
+  "share": 0.959,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_firefly_bush_near_water",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -741,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_firefly_bush_swamp",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_berry_rare",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -309,
+  "cz": 438,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_berry_common",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 612,
+  "cz": 381,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:brown_mushroom_normal",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -741,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:red_mushroom_normal",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -741,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:brown_mushroom_swamp",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_grass_badlands",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 423,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_grass_meadow",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 411,
+  "cz": 438,
+  "radius": 10,
+  "share": 0.776,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_leaf_litter",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 564,
+  "cz": 480,
+  "radius": 10,
+  "share": 1.0,
+  "k": 8
+ },
+ {
+  "feature": "minecraft:patch_red_shrub",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": 387,
+  "radius": 10,
+  "share": 0.98,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_dead_bush",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_dead_bush_2",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -264,
+  "cz": -681,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_dead_bush_badlands",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 165,
+  "cz": -462,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_cactus_decorated",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 165,
+  "cz": -462,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_large_fern",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 219,
+  "cz": -21,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_bush",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -108,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_waterlily",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 408,
+  "cz": -132,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_melon_sparse",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": -57,
+  "cz": -468,
+  "radius": 10,
+  "share": 0.98,
+  "k": 8
+ },
+ {
+  "feature": "minecraft:patch_grass_taiga_2",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 219,
+  "cz": -21,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_dry_grass_desert",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -264,
+  "cz": -681,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_dry_grass_badlands",
+  "dim": "overworld",
+  "seed": 8675309,
+  "cx": 165,
+  "cz": -462,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:forest_flowers",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": -9,
+  "cz": -669,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_warm",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 204,
+  "cz": -741,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:flower_flower_forest",
+  "dim": "overworld",
+  "seed": -7048155917072976836,
+  "cx": -738,
+  "cz": -243,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:bamboo_vegetation",
+  "dim": "overworld",
+  "seed": 12345,
+  "cx": 459,
+  "cz": 153,
+  "radius": 10,
+  "share": 0.939,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:patch_soul_fire",
+  "dim": "nether",
+  "seed": 12345,
+  "cx": -351,
+  "cz": -366,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:warped_forest_vegetation",
+  "dim": "nether",
+  "seed": 12345,
+  "cx": 213,
+  "cz": -219,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ },
+ {
+  "feature": "minecraft:crimson_forest_vegetation",
+  "dim": "nether",
+  "seed": 12345,
+  "cx": 156,
+  "cz": -354,
+  "radius": 10,
+  "share": 1.0,
+  "k": 4
+ }
+]

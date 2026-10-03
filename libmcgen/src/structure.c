@@ -348,6 +348,13 @@ int gen_first_free_height(GenCtx *c, int x, int z, int hm) {
     mutex_unlock(sw->lock);
     return v;
 }
+int terrain_column_states_ctx(McWorld *w, TerrainCtx *t, int bx, int bz, int *out, int *y0);    /* terrain.c */
+int gen_base_column(GenCtx *c, int x, int z, int *out, int *y0) {
+    TerrainCtx *tc = tc_get(c->sw);
+    int n = terrain_column_states_ctx(c->w, tc, x, z, out, y0);
+    tc_put(c->sw, tc);
+    return n;
+}
 int gen_biome_quart(GenCtx *c, int qx, int qy, int qz) { return world_biome_noise(c->w, qx, qy, qz); }
 int gen_biome_valid(GenCtx *c, int qx, int qy, int qz) { int b = world_biome_noise(c->w, qx, qy, qz); return b >= 0 && c->def->biome_ok[b]; }
 int gen_could_exist_in_column(GenCtx *c, int bx, int bz, int min_y, int max_y) {
@@ -408,6 +415,7 @@ static void create_structures(StructWorld *sw, int cx, int cz, ChunkStarts *out)
                 int choice = rs_bound(&r, total), idx = 0;
                 for (int i = 0; i < n; i++) { choice -= opt[i].weight; if (choice < 0) break; idx++; }
                 StructEntry sel = opt[idx];
+                if (!sel.def->type) break;           /* тип постройки не реализован: исход неизвестен — не подставляем другие структуры набора */
                 st = structure_generate(sw, sel.def, cx, cz);
                 if (st) break;
                 for (int i = idx; i < n - 1; i++) opt[i] = opt[i + 1];
@@ -520,7 +528,8 @@ void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int c
     if (nr == 0) { structure_free_refs(refs); return; }
     StCtx c; memset(&c, 0, sizeof c);
     c.w = w; c.sw = sw; c.fc = fc; c.cx = cx; c.cz = cz;
-    c.chunk = bb_make(cx * 16, w->min_y + 1, cz * 16, cx * 16 + 15, w->min_y + w->height - 1, cz * 16 + 15);
+    if (!fc->sbb_valid) { fc->sbb[0] = cx * 16; fc->sbb[1] = w->min_y + 1; fc->sbb[2] = cz * 16; fc->sbb[3] = cx * 16 + 15; fc->sbb[4] = w->min_y + w->height - 1; fc->sbb[5] = cz * 16 + 15; fc->sbb_valid = 1; }
+    c.chunk = bb_make(fc->sbb[0], fc->sbb[1], fc->sbb[2], fc->sbb[3], fc->sbb[4], fc->sbb[5]);       /* getWritableArea(chunk): общий объект на все шаги чанка */
     RS rs; rs.kind = 1; rs.f = *rnd; c.rs = &rs;
     for (int i = 0; i < sw->nstep_defs[step]; i++) {
         const StructDef *def = sw->step_defs[step][i];
@@ -532,6 +541,7 @@ void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int c
         int order[64]; if (m > 1) longset_order(keys, m, order); else order[0] = 0;
         for (int k = 0; k < m; k++) start_place_in_chunk(&c, cand[order[k]]);
     }
+    fc->sbb[0] = c.chunk.x0; fc->sbb[1] = c.chunk.y0; fc->sbb[2] = c.chunk.z0; fc->sbb[3] = c.chunk.x1; fc->sbb[4] = c.chunk.y1; fc->sbb[5] = c.chunk.z1;     /* расширения (encapsulate) сохраняются */
     *rnd = rs.f;
     structure_free_refs(refs);
 }
@@ -643,7 +653,49 @@ float beard_value(const Beard *b, int x, int y, int z) {
     kernel_init();
     return beard_sample(b, x, y, z);
 }
-double beard_value_d(const Beard *b, int x, int y, int z) { return (double)beard_value(b, x, y, z); }
+/* 26.1/26.2: Beardifier.compute — double-арифметика (ядро — float-массив, как в игре) */
+static double len_sq3d(double x, double y, double z) { return x * x + y * y + z * z; }
+static double bury_d(double dx, double dy, double dz) {
+    double d = sqrt(len_sq3d(dx, dy, dz));
+    double t = (d - 0.0) / (6.0 - 0.0);               /* Mth.clampedMap(d, 0, 6, 1, 0) */
+    return t < 0.0 ? 1.0 : (t > 1.0 ? 0.0 : 1.0 + t * (0.0 - 1.0));
+}
+static double beard_d(int dx, int dy, int dz, int y_to_ground) {
+    int xi = dx + 12, yi = dy + 12, zi = dz + 12;
+    if (xi < 0 || xi >= 24 || yi < 0 || yi >= 24 || zi < 0 || zi >= 24) return 0.0;
+    double dyo = (double)y_to_ground + 0.5, d2 = len_sq3d((double)dx, dyo, (double)dz);
+    double value = -dyo * fast_inv_sqrt(d2 / 2.0) / 2.0;
+    return value * (double)BEARD_KERNEL[zi * 24 * 24 + xi * 24 + yi];
+}
+double beard_value_d(const Beard *b, int bx, int by, int bz) {
+    if (!b || !b->has || !bb_inside(&b->affected, bx, by, bz)) return 0.0;
+    kernel_init();
+    double nv = 0.0;
+    for (int i = 0; i < b->nr; i++) {
+        const BRigid *r = &b->r[i]; const BB *bx_ = &r->box;
+        int ddx = bx_->x0 - bx; int t = bx - bx_->x1; if (t > ddx) ddx = t; if (ddx < 0) ddx = 0;
+        int ddz = bx_->z0 - bz; t = bz - bx_->z1; if (t > ddz) ddz = t; if (ddz < 0) ddz = 0;
+        int ground = bx_->y0 + r->gld, dy_ground = by - ground, dy;
+        switch (r->adapt) {
+        case TA_BURY: case TA_BEARD_THIN: dy = dy_ground; break;
+        case TA_BEARD_BOX: { int a = ground - by, c2 = by - bx_->y1; dy = a > c2 ? a : c2; if (dy < 0) dy = 0; break; }
+        case TA_ENCAPSULATE: { int a = bx_->y0 - by, c2 = by - bx_->y1; dy = a > c2 ? a : c2; if (dy < 0) dy = 0; break; }
+        default: dy = 0;
+        }
+        switch (r->adapt) {
+        case TA_BURY: nv += bury_d((double)ddx, (double)dy / 2.0, (double)ddz); break;
+        case TA_BEARD_THIN: case TA_BEARD_BOX: nv += beard_d(ddx, dy, ddz, dy_ground) * 0.8; break;
+        case TA_ENCAPSULATE: nv += bury_d((double)ddx / 2.0, (double)dy / 2.0, (double)ddz / 2.0) * 0.8; break;
+        default: break;
+        }
+    }
+    for (int i = 0; i < b->nj; i++) {
+        const JJunction *j = &b->j[i];
+        int dx = bx - j->sx, dy = by - j->sgy, dz = bz - j->sz;
+        nv += beard_d(dx, dy, dz, dy) * 0.4;
+    }
+    return nv;
+}
 void beard_volume(const Beard *b, float *out, const Vol *v) {
     int n = vol_size(v);
     for (int i = 0; i < n; i++) out[i] = 0.0f;
@@ -750,4 +802,30 @@ int mcgen_structure_piece_bb(McWorld *w, int cx, int cz, int index, int piece, i
     const BB *b = &st[index]->pieces[piece]->bb;
     bb[0] = b->x0; bb[1] = b->y0; bb[2] = b->z0; bb[3] = b->x1; bb[4] = b->y1; bb[5] = b->z1;
     return MCGEN_OK;
+}
+
+/* Снимок карт WG чанка сразу после terrain: в игре WORLD_SURFACE_WG/OCEAN_FLOOR_WG создаются в doFill, обновляются при записях поверхности и карверов
+ * (статус чанка во время terrain — biomes, у которого heightmapsAfter = WG-карты) и после статуса terrain больше не обновляются; постройки читают их
+ * через level.getHeight(...WG...) (gravity у terrain_matching, isInterior, …). */
+void structures_wg_snapshot(const BsTab *bs, FChunk *ch, int min_y, int height) {
+    if (ch->wg_snap) return;
+    i16 *m = xmalloc(512 * sizeof(i16));
+    for (int i = 0; i < 512; i++) m[i] = (i16)min_y;
+    static const int T[2] = { HM_WORLD_SURFACE_WG, HM_OCEAN_FLOOR_WG };
+    for (int k = 0; k < 2; k++) {
+        u8 done[256]; memset(done, 0, sizeof done); int left = 256;
+        for (int y = height - 1; y >= 0 && left; y--) {
+            const u16 *row = ch->blocks + (size_t)y * 256;
+            for (int i = 0; i < 256; i++) if (!done[i] && ((bs->hmcls[row[i]] >> T[k]) & 1)) { m[k * 256 + i] = (i16)(min_y + y + 1); done[i] = 1; left--; }
+        }
+    }
+    ch->wg_snap = m;
+}
+/* level.getHeight(type, x, z) для построек: WG-карты — снимок после terrain, остальные — карты окна фич */
+int structure_height(FCtx *fc, int type, int x, int z) {
+    if (type == HM_WORLD_SURFACE_WG || type == HM_OCEAN_FLOOR_WG) {
+        FChunk *ch = fc_chunk(fc, x, z);
+        if (ch && ch->wg_snap) return ch->wg_snap[(type == HM_OCEAN_FLOOR_WG ? 256 : 0) + (z & 15) * 16 + (x & 15)];
+    }
+    return fc_height(fc, type, x, z);
 }

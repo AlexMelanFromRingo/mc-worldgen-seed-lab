@@ -688,8 +688,7 @@ static void rl_push(RList *l, int x, int y, int z) {
 static int root_simulate(TreeRun *tr, int px, int py, int pz, int dir, int rx, int ry, int rz, RList *out, int layer) {
     const RootCfg *rc = tr->t->root; FRnd *r = tr->r;
     int maxlen = rc->max_length;
-    if (getenv("MCGEN_ROOT_DEBUG") && getenv("MCGEN_ROOT_DEBUG")[0]=='2') fprintf(stderr, "ROOTSIM layer=%d pos=%d,%d,%d block=%s\n", layer, px, py, pz, tr->c->bs->blk[blk_of(tr->c, fc_get(tr->c, px, py, pz))].name);
-    if (layer == maxlen || out->n > maxlen) { if (getenv("MCGEN_ROOT_DEBUG")) fprintf(stderr, "ROOTFAIL layer=%d n=%d at %d,%d,%d\n", layer, out->n, px, py, pz); return 0; }
+    if (layer == maxlen || out->n > maxlen) return 0;
     /* potentialRootPositions */
     int belowx = px, belowy = py - 1, belowz = pz;
     int nx = px + HZ_DX[dir], ny = py, nz = pz + HZ_DZ[dir];

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 /* ---------------------------------------------------------------- хранилище */
-typedef struct TStore { McMutex *lock; StrMap map; u16 *cache[3 * 4]; int n_cache_states; } TStore;
+typedef struct TStore { McMutex *lock; StrMap map; u16 *cache[3 * 4]; int n_cache_states; u8 *rc, *lbc; } TStore;
 void *templates_store_new(void) { TStore *s = xcalloc(1, sizeof *s); s->lock = mutex_new(); return s; }
 
 static void tpl_free(void *v) {
@@ -20,6 +20,7 @@ void templates_world_free(void *store) {
     TStore *s = store; if (!s) return;
     sm_free(&s->map, tpl_free);
     for (int i = 0; i < 12; i++) free(s->cache[i]);
+    free(s->rc); free(s->lbc);
     mutex_free(s->lock); free(s);
 }
 
@@ -359,13 +360,52 @@ int template_process(FCtx *fc, McWorld *w, const Template *t, int x, int y, int 
     return n;
 }
 
+/* instanceof LiquidBlockContainer: блоки со свойством waterlogged (SimpleWaterloggedBlock) + келп/морская трава */
+static const u8 *liquid_container_blocks(McWorld *w) {
+    TStore *s = store_of(w); const BsTab *bs = bs_get(w->g);
+    mutex_lock(s->lock);
+    if (!s->lbc) {
+        u8 *m = xcalloc((size_t)(bs->nblocks ? bs->nblocks : 1), 1);
+        for (int b = 0; b < bs->nblocks; b++) {
+            const BsBlock *bb = &bs->blk[b];
+            for (int p = 0; p < bb->nprops; p++) if (!strcmp(bb->pname[p], "waterlogged")) { m[b] = 1; break; }
+        }
+        static const char *K[] = { "minecraft:kelp", "minecraft:kelp_plant", "minecraft:seagrass", "minecraft:tall_seagrass", NULL };
+        for (int k = 0; K[k]; k++) { int b = bs_block_index(bs, K[k]); if (b >= 0) m[b] = 1; }
+        s->lbc = m;
+    }
+    const u8 *r = s->lbc;
+    mutex_unlock(s->lock);
+    return r;
+}
+/* блок-сущность — RandomizableContainer (ChestBlockEntity, BarrelBlockEntity, DispenserBlockEntity, HopperBlockEntity, ShulkerBoxBlockEntity, CrafterBlockEntity, DecoratedPotBlockEntity) */
+static const u8 *randomizable_blocks(McWorld *w) {
+    TStore *s = store_of(w); const BsTab *bs = bs_get(w->g);
+    mutex_lock(s->lock);
+    if (!s->rc) {
+        u8 *m = xcalloc((size_t)(bs->nblocks ? bs->nblocks : 1), 1);
+        static const char *C[] = { "ChestBlock", "BarrelBlock", "DispenserBlock", "HopperBlock", "ShulkerBoxBlock", "CrafterBlock", "DecoratedPotBlock", NULL };
+        for (int b = 0; b < bs->nblocks; b++) {
+            const BsBlock *bb = &bs->blk[b]; if (!bb->chain) continue;
+            for (int k = 0; C[k]; k++) { char key[64]; snprintf(key, sizeof key, "|%s|", C[k]); if (strstr(bb->chain, key)) { m[b] = 1; break; } }
+        }
+        s->rc = m;
+    }
+    const u8 *r = s->rc;
+    mutex_unlock(s->lock);
+    return r;
+}
+
 int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z, int rx, int ry, int rz,
                    const TSettings *s, i64 level_seed, int flags) {
     const BsTab *bs = bs_get(w->g);
+    const u8 *rand_blk = s->rnd ? randomizable_blocks(w) : NULL;
+    const u8 *lbc = liquid_container_blocks(w);
     const TPal *pal = tpl_palette_at(t, x, y, z);
     if (!pal || pal->nb == 0 || t->sx < 1 || t->sy < 1 || t->sz < 1) return 0;
     TInfo *list = NULL;
     int n = template_process(fc, w, t, x, y, z, rx, ry, rz, s, level_seed, &list, NULL);
+    int *placed = s->known_shape ? NULL : xmalloc((size_t)(n ? n : 1) * 3 * sizeof(int)); int nplaced = 0;
     /* места, где жидкость была до записи → waterlogging */
     int *tofill = NULL, nfill = 0; int *locked = NULL, nlocked = 0;
     if (s->waterlog) { tofill = xmalloc((size_t)(n ? n : 1) * 3 * sizeof(int)); locked = xmalloc((size_t)(n ? n : 1) * 3 * sizeof(int)); }
@@ -376,21 +416,22 @@ int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z,
         if (s->waterlog) prev = bs->fluid[fc_get(fc, b->x, b->y, b->z)];
         int st = bsx_rotate(bs, bsx_mirror(bs, b->state, s->mir), s->rot);
         if (!fc_set(fc, b->x, b->y, b->z, st, flags)) continue;
+        if (placed) { placed[3 * nplaced] = b->x; placed[3 * nplaced + 1] = b->y; placed[3 * nplaced + 2] = b->z; nplaced++; }
+        if (rand_blk && b->nbt && rand_blk[w->g->state_block[st]]) (void)rs_long(s->rnd);       /* blockInfo.nbt.putLong("LootTableSeed", random.nextLong()) */
         if (s->waterlog) {
             int nf = bs->fluid[st];
             if (BS_FL_TYPE(nf) != FL_NONE && BS_FL_SOURCE(nf)) { locked[nlocked * 3] = b->x; locked[nlocked * 3 + 1] = b->y; locked[nlocked * 3 + 2] = b->z; nlocked++; }
-            else {
+            else if (lbc[w->g->state_block[st]]) {          /* instanceof LiquidBlockContainer: placeLiquid(level, pos, state, previousFluidState) */
                 const char *wv;
-                if (bs_get_prop(bs, st, "waterlogged", &wv) && !strcmp(wv, "false") && BS_FL_TYPE(prev) == FL_WATER && BS_FL_SOURCE(prev)) {
+                if (bs_get_prop(bs, st, "waterlogged", &wv) && !strcmp(wv, "false") && BS_FL_TYPE(prev) == FL_WATER) {
                     int ns = bs_with(bs, st, "waterlogged", "true");
                     if (ns >= 0) fc_set(fc, b->x, b->y, b->z, ns, 3);
-                } else if (bs_get_prop(bs, st, "waterlogged", &wv) && !strcmp(wv, "false") && BS_FL_TYPE(prev) != FL_NONE && !BS_FL_SOURCE(prev)) {
-                    tofill[nfill * 3] = b->x; tofill[nfill * 3 + 1] = b->y; tofill[nfill * 3 + 2] = b->z; nfill++;
                 }
+                if (!(BS_FL_TYPE(prev) != FL_NONE && BS_FL_SOURCE(prev))) { tofill[nfill * 3] = b->x; tofill[nfill * 3 + 1] = b->y; tofill[nfill * 3 + 2] = b->z; nfill++; }   /* previousFluidState не источник (в т. ч. пусто) */
             }
         }
     }
-    /* проток воды из соседних источников в ещё не заполненные (редкий случай: течёт вода) */
+    /* заливка: соседи UP, NORTH, EAST, SOUTH, WEST; первый источник (любой жидкости), не входящий в lockedFluids; элемент снимается при любом найденном источнике */
     if (nfill) {
         static const int D[5][3] = { {0,1,0}, {0,0,-1}, {1,0,0}, {0,0,1}, {-1,0,0} };
         int filled = 1;
@@ -398,23 +439,31 @@ int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z,
             filled = 0;
             for (int i = 0; i < nfill;) {
                 int px = tofill[i * 3], py = tofill[i * 3 + 1], pz = tofill[i * 3 + 2];
-                int fl = bs->fluid[fc_get(fc, px, py, pz)]; int src = BS_FL_SOURCE(fl) && BS_FL_TYPE(fl) != FL_NONE;
+                int fl = bs->fluid[fc_get(fc, px, py, pz)];
+                int src = BS_FL_TYPE(fl) != FL_NONE && BS_FL_SOURCE(fl), stype = src ? BS_FL_TYPE(fl) : FL_NONE;
                 for (int d = 0; d < 5 && !src; d++) {
                     int nx = px + D[d][0], ny = py + D[d][1], nz = pz + D[d][2];
                     int nf = bs->fluid[fc_get(fc, nx, ny, nz)];
-                    if (BS_FL_TYPE(nf) == FL_WATER && BS_FL_SOURCE(nf)) {
+                    if (BS_FL_TYPE(nf) != FL_NONE && BS_FL_SOURCE(nf)) {
                         int lk = 0; for (int k = 0; k < nlocked; k++) if (locked[k * 3] == nx && locked[k * 3 + 1] == ny && locked[k * 3 + 2] == nz) { lk = 1; break; }
-                        if (!lk) src = 1;
+                        if (!lk) { src = 1; stype = BS_FL_TYPE(nf); }
                     }
                 }
                 if (src) {
                     int st = fc_get(fc, px, py, pz); const char *wv;
-                    if (bs_get_prop(bs, st, "waterlogged", &wv) && !strcmp(wv, "false")) { int ns = bs_with(bs, st, "waterlogged", "true"); if (ns >= 0) fc_set(fc, px, py, pz, ns, 3); filled = 1; tofill[i * 3] = tofill[(nfill - 1) * 3]; tofill[i * 3 + 1] = tofill[(nfill - 1) * 3 + 1]; tofill[i * 3 + 2] = tofill[(nfill - 1) * 3 + 2]; nfill--; continue; }
+                    if (lbc[w->g->state_block[st]]) {
+                        if (stype == FL_WATER && bs_get_prop(bs, st, "waterlogged", &wv) && !strcmp(wv, "false")) { int ns = bs_with(bs, st, "waterlogged", "true"); if (ns >= 0) fc_set(fc, px, py, pz, ns, 3); }
+                        filled = 1;
+                        memmove(&tofill[i * 3], &tofill[(i + 1) * 3], (size_t)(nfill - i - 1) * 3 * sizeof(int)); nfill--;
+                        continue;
+                    }
                 }
                 i++;
             }
         }
     }
+    if (placed && nplaced) structure_update_after_template(fc, placed, nplaced, flags);
+    free(placed);
     free(list); free(tofill); free(locked);
     return 1;
 }

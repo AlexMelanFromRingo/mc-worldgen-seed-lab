@@ -352,9 +352,10 @@ int proc_block(const Proc *p, PEnv *e, const TInfo *orig, TInfo *cur) {
         cur->state = st; cur->nbt = NULL; return 1;
     }
     case PK_GRAVITY: {
-        int h;
-        if (e->w->g->newf && (p->hm == HM_WORLD_SURFACE_WG || p->hm == HM_OCEAN_FLOOR_WG)) h = structure_height_wg(e->w, p->hm, cur->x, cur->z) + p->offset;   /* карты WG: результат заполнения шумом */
-        else h = e->fc ? fc_height(e->fc, p->hm, cur->x, cur->z) + p->offset : p->offset;
+        int h;       /* level.getHeight(WORLD_SURFACE_WG…): карты окна фич W8 (WG-карты 26.3 праймятся при первом запросе); без окна — по заполнению шумом */
+        if (e->fc) h = structure_height(e->fc, p->hm, cur->x, cur->z) + p->offset;
+        else if (e->w->g->newf && (p->hm == HM_WORLD_SURFACE_WG || p->hm == HM_OCEAN_FLOOR_WG)) h = structure_height_wg(e->w, p->hm, cur->x, cur->z) + p->offset;
+        else h = p->offset;
         cur->y = h + orig->y;
         return 1;
     }

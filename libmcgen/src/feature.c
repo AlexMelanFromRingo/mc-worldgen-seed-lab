@@ -235,7 +235,7 @@ void features_get_stats(FeatStats *out) { *out = g_stats; }
 
 static void decorate_chunk(FCtx *c, int cx, int cz) {
     FWorld *fw = c->fw; McWorld *w = c->w;
-    c->ccx = cx; c->ccz = cz; c->n_chunks++; c->region_rnd_ready = 0;
+    c->ccx = cx; c->ccz = cz; c->n_chunks++; c->sbb_valid = 0; c->region_rnd_ready = 0;
     FRnd rnd; memset(&rnd, 0, sizeof rnd); c->rnd = &rnd;
     int ox = cx * 16, oz = cz * 16, oy = c->min_y;
     i64 seed = w->seeds.features;
@@ -316,6 +316,7 @@ static void prime_worker(void *arg) {
         if (i >= j->n) break;
         FChunk *ch = j->list[i]; FCtx *c = j->c;
         fchunk_prime_final(c->g, c->bs, ch, c->min_y, c->height, c->lazy_wg);
+        if (c->w->struct_on) structures_wg_snapshot(c->bs, ch, c->min_y, c->height);
         int H4 = (c->height / 4) * 16;
         for (int k = 0; k < H4; k++) { int b = ch->biomes[k]; ch->bio_mask[b >> 3] |= (u8)(1 << (b & 7)); }
     }
@@ -344,7 +345,9 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     double t0 = now_sec();
     McRegionInfo info; mcgen_region_info(r, &info);
     uint32_t stages = region_stages(r);
-    int gx0 = info.cx0 - 2, gz0 = info.cz0 - 2, gnx = info.nx + 4, gnz = info.nz + 4;
+    /* кольцо декорации (чанки вне региона, фичи которых заходят в регион): по умолчанию 1; MCGEN_FEATURES_RING=N — N (игра декорирует ещё r+2, r+3: каскад порядка у края) */
+    int ring = 1; { const char *e = getenv("MCGEN_FEATURES_RING"); if (e && *e) ring = atoi(e); if (ring < 1) ring = 1; if (ring > 6) ring = 6; }
+    int gx0 = info.cx0 - ring - 1, gz0 = info.cz0 - ring - 1, gnx = info.nx + 2 * ring + 2, gnz = info.nz + 2 * ring + 2;
     size_t H = (size_t)w->height;
     FChunk *chunks = xcalloc((size_t)gnx * gnz, sizeof(FChunk));
     FChunk **grid = xcalloc((size_t)gnx * gnz, sizeof(FChunk *));
@@ -398,10 +401,10 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         mutex_free(pj.lock);
         /* декорация: чанки региона и кольцо вокруг него (их фичи заходят в регион); порядок — как у forceload (x внешний, z внутренний), параллельно волнами.
          * MCGEN_FEATURES_SEQ=<xz|zx|zx-|xz-|ring|xzw> — последовательный обход другим порядком (эксперимент). */
-        int total = (info.nx + 2) * (info.nz + 2);
+        int total = (info.nx + 2 * ring) * (info.nz + 2 * ring);
         double t_dec0 = now_sec();
         DecJob dj; memset(&dj, 0, sizeof dj);
-        dj.c = &c; dj.lock = mutex_new(); dj.cx0 = info.cx0 - 1; dj.cz0 = info.cz0 - 1; dj.nx = info.nx + 2; dj.nz = info.nz + 2;
+        dj.c = &c; dj.lock = mutex_new(); dj.cx0 = info.cx0 - ring; dj.cz0 = info.cz0 - ring; dj.nx = info.nx + 2 * ring; dj.nz = info.nz + 2 * ring;
         int seq = getenv("MCGEN_FEATURES_SEQ") != NULL;
         if (seq) {
             const char *ord = getenv("MCGEN_FEATURES_SEQ"); if (!ord || !*ord) ord = "xz";           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
@@ -462,10 +465,10 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         mutex_free(dj.lock); (void)total;
         g_dec_secs = now_sec() - t_dec0;
     }
-    for (int i = 0; i < gnx * gnz; i++) if (!chunks[i].marks) { free(chunks[i].blocks); free(chunks[i].biomes); }
+    for (int i = 0; i < gnx * gnz; i++) { free(chunks[i].wg_snap); if (!chunks[i].marks) { free(chunks[i].blocks); free(chunks[i].biomes); } }
     free(chunks); free(grid);
     g_stats.secs += now_sec() - t0;
-    if (fw && fw->debug) fprintf(stderr, "\nlibmcgen: FEATURES: чанков декорировано %d, всего %.2f с (из них декорация %.2f с = %.0f чанков/с, остальное — кольца и карты высот), вызовов placed_feature %ld\n", (info.nx + 2) * (info.nz + 2), now_sec() - t0, g_dec_secs, (info.nx + 2) * (info.nz + 2) / (g_dec_secs > 0 ? g_dec_secs : 1e-9), g_stats.placed_calls);
+    if (fw && fw->debug) fprintf(stderr, "\nlibmcgen: FEATURES: чанков декорировано %d, всего %.2f с (из них декорация %.2f с = %.0f чанков/с, остальное — кольца и карты высот), вызовов placed_feature %ld\n", (info.nx + 2 * ring) * (info.nz + 2 * ring), now_sec() - t0, g_dec_secs, (info.nx + 2 * ring) * (info.nz + 2 * ring) / (g_dec_secs > 0 ? g_dec_secs : 1e-9), g_stats.placed_calls);
     if (rc) { set_err(err, errlen, "%s", e); return rc; }
     return 0;
 }

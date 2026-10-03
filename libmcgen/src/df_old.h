@@ -25,6 +25,7 @@ NChunk *nchunk_new(OldWire *o);                     /* состояние обё
 void nchunk_free(NChunk *c);
 /* начать чанк (cellCountXZ = 16 / cellWidth): заполняет плоские кэши */
 void nchunk_begin(NChunk *c, int chunk_min_x, int chunk_min_z, int min_y, int height);
+void nchunk_begin_cells(NChunk *c, int chunk_min_x, int chunk_min_z, int min_y, int height, int cells_xz);   /* cells_xz: 1 — столбец (NoiseChunk.forColumn) */
 int nchunk_cell_width(const NChunk *c);
 int nchunk_cell_height(const NChunk *c);
 void nchunk_init_first_cell_x(NChunk *c);
@@ -35,6 +36,7 @@ void nchunk_update_x(NChunk *c, int pos_x, double fx);
 void nchunk_update_z(NChunk *c, int pos_z, double fz);
 void nchunk_swap_slices(NChunk *c);
 void nchunk_stop(NChunk *c);
+void nchunk_set_beard(NChunk *c, const void *beard);   /* Beardifier чанка для W_BEARD (NULL — ноль) */
 /* значения в текущей позиции интерполяции (контекст = NoiseChunk) */
 double nchunk_full_density(NChunk *c);              /* cache_all_in_cell(add(final_density, beardifier)) */
 double nchunk_router_here(NChunk *c, int field);   /* поле обёрнутого роутера в текущей позиции */

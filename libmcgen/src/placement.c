@@ -142,7 +142,12 @@ static int find_on_ground(FCtx *c, int x, int ystart, int z, int layer_to_place)
 static void pm_run(FCtx *c, const PMod *m, int x, int y, int z, PlcVec *out, const Placed *top, int *rejected_biome);
 
 static int placed_run(FCtx *c, const Placed *pf, int idx, int x, int y, int z, int biome_check) {
-    if (idx == pf->nmods) return feat_place(c, pf->feat, x, y, z);
+    if (idx == pf->nmods) {
+        static int att = -1; if (att < 0) att = getenv("MCGEN_TRACE_ATT") != NULL;
+        int rr = feat_place(c, pf->feat, x, y, z);
+        if (att) fprintf(stderr, "ATT chunk(%d,%d) %s (%d,%d,%d) -> %d\n", c->ccx, c->ccz, pf->id ? pf->id : "?", x, y, z, rr);
+        return rr;
+    }
     PlcVec out; plc_init(&out);
     int dummy = 0;
     pm_run(c, pf->mods[idx], x, y, z, &out, biome_check ? pf : NULL, &dummy);
@@ -237,7 +242,6 @@ static void pm_run(FCtx *c, const PMod *m, int x, int y, int z, PlcVec *out, con
     case PM_RANDOMLY: { int k = frnd_int_bound(r, m->nsub); pm_run(c, m->sub[k], x, y, z, out, top, unused); break; }
     case PM_CUBOID: {
         int height = intprov_sample(m->iy, r); int width = intprov_sample(m->ix, r); int length = intprov_sample(m->ix, r);
-        if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "cuboid origin %d %d %d size %d %d %d chunk %d %d\n", x, y, z, width, height, length, c->ccx, c->ccz);/*DBG*/
         for (int dx = 0; dx <= width; dx++) for (int dy = 0; dy <= height; dy++) for (int dz = 0; dz <= length; dz++) {
             if ((m->inc_edges || (dx != 0 && dx != width) || (dy != 0 && dy != height)) &&
                 (m->inc_edges || (dz != 0 && dz != length) || (dy != 0 && dy != height)) &&

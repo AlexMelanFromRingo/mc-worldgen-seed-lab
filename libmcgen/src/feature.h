@@ -77,7 +77,10 @@ typedef struct FChunk {
     u8 hm_has;                   /* биты праймированных карт */
     PPMarks *marks;              /* пометки пост-обработки (NULL у внешних колец) */
     u8 bio_mask[32];             /* биомы, присутствующие в чанке (256 бит) */
+    i16 *wg_snap;                /* [2][256]: WORLD_SURFACE_WG, OCEAN_FLOOR_WG сразу после terrain (до декорации) — для построек (structure.c); NULL — не снято */
 } FChunk;
+
+void structures_wg_snapshot(const BsTab *bs, FChunk *ch, int min_y, int height);   /* structure.c: снять карты WG чанка (вызывает feature.c при включённой стадии STRUCTURES) */
 
 struct FCtx {
     McWorld *w; const McGen *g; const BsTab *bs; FWorld *fw;
@@ -90,6 +93,7 @@ struct FCtx {
     int st_air, st_cave_air, st_void_air, st_water, st_lava, bedrock_blk, plains;
     int fail;
     int no_features;                              /* стадия FEATURES не запрошена: только постройки (structures_decorate_step) */
+    int sbb_valid, sbb[6];                        /* writableArea чанка (BoundingBox) — один объект на все шаги декорации чанка; постройки могут расширять его (structure.c) */
     long n_chunks, n_calls, n_skipped;            /* счётчики потока */
     Rnd region_rnd; int region_rnd_ready;         /* WorldGenRegion.getRandom() (см. fc_region_random): создаётся лениво, сбрасывается в начале чанка */
 };

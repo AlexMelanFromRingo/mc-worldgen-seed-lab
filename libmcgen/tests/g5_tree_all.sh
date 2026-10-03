@@ -6,9 +6,10 @@ MARGINS=${@:-0 1}
 for f in $FEATS; do
   for w in $R/run/gt/${V:-26.3}/feature_minecraft_$f/*/; do
     [ -f $w/manifest.json ] || continue
+    case "$w" in *_rep*) continue;; esac
     out="$f"
     for m in $MARGINS; do
-      r=$(python3 $R/libmcgen/tests/g5_tree_set.py --world $w --only minecraft:$f --version ${V:-26.3} --margin $m --top 0 2>&1 | grep "^сравнено" | sed 's/сравнено //; s/  расхождений/ mism/')
+      r=$(python3 $R/libmcgen/tests/g5_tree_set.py --world $w --only minecraft:$f --version ${V:-26.3} --margin $m --top 0 ${STABLE:+--stable} 2>&1 | grep "^сравнено" | sed 's/сравнено //; s/  расхождений/ mism/')
       out="$out | m$m: $r"
     done
     echo "$out"

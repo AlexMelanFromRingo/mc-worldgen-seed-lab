@@ -64,14 +64,13 @@ static int hm_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     int th = frnd_int_bound(r, 3) + 4;
     if (frnd_int_bound(r, 12) == 0) th *= 2;
     int maxy = c->min_y + c->height - 1;
-    int dbg = getenv("MCGEN_MUSH_DEBUG") != NULL;
     if (!(oy >= c->min_y + 1 && oy + th + 1 <= maxy)) return 0;
-    if (!bpred_test(c, h->can_place_on, ox, oy - 1, oz)) { if (dbg) fprintf(stderr, "MUSH canplace fail at %d,%d,%d below=%s\n", ox, oy, oz, c->bs->blk[blk_of(c, fc_get(c, ox, oy - 1, oz))].name); return 0; }
+    if (!bpred_test(c, h->can_place_on, ox, oy - 1, oz)) return 0;
     for (int dy = 0; dy <= th; dy++) {
         int R = hm_radius_for_height(h, dy);
         for (int dx = -R; dx <= R; dx++) for (int dz = -R; dz <= R; dz++) {
             int st = fc_get(c, ox + dx, oy + dy, oz + dz);
-            if (!fc_is_air(c, st) && !h->leaves[blk_of(c, st)]) { if (dbg) fprintf(stderr, "MUSH blocked at %d,%d,%d by %s (origin %d,%d,%d h=%d)\n", ox + dx, oy + dy, oz + dz, c->bs->blk[blk_of(c, st)].name, ox, oy, oz, th); return 0; }
+            if (!fc_is_air(c, st) && !h->leaves[blk_of(c, st)]) return 0;
         }
     }
     if (h->red) hm_cap_red(c, h, ox, oy, oz, th); else hm_cap_brown(c, h, ox, oy, oz, th);
@@ -206,7 +205,7 @@ static int rs_space_for_tree(FCtx *c, const RootSys *r, int x, int y, int z) {
         if (fc_is_air(c, st)) continue;
         if (!(i + 1 <= r->allowed_water && rs_is_water_fluid(c, st))) return 0;
     }
-    if (r->level_dist > 0) {
+    if (c->g->version >= V26_2 && r->level_dist > 0) {                  /* проверка уровня — с 26.2 */
         static const int DX[4] = { 0, -1, 0, 1 }, DZ[4] = { 1, 0, -1, 0 };           /* Direction.from2DDataValue: SOUTH, WEST, NORTH, EAST */
         for (int i = 0; i < 4; i++) {
             int cx = x + DX[i] * r->level_dist, cz = z + DZ[i] * r->level_dist;
@@ -222,7 +221,7 @@ static int rs_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     int wy = oy, ok = 0, y = 0;
     for (y = 0; y < r->col_max; y++) {
         wy++;
-        if (fc_height(c, HM_WORLD_SURFACE, ox, oz) < wy) break;
+        if (c->g->version >= V26_2 && fc_height(c, HM_WORLD_SURFACE, ox, oz) < wy) break;        /* проверка высоты — с 26.2 */
         if (bpred_test(c, r->allowed_pos, ox, wy, oz) && rs_space_for_tree(c, r, ox, wy, oz)) {
             int below = fc_get(c, ox, wy - 1, oz);
             int ft = BS_FL_TYPE(c->bs->fluid[below]);
@@ -265,6 +264,10 @@ static const FeatType T_HRED = { "minecraft:huge_red_mushroom", hm_parse_red, hm
 static const FeatType T_HBROWN = { "minecraft:huge_brown_mushroom", hm_parse_brown, hm_place };
 static const FeatType T_FUNGUS = { "minecraft:huge_fungus", hf_parse, hf_place };
 static const FeatType T_ROOTSYS = { "minecraft:root_system", rs_parse, rs_place };
+/* huge_fungus и root_system независимо написаны и в feature_veg.c (W10): результаты побитово совпали (crimson_fungi, warped_fungi, rooted_azalea_tree — одинаковые
+ * числа расхождений). Регистрируются как запасные, только если W10 их не зарегистрировал (первый зарегистрированный тип побеждает). */
 void feature_register_mushroom(void) {
-    feature_register_type(&T_HRED); feature_register_type(&T_HBROWN); feature_register_type(&T_FUNGUS); feature_register_type(&T_ROOTSYS);
+    feature_register_type(&T_HRED); feature_register_type(&T_HBROWN);
+    if (!feature_find_type("minecraft:huge_fungus")) feature_register_type(&T_FUNGUS);
+    if (!feature_find_type("minecraft:root_system")) feature_register_type(&T_ROOTSYS);
 }

@@ -16,6 +16,31 @@ typedef struct IGData { const Template *t; int loc, rot; int tx, ty, tz; } IGDat
 
 static void ig_free(void *v) { free(v); }
 
+/* StructureTemplate.placeInWorld без knownShape: updateShapeAtEdge вызывает updateShape у соседей по краю размещённого объёма. У иглу единственное
+ * заметное следствие — SnowyDirtBlock под нижним слоем (grass_block/podzol/mycelium: snowy = блок сверху в теге #snow). Остальные классы
+ * (заборы, решётки, лестницы-ladder, факелы) обрабатываются отметками SHAPE_CHECK_BLOCKS (structure_post.c); писать можно только в свой чанк. */
+static void ig_update_edges(StCtx *c, const IGData *d, const TSettings *s, int ty, int rx, int ry, int rz) {
+    TInfo *list = NULL;
+    int n = template_process(c->fc, c->w, d->t, d->tx, ty, d->tz, rx, ry, rz, s, c->w->seeds.structures, &list, NULL);
+    const BsTab *bs = c->sw->bs; const McGen *g = c->w->g;
+    const u8 *snow = gen_block_tag(g, "minecraft:snow");
+    for (int i = 0; i < n; i++) {
+        const TInfo *b = &list[i];
+        if (!bb_inside(&c->chunk, b->x, b->y, b->z)) continue;
+        int bx = b->x, by = b->y - 1, bz = b->z;                       /* сосед снизу (направление UP от него к размещённому блоку) */
+        int inside = 0;
+        for (int k = 0; k < n && !inside; k++) inside = list[k].x == bx && list[k].y == by && list[k].z == bz;
+        if (inside || !bb_inside(&c->chunk, bx, by, bz)) continue;
+        int nst = sp_get_world(c, bx, by, bz);
+        const char *v;
+        if (!bs_get_prop(bs, nst, "snowy", &v)) continue;
+        int want = snow && snow[g->state_block[b->state]];
+        int ns = bs_with(bs, nst, "snowy", want ? "true" : "false");
+        if (ns >= 0 && ns != nst) sp_set_world(c, bx, by, bz, ns);
+    }
+    free(list);
+}
+
 static void ig_post(StCtx *c, StPiece *p, int rx, int ry, int rz) {
     IGData *d = p->data;
     McWorld *w = c->w;
@@ -32,6 +57,7 @@ static void ig_post(StCtx *c, StPiece *p, int rx, int ry, int rz) {
     s.rot = d->rot; s.mir = MIR_NONE; s.px = px; s.pz = pz; s.bounds = &c->chunk; s.procs = procs; s.nprocs = 1;
     s.waterlog = 0;                                                        /* LiquidSettings.IGNORE_WATERLOGGING */
     if (template_place(c->fc, w, d->t, d->tx, ty, d->tz, rx, ry, rz, &s, w->seeds.structures, 2)) {
+        ig_update_edges(c, d, &s, ty, rx, ry, rz);
         const TPal *pal = tpl_palette_at(d->t, d->tx, ty, d->tz);
         static _Thread_local const BsTab *kb; static _Thread_local int sblock, chest;
         const BsTab *bs = c->sw->bs;

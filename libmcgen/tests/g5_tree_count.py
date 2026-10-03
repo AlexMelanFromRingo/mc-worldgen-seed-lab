@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Счётчики блоков по подстрокам имён: эталон против нашего дампа. g5_tree_count.py <мир> <наш.mcr> <подстрока>[,<подстрока>…]  (margin 1 чанк)"""
+"""Счётчики блоков по подстрокам имён: эталон против нашего дампа (.mcr) или повторного мира (каталог). g5_tree_count.py <мир> <наш.mcr|мир2> <подстрока>[,…]  (margin 1 чанк)"""
 import sys, json, os, collections
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../tools/gt'))
 import anvil, mcr, numpy as np
 wd = sys.argv[1].rstrip('/'); path = sys.argv[2]; words = sys.argv[3].split(',')
 m = json.load(open(wd + '/manifest.json')); dim = m['dim'].replace('the_', '')
-w = anvil.World(wd + '/world', dim, '26.3'); mc = mcr.Mcr(path)
+w = anvil.World(wd + '/world', dim, '26.3')
+w2 = anvil.World(path.rstrip('/') + '/world', dim, '26.3') if os.path.isdir(path) else None
+mc = None if w2 else mcr.Mcr(path)
 x0, z0, x1, z1 = m['area_chunks']
 ref = collections.Counter(); our = collections.Counter()
 names_ref = w.states.names
@@ -17,9 +19,13 @@ for cz in range(z0 + 1, z1):
         for a, k in zip(u, n):
             nm = names_ref[int(a)].split('[')[0].replace('minecraft:', '')
             if any(x in nm for x in words): ref[nm] += int(k)
-        b = mc.blocks(cx, cz); u, n = np.unique(b, return_counts=True)
+        if w2:
+            c2 = w2.chunk(cx, cz); b = c2.blocks; names2 = w2.states.names
+        else:
+            b = mc.blocks(cx, cz); names2 = mc.state_names
+        u, n = np.unique(b, return_counts=True)
         for a, k in zip(u, n):
-            nm = mc.state_names[int(a)].split('[')[0].replace('minecraft:', '')
+            nm = names2[int(a)].split('[')[0].replace('minecraft:', '')
             if any(x in nm for x in words): our[nm] += int(k)
 print('%-30s %10s %10s' % ('блок', 'эталон', 'наше'))
 for nm in sorted(set(ref) | set(our)): print('%-30s %10d %10d' % (nm, ref[nm], our[nm]))

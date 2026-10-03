@@ -211,7 +211,6 @@ static int patch_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
             }
         }
     }
-    if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "patch origin %d %d %d n=%d r=%d,%d\n", ox, oy, oz, ns, xr, zr);
     veg_hashset_order(surf, ns);
     int ret;
     if (!s->water) {
@@ -430,10 +429,63 @@ static int root_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 }
 
 /* ====================================================================== coral_tree / coral_claw */
-typedef struct CoralCfg { Placed *feat; } CoralCfg;
+static void tag_collect(const McGen *g, const BsTab *bs, const char *name, int *out, int *n, int cap, int depth);
+/* 26.3+: фича-«блок коралла» (placed_feature coral/*); 26.1/26.2: сам кораллы-блок CoralFeature.placeCoralBlock с тегами corals / coral_blocks / wall_corals */
+typedef struct CoralCfg {
+    Placed *feat;                                      /* 26.3+ */
+    int old; int n_blocks, n_corals, n_walls; int *blocks, *corals, *walls; const u8 *corals_set; int water, pickle;
+} CoralCfg;
+static _Thread_local int g_coral_state;                /* выбранное состояние коралла-блока (старый режим) */
 static void *coral_parse(FParse *p, const Js *cfg) {
     CoralCfg *s = fp_alloc(p, sizeof *s);
-    s->feat = fp_placed(p, js_get(cfg, "feature")); return s->feat ? s : NULL;
+    const Js *f = js_get(cfg, "feature");
+    if (f) { s->feat = fp_placed(p, f); return s->feat ? s : NULL; }
+    if (p->newf) { fp_fail(p, "coral: нет feature"); return NULL; }
+    s->old = 1;
+    int tmp[64], n;
+    n = 0; tag_collect(p->g, p->bs, "minecraft:coral_blocks", tmp, &n, 64, 0); s->n_blocks = n; s->blocks = fp_alloc(p, sizeof(int) * (size_t)(n + 1)); memcpy(s->blocks, tmp, sizeof(int) * (size_t)n);
+    n = 0; tag_collect(p->g, p->bs, "minecraft:corals", tmp, &n, 64, 0); s->n_corals = n; s->corals = fp_alloc(p, sizeof(int) * (size_t)(n + 1)); memcpy(s->corals, tmp, sizeof(int) * (size_t)n);
+    n = 0; tag_collect(p->g, p->bs, "minecraft:wall_corals", tmp, &n, 64, 0); s->n_walls = n; s->walls = fp_alloc(p, sizeof(int) * (size_t)(n + 1)); memcpy(s->walls, tmp, sizeof(int) * (size_t)n);
+    s->corals_set = gen_block_tag(p->g, "minecraft:corals");
+    s->water = bs_block_index(p->bs, "minecraft:water"); s->pickle = bs_block_index(p->bs, "minecraft:sea_pickle");
+    if (!s->n_blocks || !s->n_corals || !s->n_walls || s->water < 0 || s->pickle < 0) { fp_fail(p, "coral: нет тегов"); return NULL; }
+    return s;
+}
+/* CoralFeature.placeCoralBlock (26.1/26.2) */
+static int coral_old_block(FCtx *c, const CoralCfg *s, int x, int y, int z) {
+    FRnd *r = c->rnd; const BsTab *bs = c->bs;
+    int tb = c->g->state_block[fc_get(c, x, y, z)];
+    if (!((tb == s->water || s->corals_set[tb]) && c->g->state_block[fc_get(c, x, y + 1, z)] == s->water)) return 0;
+    fc_set(c, x, y, z, g_coral_state, 3);
+    if (frnd_float(r) < 0.25f) {
+        int b = s->corals[frnd_int_bound(r, s->n_corals)];
+        fc_set(c, x, y + 1, z, bs_default(bs, b), 2);
+    } else if (frnd_float(r) < 0.05f) {
+        char n[4]; snprintf(n, sizeof n, "%d", frnd_int_bound(r, 4) + 1);
+        fc_set(c, x, y + 1, z, bs_with(bs, bs_default(bs, s->pickle), "pickles", n), 2);
+    }
+    static const int HZ4[4] = { DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST };
+    static const char *HN[4] = { "north", "east", "south", "west" };
+    for (int i = 0; i < 4; i++) {
+        if (frnd_float(r) < 0.2f) {
+            int d = HZ4[i], rx = x + DIR_DX[d], rz = z + DIR_DZ[d];
+            if (c->g->state_block[fc_get(c, rx, y, rz)] == s->water) {
+                int b = s->walls[frnd_int_bound(r, s->n_walls)];
+                int st = bs_try_with(bs, bs_default(bs, b), "facing", HN[i]);
+                fc_set(c, rx, y, rz, st, 2);
+            }
+        }
+    }
+    return 1;
+}
+static inline int coral_put(FCtx *c, const CoralCfg *s, int x, int y, int z) {
+    return s->old ? coral_old_block(c, s, x, y, z) : placed_place(c, s->feat, x, y, z, 0);
+}
+/* CoralFeature.place (26.1/26.2): случайный блок коралла из тега coral_blocks, затем форма */
+static inline int coral_old_pick(FCtx *c, const CoralCfg *s) {
+    int b = s->blocks[frnd_int_bound(c->rnd, s->n_blocks)];
+    g_coral_state = bs_default(c->bs, b);
+    return 1;
 }
 static const int HZ[4] = { DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST };      /* Direction.Plane.HORIZONTAL */
 static inline int hz_index(int d) { for (int i = 0; i < 4; i++) if (HZ[i] == d) return i; return 0; }
@@ -443,9 +495,9 @@ static void shuffle_ints(FRnd *r, int *a, int n) {                           /* 
 static int coral_tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     const CoralCfg *s = cfg; FRnd *r = c->rnd;
     int x = ox, y = oy, z = oz;
-    if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "coral_tree origin %d %d %d chunk %d %d\n", ox, oy, oz, c->ccx, c->ccz);
+    if (s->old) coral_old_pick(c, s);
     int trunk = frnd_int_bound(r, 3) + 1;
-    for (int i = 0; i < trunk; i++) { if (!placed_place(c, s->feat, x, y, z, 0)) return 1; y++; }
+    for (int i = 0; i < trunk; i++) { if (!coral_put(c, s, x, y, z)) return 1; y++; }
     int tx = x, ty = y, tz = z;
     int nb = frnd_int_bound(r, 3) + 2;
     int dirs[4] = { HZ[0], HZ[1], HZ[2], HZ[3] };
@@ -454,7 +506,7 @@ static int coral_tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
         int d = dirs[k];
         x = tx + DIR_DX[d]; y = ty; z = tz + DIR_DZ[d];
         int bh = frnd_int_bound(r, 5) + 2, seg = 0;
-        for (int j = 0; j < bh && placed_place(c, s->feat, x, y, z, 0); j++) {
+        for (int j = 0; j < bh && coral_put(c, s, x, y, z); j++) {
             seg++; y++;
             if (j == 0 || (seg >= 2 && frnd_float(r) < 0.25f)) { x += DIR_DX[d]; z += DIR_DZ[d]; seg = 0; }
         }
@@ -463,8 +515,8 @@ static int coral_tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 }
 static int coral_claw_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     const CoralCfg *s = cfg; FRnd *r = c->rnd;
-    if (getenv("MCGEN_VEG_DEBUG")) fprintf(stderr, "coral_claw origin %d %d %d chunk %d %d\n", ox, oy, oz, c->ccx, c->ccz);
-    if (!placed_place(c, s->feat, ox, oy, oz, 0)) return 0;
+    if (s->old) coral_old_pick(c, s);
+    if (!coral_put(c, s, ox, oy, oz)) return 0;
     int claw = HZ[frnd_int_bound(r, 4)];
     int nb = frnd_int_bound(r, 2) + 2;
     int ci = hz_index(claw);
@@ -482,15 +534,27 @@ static int coral_claw_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
             seg = frnd_int_bound(r, 2) == 0 ? bd : DIR_UP;
             inway = frnd_int_bound(r, 3) + 3;
         }
-        for (int i = 0; i < sideway && placed_place(c, s->feat, x, y, z, 0); i++) { x += DIR_DX[seg]; y += DIR_DY[seg]; z += DIR_DZ[seg]; }
+        for (int i = 0; i < sideway && coral_put(c, s, x, y, z); i++) { x += DIR_DX[seg]; y += DIR_DY[seg]; z += DIR_DZ[seg]; }
         int op = seg ^ 1;
         x += DIR_DX[op]; y += DIR_DY[op]; z += DIR_DZ[op];
         y++;
         for (int i = 0; i < inway; i++) {
             x += DIR_DX[claw]; z += DIR_DZ[claw];
-            if (!placed_place(c, s->feat, x, y, z, 0)) break;
+            if (!coral_put(c, s, x, y, z)) break;
             if (frnd_float(r) < 0.25f) y++;
         }
+    }
+    return 1;
+}
+
+static int coral_mushroom_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
+    const CoralCfg *s = cfg; FRnd *r = c->rnd;
+    coral_old_pick(c, s);
+    int height = frnd_int_bound(r, 3) + 3, width = frnd_int_bound(r, 3) + 3, length = frnd_int_bound(r, 3) + 3, sink = frnd_int_bound(r, 3) + 1;
+    for (int x = 0; x <= width; x++) for (int y = 0; y <= height; y++) for (int z = 0; z <= length; z++) {
+        if ((x != 0 && x != width || y != 0 && y != height) && (z != 0 && z != length || y != 0 && y != height) && (x != 0 && x != width || z != 0 && z != length)
+            && (x == 0 || x == width || y == 0 || y == height || z == 0 || z == length) && !(frnd_float(r) < 0.1f))
+            coral_put(c, s, ox + x, oy + y - sink, oz + z);
     }
     return 1;
 }
@@ -614,7 +678,7 @@ int veg_mossy_carpet_place(FCtx *c, int x, int y, int z) { moss_place_at(c, x, y
 
 /* ====================================================================== выживание растений (BlockState.canSurvive) */
 enum { VK_UNK = 0, VK_NONE, VK_SEAGRASS, VK_TALL_SEAGRASS, VK_SEA_PICKLE, VK_LILY_PAD, VK_MUSHROOM, VK_FIRE, VK_SOUL_FIRE, VK_SUGAR_CANE, VK_CACTUS,
-       VK_LEAF_LITTER, VK_SPORE_BLOSSOM, VK_BERRY, VK_BAMBOO, VK_HANGING_ROOTS, VK_MOSSY_CARPET, VK_CORAL, VK_CORAL_WALL, VK_GROW_UP, VK_GROW_DOWN };
+       VK_LEAF_LITTER, VK_SPORE_BLOSSOM, VK_BERRY, VK_BAMBOO, VK_HANGING_ROOTS, VK_MOSSY_CARPET, VK_CORAL, VK_CORAL_WALL, VK_GROW_UP, VK_GROW_DOWN, VK_DRY };
 
 static int veg_kind_of(const BsBlock *bb) {
     const char *k = bb->cls;
@@ -632,6 +696,7 @@ static int veg_kind_of(const BsBlock *bb) {
     if (!strcmp(k, "SporeBlossomBlock")) return VK_SPORE_BLOSSOM;
     if (!strcmp(k, "SweetBerryBushBlock")) return VK_BERRY;
     if (!strcmp(k, "HangingRootsBlock")) return VK_HANGING_ROOTS;
+    if (!strcmp(k, "ShortDryGrassBlock") || !strcmp(k, "TallDryGrassBlock") || !strcmp(k, "DryVegetationBlock")) return VK_DRY;
     if (!strcmp(k, "KelpBlock") || !strcmp(k, "KelpPlantBlock") || !strcmp(k, "TwistingVinesBlock") || !strcmp(k, "TwistingVinesPlantBlock")) return VK_GROW_UP;
     if (!strcmp(k, "WeepingVinesBlock") || !strcmp(k, "WeepingVinesPlantBlock") || !strcmp(k, "CaveVinesBlock") || !strcmp(k, "CaveVinesPlantBlock")) return VK_GROW_DOWN;
     if (!strcmp(k, "CoralPlantBlock") || !strcmp(k, "BaseCoralPlantBlock") || !strcmp(k, "CoralFanBlock") || !strcmp(k, "BaseCoralFanBlock")) return VK_CORAL;
@@ -673,7 +738,9 @@ int veg_survive(FCtx *c, int st, int x, int y, int z, int *res) {
     }
     case VK_MUSHROOM:
         if (veg_in_tag(c, veg_tag(c, "minecraft:overrides_mushroom_light_requirement"), below)) { *res = 1; return 1; }
-        *res = (bs->flags[below] & BSF_SOLID_RENDER) != 0;        /* освещения на стадии FEATURES нет: raw brightness = 0 < 13 */
+        /* getRawBrightness(pos, 0) на стадии FEATURES: чанки без данных освещения дают небесный свет 15 (SkyLightSectionStorage.getLightValue: «15»), блочный 0;
+         * 15 >= 13 ⇒ гриб без «переопределяющей» опоры не выживает. Исключение игры (непредсказуемое): уже освещённые соседние чанки с настоящим светом. */
+        *res = c->w->dim_kind != 1 ? 0 : (bs->flags[below] & BSF_SOLID_RENDER) != 0;      /* Nether (has_skylight=false): skyEngine == null → яркость 0 < 13; Overworld/End — небесный свет 15 */
         return 1;
     case VK_FIRE: *res = veg_sturdy(c, below, DIR_UP); return 1;
     case VK_SOUL_FIRE: *res = veg_in_tag(c, veg_tag(c, "minecraft:soul_fire_base_blocks"), below); return 1;
@@ -719,6 +786,7 @@ int veg_survive(FCtx *c, int st, int x, int y, int z, int *res) {
         *res = veg_sturdy(c, a, up ? DIR_UP : DIR_DOWN);
         return 1;
     }
+    case VK_DRY: *res = veg_in_tag(c, veg_tag(c, "minecraft:supports_dry_vegetation"), below); return 1;
     case VK_CORAL: *res = veg_sturdy(c, below, DIR_UP); return 1;
     case VK_CORAL_WALL: {
         const char *fv = NULL; int d = bs_get_prop(bs, st, "facing", &fv) ? dir_from_name(fv) : -1;
@@ -743,6 +811,7 @@ static const FeatType T_COLUMN = { "minecraft:block_column", col_parse, col_plac
 static const FeatType T_BAMBOO = { "minecraft:bamboo", bamboo_parse, bamboo_place };
 static const FeatType T_VINES = { "minecraft:vines", vines_parse, vines_place };
 static const FeatType T_CTREE = { "minecraft:coral_tree", coral_parse, coral_tree_place };
+static const FeatType T_CMUSH = { "minecraft:coral_mushroom", coral_parse, coral_mushroom_place };
 static const FeatType T_CCLAW = { "minecraft:coral_claw", coral_parse, coral_claw_place };
 static const FeatType T_FUNGUS = { "minecraft:huge_fungus", fungus_parse, fungus_place };
 static const FeatType T_ROOTS = { "minecraft:root_system", root_parse, root_place };
@@ -752,7 +821,7 @@ void feature_register_veg2(void);       /* feature_veg2.c: типы 26.1/26.2 */
 void feature_register_veg(void) {
     feature_register_veg2();
     feature_register_type(&T_COLUMN); feature_register_type(&T_BAMBOO); feature_register_type(&T_VINES);
-    feature_register_type(&T_CTREE); feature_register_type(&T_CCLAW);
+    feature_register_type(&T_CTREE); feature_register_type(&T_CMUSH); feature_register_type(&T_CCLAW);
     feature_register_type(&T_FUNGUS); feature_register_type(&T_ROOTS);
     feature_register_type(&T_VPATCH); feature_register_type(&T_WPATCH);
 }

@@ -4,6 +4,10 @@
 #include "mcgen_internal.h"
 #include "mcgen_tweaks_table.h"
 #include "df_old.h"
+typedef struct Beard Beard;
+Beard *beard_for_chunk(McWorld *w, int cx, int cz);
+void beard_free(Beard *b);
+#include "blockstate.h"
 #include "fluidpp.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -251,6 +255,8 @@ int terrain_old_fill(McWorld *w, void *octx, int cx, int cz, uint16_t *blocks, P
     if (nh <= 0) return MCGEN_OK;
     NChunk *nc = oc->nc;
     nchunk_begin(nc, cx * 16, cz * 16, nmin, nh);
+    Beard *bd = w->struct_on ? beard_for_chunk(w, cx, cz) : NULL;       /* Beardifier.forStructuresInChunk (structure.c) */
+    nchunk_set_beard(nc, bd);
     Picker pk; terrain_picker(w, &pk.lava_level, &pk.sea_level); pk.sea_type = w->def_fluid; pk.lava_type = g->st_lava;
     aq_init(&oc->aq, w, nc, cx, cz, nmin, nh, &pk);
     int veins = w->ns->ore_veins_enabled && w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0;
@@ -288,6 +294,76 @@ int terrain_old_fill(McWorld *w, void *octx, int cx, int cz, uint16_t *blocks, P
         nchunk_swap_slices(nc);
     }
     nchunk_stop(nc);
+    nchunk_set_beard(nc, NULL); beard_free(bd);
     (void)err; (void)errlen;
     return MCGEN_OK;
+}
+
+/* NoiseBasedChunkGenerator.iterateNoiseColumn 26.1/26.2: NoiseChunk из одной ячейки, ячейки Y сверху вниз, первое состояние с hmcls[hm_type]; ЖИЛЫ не нужны
+ * (они заменяют только твёрдые блоки). Aquifer — как у чанка, содержащего столбец. */
+int terrain_old_column_height(McWorld *w, void *octx, int bx, int bz, int hm_type) {
+    OldCtx *oc = octx; const McGen *g = w->g; const BsTab *bs = bs_get(g);
+    int nmin = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
+    int ntop = w->ns->min_y + w->ns->height; if (ntop > w->min_y + w->height) ntop = w->min_y + w->height;
+    int nh = ntop - nmin;
+    if (nh <= 0) return w->min_y;
+    NChunk *nc = oc->nc;
+    int cw = (w->ns->size_h << 2), ch = (w->ns->size_v << 2);
+    int fbx = jm_floordiv(bx, cw) * cw, fbz = jm_floordiv(bz, cw) * cw;
+    double fx = (double)jm_floormod(bx, cw) / cw, fz = (double)jm_floormod(bz, cw) / cw;
+    nchunk_begin_cells(nc, fbx, fbz, nmin, nh, 1);
+    Picker pk; terrain_picker(w, &pk.lava_level, &pk.sea_level); pk.sea_type = w->def_fluid; pk.lava_type = g->st_lava;
+    aq_init(&oc->aq, w, nc, fbx >> 4, fbz >> 4, nmin, nh, &pk);
+    int cell_min_y = jm_floordiv(nmin, ch), ccy = jm_floordiv(nh, ch);
+    int res = w->min_y;
+    nchunk_init_first_cell_x(nc);
+    nchunk_advance_cell_x(nc, 0);
+    for (int cyi = ccy - 1; cyi >= 0 && res == w->min_y; cyi--) {
+        nchunk_select_cell_yz(nc, cyi, 0);
+        for (int yi = ch - 1; yi >= 0; yi--) {
+            int py = (cell_min_y + cyi) * ch + yi;
+            nchunk_update_y(nc, py, (double)yi / ch);
+            nchunk_update_x(nc, bx, fx);
+            nchunk_update_z(nc, bz, fz);
+            int st = aq_substance(&oc->aq, nchunk_full_density(nc));
+            if (st < 0) st = w->def_block;
+            if ((bs->hmcls[st] >> hm_type) & 1) { res = py + 1; break; }
+        }
+    }
+    nchunk_stop(nc);
+    return res;
+}
+
+/* getBaseColumn 26.1/26.2: все состояния колонки (как terrain_old_column_height, без остановки) */
+int terrain_old_column_states(McWorld *w, void *octx, int bx, int bz, int *out, int *y0) {
+    OldCtx *oc = octx; const McGen *g = w->g;
+    int nmin = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
+    int ntop = w->ns->min_y + w->ns->height; if (ntop > w->min_y + w->height) ntop = w->min_y + w->height;
+    int nh = ntop - nmin;
+    *y0 = nmin;
+    if (nh <= 0) return 0;
+    NChunk *nc = oc->nc;
+    int cw = (w->ns->size_h << 2), ch = (w->ns->size_v << 2);
+    int fbx = jm_floordiv(bx, cw) * cw, fbz = jm_floordiv(bz, cw) * cw;
+    double fx = (double)jm_floormod(bx, cw) / cw, fz = (double)jm_floormod(bz, cw) / cw;
+    nchunk_begin_cells(nc, fbx, fbz, nmin, nh, 1);
+    Picker pk; terrain_picker(w, &pk.lava_level, &pk.sea_level); pk.sea_type = w->def_fluid; pk.lava_type = g->st_lava;
+    aq_init(&oc->aq, w, nc, fbx >> 4, fbz >> 4, nmin, nh, &pk);
+    int cell_min_y = jm_floordiv(nmin, ch), ccy = jm_floordiv(nh, ch);
+    nchunk_init_first_cell_x(nc);
+    nchunk_advance_cell_x(nc, 0);
+    for (int cyi = ccy - 1; cyi >= 0; cyi--) {
+        nchunk_select_cell_yz(nc, cyi, 0);
+        for (int yi = ch - 1; yi >= 0; yi--) {
+            int py = (cell_min_y + cyi) * ch + yi;
+            nchunk_update_y(nc, py, (double)yi / ch);
+            nchunk_update_x(nc, bx, fx);
+            nchunk_update_z(nc, bz, fz);
+            int st = aq_substance(&oc->aq, nchunk_full_density(nc));
+            if (st < 0) st = w->def_block;
+            out[py - nmin] = st;
+        }
+    }
+    nchunk_stop(nc);
+    return nh;
 }

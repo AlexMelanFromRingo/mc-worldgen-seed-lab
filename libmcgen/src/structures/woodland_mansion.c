@@ -6,7 +6,8 @@
  * комнаты 1×2 второго этажа. MansionPiecePlacer обходит наружные стены (traverseOuterWalls), кладёт крыши, коридоры, ковры, стены/двери
  * комнат и сами комнаты. Все части — шаблоны woodland_mansion/<имя> (TemplateStructurePiece, BlockIgnoreProcessor.STRUCTURE_BLOCK,
  * ignoreEntities, knownShape = false — после записи блоков форма обновляется по соседям, как StructureTemplate.placeInWorld).
- * Маркеры данных: Chest* — сундук (createChest), Mage/Warrior/Group of Allays — воздух на месте маркера (мобы не моделируются).
+ * Маркеры данных: Chest* — сундук (createChest), Mage/Warrior/Group of Allays — воздух на месте маркера (мобы не создаются, расход
+ * level.getRandom() их finalizeSpawn повторён).
  * afterPlace: под частями колонны булыжника вниз до твёрдого блока. */
 #include "../structure_piece.h"
 #include <stdio.h>
@@ -33,24 +34,12 @@ static void wm_dump(const StPiece *p, StrBuf *o) {
 }
 
 /* ---------------------------------------------------------------- классы блоков (кэш на таблицу состояний) */
-typedef struct WMBlk {
-    const BsTab *bs;
-    int structure_block, chest, trapped_chest, barrel, dispenser, dropper, hopper, cobble;
-} WMBlk;
+typedef struct WMBlk { const BsTab *bs; int structure_block, chest; } WMBlk;
 static const WMBlk *wm_blk(const BsTab *bs) {
     static _Thread_local WMBlk k;
-    if (k.bs != bs) {
-        k.structure_block = bs_block_index(bs, "minecraft:structure_block"); k.chest = bs_block_index(bs, "minecraft:chest");
-        k.trapped_chest = bs_block_index(bs, "minecraft:trapped_chest"); k.barrel = bs_block_index(bs, "minecraft:barrel");
-        k.dispenser = bs_block_index(bs, "minecraft:dispenser"); k.dropper = bs_block_index(bs, "minecraft:dropper");
-        k.hopper = bs_block_index(bs, "minecraft:hopper"); k.cobble = bs_block_index(bs, "minecraft:cobblestone");
-        k.bs = bs;
-    }
+    if (k.bs != bs) { k.structure_block = bs_block_index(bs, "minecraft:structure_block"); k.chest = bs_block_index(bs, "minecraft:chest"); k.bs = bs; }
     return &k;
 }
-
-/* ---------------------------------------------------------------- knownShape = false: StructureTemplate.updateShapeAtEdge + updateFromNeighbourShapes */
-static void wm_shape_update(StCtx *c, const TPal *pal, const WMData *d) { (void)c; (void)pal; (void)d; }
 
 static void wm_post(StCtx *c, StPiece *p, int rx, int ry, int rz) {
     WMData *d = p->data;
@@ -60,19 +49,11 @@ static void wm_post(StCtx *c, StPiece *p, int rx, int ry, int rz) {
     TSettings s; tsettings_init(&s);
     const Proc *procs[1] = { proc_builtin(w, PB_STRUCTURE_BLOCK) };
     s.rot = d->rot; s.mir = d->mir; s.bounds = &c->chunk; s.procs = procs; s.nprocs = 1;
+    s.known_shape = 0;                       /* StructurePlaceSettings по умолчанию: формы обновляются после записи */
+    s.rnd = c->rs;                           /* nextLong() на сундуки шаблона (LootTableSeed) */
     const TPal *pal = tpl_palette_at(d->t, d->tx, d->ty, d->tz);
     if (!pal) return;
     if (!template_place(c->fc, w, d->t, d->tx, d->ty, d->tz, rx, ry, rz, &s, w->seeds.structures, 2)) return;
-    /* placeInWorld: RandomizableContainer из шаблона получает LootTableSeed = random.nextLong(); формы блоков (knownShape = false) */
-    for (int i = 0; i < pal->nb; i++) {
-        const TInfo *b = &pal->b[i];
-        if (!b->nbt) continue;
-        int blk = g->state_block[b->state];
-        if (blk != k->chest && blk != k->trapped_chest && blk != k->barrel && blk != k->dispenser && blk != k->dropper && blk != k->hopper) continue;
-        int wx, wz; tpl_transform(b->x, b->z, d->mir, d->rot, 0, 0, &wx, &wz);
-        if (bb_inside(&c->chunk, wx + d->tx, b->y + d->ty, wz + d->tz)) (void)rs_long(c->rs);
-    }
-    wm_shape_update(c, pal, d);
     /* маркеры данных (filterBlocks(STRUCTURE_BLOCK) в порядке палитры, только внутри chunkBB) */
     for (int i = 0; i < pal->nb; i++) {
         const TInfo *b = &pal->b[i];
@@ -99,7 +80,15 @@ static void wm_post(StCtx *c, StPiece *p, int rx, int ry, int rz) {
                 (void)rs_long(c->rs);
             }
         } else if (!strcmp(m, "Mage") || !strcmp(m, "Warrior") || !strcmp(m, "Group of Allays")) {
-            if (!strcmp(m, "Group of Allays")) (void)rnd_next_int_bound(sp_region_random(c), 3);   /* level.getRandom().nextInt(3) + 1 */
+            /* мобы не создаются, но их finalizeSpawn тратит level.getRandom() (общий ГСЧ региона): Mob — random.triangle (2 × nextDouble) и
+             * nextFloat (левша); Vindicator — ещё nextFloat в enchantSpawnedWeapon (топор; getSpecialMultiplier = 0 при easy/normal) */
+            Rnd *rr = sp_region_random(c);
+            int nmob = 1, vind = !strcmp(m, "Warrior");
+            if (!strcmp(m, "Group of Allays")) nmob = rnd_next_int_bound(rr, 3) + 1;
+            for (int q = 0; q < nmob; q++) {
+                (void)rnd_next_double(rr); (void)rnd_next_double(rr); (void)rnd_next_float(rr);
+                if (vind) (void)rnd_next_float(rr);
+            }
             fc_set(c->fc, wx, wy, wz, g->st_air, 2);
         }
     }

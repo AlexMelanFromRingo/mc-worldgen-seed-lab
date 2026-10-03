@@ -50,7 +50,7 @@ def affected_chunks(world, dim, box):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--version', default='26.3'); ap.add_argument('--sets', default=''); ap.add_argument('--seeds', default='')
-    ap.add_argument('-v', action='store_true'); ap.add_argument('--list', type=int, default=0); ap.add_argument('--md', default='')
+    ap.add_argument('-v', action='store_true'); ap.add_argument('--list', type=int, default=0); ap.add_argument('--md', default=''); ap.add_argument('--json', default='', help='файл для JSON-результатов по мирам')
     ap.add_argument('--stages', default='0x27'); ap.add_argument('--threshold', type=float, default=99.9); ap.add_argument('--threads', default='0')
     a = ap.parse_args()
     os.makedirs(TMP, exist_ok=True)
@@ -103,6 +103,10 @@ def main():
             if a.v and R['top_pairs']:
                 for t in R['top_pairs'][:6]:
                     print('      ', t)
+    if a.json:
+        out = [dict(set=r[0], world=r[1], error=True) if not r[2] else dict(set=r[0], world=r[1], area_pct=r[2][0], area_mismatch=r[2][1], chunks=r[2][2], chunk_mismatch=r[2][3],
+                     chunk_pct=r[2][4], secs=r[2][5], structures=sorted(set(r[2][8])), struct_blocks=r[2][9], struct_pct=r[2][10]) for r in rows]
+        json.dump(out, open(a.json, 'w'), ensure_ascii=False, indent=1)
     ok = [r for r in rows if r[2]]
     if ok:
         tm = sum(r[2][3] for r in ok); tb = sum(r[2][2] for r in ok)

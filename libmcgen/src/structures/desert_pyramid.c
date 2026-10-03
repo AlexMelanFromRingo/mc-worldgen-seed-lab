@@ -200,7 +200,8 @@ static void dp_after(StCtx *c, const StStart *s) {
     }
     qsort(all, (size_t)n, 3 * sizeof(int), cmp3);
     int m = 0; for (int i = 0; i < n; i++) if (i == 0 || memcmp(&all[i * 3], &all[(i - 1) * 3], 3 * sizeof(int))) { if (m != i) memcpy(&all[m * 3], &all[i * 3], 3 * sizeof(int)); m++; }   /* SortedArraySet: уникальные */
-    int cx = bb_cx(&s->bb), cy = bb_cy(&s->bb), cz = bb_cz(&s->bb);
+    BB cur = bb_empty(); for (int i = 0; i < s->n; i++) cur = bb_union(cur, s->pieces[i]->bb);    /* pieces.calculateBoundingBox(): ТЕКУЩИЕ рамки (после сдвига по высоте) */
+    int cx = bb_cx(&cur), cy = bb_cy(&cur), cz = bb_cz(&cur);
     RS pr = sp_seed_positional(c, cx, cy, cz);
     for (int i = m; i > 1; i--) { int sw = rs_bound(&pr, i); int t[3]; memcpy(t, &all[(i - 1) * 3], 12); memcpy(&all[(i - 1) * 3], &all[sw * 3], 12); memcpy(&all[sw * 3], t, 12); }   /* Util.shuffle */
     int to_place = rs_bound(&pr, 3) + 5; if (m < to_place) to_place = m;   /* min(size, nextInt(5, 8)): порядок вычислений — rnd после shuffle */

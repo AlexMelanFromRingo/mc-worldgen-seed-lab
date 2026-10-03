@@ -81,11 +81,13 @@ python3 tools/gt/selftest.py                                                    
 | `full` | чистая ваниль (без пака), структуры включены | G6 |
 | `feature:<id>` | surface + одна placed_feature на своём шаге у биомов, где она есть; карверов нет | G5 по одной |
 | `structure:<set>` | surface + один набор построек (остальные `structures=[]`), фич/карверов нет | G6 по одной |
+| `featureset:<имя>` | как `feature:`, но остаются все фичи из `tools/gt/featuresets/<имя>.json` (g5_overworld, g5_the_nether, veg_overworld, veg_the_nether) | G5 в сборе |
+| `featuresparse:<id>@K` | `feature:<id>` + `rarity_filter(K)` первым в placement: декорируется ~1/K чанков, порядок соседей не влияет (честные 100 % для плотных фич) | G5 по одной |
+| `featurecarve:<id>` | `feature:<id>` + карверы (фичи пещер: rooted_azalea_tree) | G5 по одной |
+| `custom:<имя>` | своя placed_feature из `tools/gt/custom/<имя>.json` (изоляция одного дерева), у всех биомов шаг 9 = [она] | G5 деревья |
 
 `gen_queue.py --plan features` — по `tools/gt/features_plan.json` (`feature_plan.py`: для каждой placed_feature область матрицы или extras с максимумом клеток её биомов; 209 фич,
-2 без биомов; группы: `ores` — руды/диски/источники/блобы/геология, `veg` — растительность; r=5). `--plan structures` — по `structures_plan.json` (`structure_plan.py`, oracle
-`structstart`: ближайший валидный старт набора для каждого seed; r=8): найдены все наборы кроме `strongholds` (кольца — отдельно: oracle `stronghold <seed>`), а также ruined_portals,
-nether_fossils и (не на всех seed) buried_treasures, desert_pyramids, igloos, swamp_huts, woodland_mansions.
+2 без биомов; группы: `ores` — руды/диски/источники/блобы/геология, `veg` — растительность; r=5). `--plan structures` — по `structures_plan.json` (`structure_plan.py` + `structure_plan2.py`, oracle `structstart`/`structs`/`stronghold`: ближайшие валидные старты для каждого seed; r=8). Для ruined_portals и nether_fossils oracle `structstart` пуст — берутся потенциальные чанки `structs`, фактические старты — по `structures.starts` в .mca.
 
 ## 4. Матрица, раскладка
 
@@ -94,6 +96,11 @@ nether_fossils и (не на всех seed) buried_treasures, desert_pyramids, i
 для каждого seed — Overworld spawn (0,0) и области ocean / mountains / desert / jungle (до ±3300 блоков от начала), Nether (0,0) и (60,−60), End (0,0) и внешние острова (90,0), (−40,−90);
 `extras` (r=5) — 14 областей с редкими биомами для фич (old_growth_taiga, pale_garden, dappled_forest, flower_forest, mangrove_swamp, ice_spikes, warm_ocean, cold_ocean,
 mushroom_fields, wooded_badlands, windswept_*, soul_sand_valley). Профили очереди: `core` (4 области/seed), `land` (8), `all` (10), `extras`.
+
+Очереди по запросам потоков (W8–W12, все — `gen_queue.py`/`gen_world.py`, один сервер за раз, лог `run/gt/queue.log`, возобновляемы): `--plan features` (209 фич по биомам, группы
+`ores`/`veg`, r=5, редкие r=10), `--plan features_extra` (`feature_regions.py`: frozen_ocean, snow, океаны, пустыня r=20, deep_dark, sulfur_caves, basalt_deltas, glowstone, end_gateway,
+end_platform), `--plan custom`, `--plan-file <json>` (область задаёт вызывающий), `--plan structures` (`structure_plan.py` + `structure_plan2.py`: strongholds, ruined_portals,
+деревни desert/savanna/snowy, fortress, nether_fossils, вторые миры редких наборов), `--tag rep1|rep2` (повторные прогоны для `--stable-with`), `--version` — те же варианты для 26.1/26.2/26.4.
 
 Готово (26.3): raw, surface, carvers, carve_raw — 30 миров (`all`); veins — 15 (Overworld); features, full — core (12); structure_*/full — витрина по 45 областям построек;
 feature_* — по плану (см. статус ниже). Для 26.1, 26.2, 26.4-snapshot-2: raw — `land` (24 мира каждая версия, 3 seed × 3 измерения + области), surface — core.
@@ -107,10 +114,11 @@ feature_* — по плану (см. статус ниже). Для 26.1, 26.2, 
 * `mcr.py` — MCR1 (чтение memmap, запись, `from-world`). `diff.py` — сравнение по именам состояний, метрики и маски в `--help`; `--list N` — координаты первых расхождений.
 * Кэш больших областей: до 6 region-ов в памяти (64x64 чанков — до 9 region-ов по ~200 МБ).
 
-## 6. Результаты ворот (libmcgen W1, 26.3; подробные таблицы — `accuracy.md`)
+## 6. Результаты ворот (libmcgen, строго, `--pp-margin`; подробные таблицы — `accuracy.md`, секции `G2`, `G2@26.1` …)
 
-G2 30/30 (100 %, Nether/End/Overworld), G2v 15/15, G3 30/30, G4 29/30 (1 блок `water[level=0] → water[level=1]` у растекания), G4c 30/30; G5/G6 — по core-областям
-(Overworld/Nether расходятся: поток декораций/построек ещё не реализован). Биомы raw 99,9–100 % (клетки на границах), карты высот — по сути 0 расхождений.
+26.3: G2 30/30, G2v 15/15, G3 30/30, G4 29/30 (1 блок `water[level=0] → water[level=1]` у растекания) → затем 30/30 после правок W3, G4c 30/30; G5/G6 на момент прогона — core-области (декорации/постройки
+ещё не были реализованы; актуальные проверки ведут потоки W8–W12 и W9 своими скриптами `libmcgen/tests/g5_*.py`, `g6_*.py` по мирам `feature_*`, `structure_*`).
+26.1: G2 23/24 (тот же 1 блок растекания), 26.2: G2 24/24, 26.4-snapshot-2: G2 24/24 (биомы поблочные — сверка биомов пропущена); G3 — 12/12 для 26.1, 26.2, 11/12 для 26.4-snapshot-2; G4, G4c — по seed 12345 PASS.
 
 ## 7. Бюджет времени и объёма (измерено, `tools/gt/budget.py --md`)
 
@@ -127,11 +135,104 @@ G2 30/30 (100 %, Nether/End/Overworld), G2v 15/15, G3 30/30, G4 29/30 (1 бло�
 | carvers r=10 | overworld | 15 | 441 | 14.3 | 8.0 | 30.3 | 10.9 | 2615 |
 | carvers r=10 | the_end | 9 | 441 | 15.6 | 4.6 | 27.8 | 9.1 | 2209 |
 | carvers r=10 | the_nether | 6 | 441 | 16.2 | 6.4 | 39.3 | 9.1 | 2209 |
-| feature:* r=5 | overworld | 1 | 121 | 26.0 | 6.0 | 40.2 | 8.0 | 1898 |
-| feature:* r=5 | the_nether | 1 | 121 | 20.0 | 6.0 | 33.2 | 5.6 | 1369 |
+| custom:acacia r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.8 | 1898 |
+| custom:birch r=5 | overworld | 1 | 121 | 14.0 | 3.0 | 24.3 | 5.6 | 1369 |
+| custom:birch_bees_0002 r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 5.6 | 1369 |
+| custom:birch_bees_0002_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.6 | 1369 |
+| custom:birch_bees_002 r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.6 | 1369 |
+| custom:birch_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.6 | 1369 |
+| custom:cherry r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.5 | 7.9 | 1898 |
+| custom:cherry_bees_005 r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:dark_oak r=5 | overworld | 1 | 121 | 12.0 | 3.0 | 22.2 | 5.7 | 1369 |
+| custom:dark_oak_leaf_litter r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 5.7 | 1369 |
+| custom:fallen_birch_tree r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.1 | 5.6 | 1369 |
+| custom:fallen_jungle_tree r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:fallen_oak_tree r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 5.6 | 1369 |
+| custom:fallen_poplar_tree r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.8 | 1898 |
+| custom:fallen_spruce_tree r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.6 | 1369 |
+| custom:fallen_super_birch_tree r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 5.6 | 1369 |
+| custom:fancy_oak r=5 | overworld | 1 | 121 | 21.0 | 6.0 | 35.2 | 5.7 | 1369 |
+| custom:fancy_oak_bees r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.7 | 1369 |
+| custom:fancy_oak_bees_0002_leaf_litter r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 5.7 | 1369 |
+| custom:fancy_oak_bees_002 r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.7 | 1369 |
+| custom:fancy_oak_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.7 | 1369 |
+| custom:jungle_bush r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:jungle_tree r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:mangrove r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:mega_jungle_tree r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 8.0 | 1898 |
+| custom:mega_pine r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.8 | 1898 |
+| custom:mega_spruce r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:oak r=5 | overworld | 1 | 121 | 18.0 | 3.0 | 28.9 | 5.6 | 1369 |
+| custom:oak_bees_0002_leaf_litter r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 5.6 | 1369 |
+| custom:oak_bees_002 r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.2 | 5.6 | 1369 |
+| custom:oak_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 5.6 | 1369 |
+| custom:orange_poplar r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:orange_poplar_leaf_litter r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.9 | 1898 |
+| custom:pale_oak r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 8.0 | 1898 |
+| custom:pale_oak_creaking r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 8.0 | 1898 |
+| custom:pine r=5 | overworld | 1 | 121 | 16.0 | 3.0 | 26.6 | 5.6 | 1369 |
+| custom:red_poplar r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.9 | 1898 |
+| custom:red_poplar_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| custom:spruce r=5 | overworld | 1 | 121 | 25.0 | 6.1 | 40.2 | 5.6 | 1369 |
+| custom:super_birch_bees r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 5.6 | 1369 |
+| custom:super_birch_bees_0002 r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 5.6 | 1369 |
+| custom:swamp_oak r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.2 | 7.9 | 1898 |
+| custom:tall_mangrove r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 8.0 | 1898 |
+| custom:yellow_poplar r=5 | overworld | 1 | 121 | 10.0 | 3.0 | 20.3 | 7.9 | 1898 |
+| custom:yellow_poplar_leaf_litter r=5 | overworld | 1 | 121 | 11.0 | 3.0 | 21.3 | 7.9 | 1898 |
+| feature:* r=5 | overworld | 182 | 121 | 14.7 | 4.1 | 26.4 | 7.6 | 1817 |
+| feature:* r=10 | overworld | 18 | 441 | 11.5 | 6.2 | 25.4 | 10.1 | 2441 |
+| feature:* r=16 | overworld | 2 | 1089 | 14.0 | 13.6 | 35.8 | 14.3 | 3481 |
+| feature:* r=20 | overworld | 1 | 1681 | 23.0 | 27.2 | 58.8 | 20.8 | 5018 |
+| feature:* r=4 | the_end | 1 | 81 | 11.0 | 3.0 | 21.1 | 5.1 | 1225 |
+| feature:* r=5 | the_end | 5 | 121 | 21.8 | 4.2 | 34.5 | 5.6 | 1369 |
+| feature:* r=20 | the_end | 1 | 1681 | 10.0 | 12.0 | 29.5 | 18.5 | 4489 |
+| feature:* r=5 | the_nether | 34 | 121 | 13.9 | 3.4 | 24.8 | 5.7 | 1369 |
+| feature:* r=10 | the_nether | 10 | 441 | 10.8 | 3.9 | 22.1 | 9.2 | 2209 |
+| featurecarve:minecraft:rooted_azalea_tree r=5 | overworld | 2 | 121 | 13.0 | 3.0 | 23.6 | 6.2 | 1496 |
 | features r=10 | overworld | 3 | 441 | 16.0 | 12.1 | 36.1 | 12.9 | 2209 |
 | features r=10 | the_end | 6 | 441 | 19.3 | 5.5 | 32.9 | 9.1 | 2209 |
 | features r=10 | the_nether | 3 | 441 | 16.0 | 7.0 | 30.6 | 10.3 | 2209 |
+| featureset:g5_overworld r=10 | overworld | 2 | 441 | 13.0 | 6.1 | 26.8 | 11.3 | 2209 |
+| featureset:g5_the_nether r=10 | the_nether | 1 | 441 | 14.0 | 6.0 | 27.4 | 9.1 | 2209 |
+| featuresparse:minecraft:bamboo@4 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.5 | 11.3 | 2738 |
+| featuresparse:minecraft:bamboo_light@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 11.3 | 2738 |
+| featuresparse:minecraft:crimson_fungi@12 r=10 | the_nether | 1 | 441 | 18.1 | 6.0 | 31.6 | 9.1 | 2209 |
+| featuresparse:minecraft:flower_default@4 r=10 | overworld | 1 | 441 | 24.0 | 9.1 | 42.3 | 11.3 | 2738 |
+| featuresparse:minecraft:flower_forest_flowers@4 r=10 | overworld | 1 | 441 | 62.2 | 9.3 | 80.4 | 11.3 | 2738 |
+| featuresparse:minecraft:flower_plains@4 r=10 | overworld | 1 | 441 | 13.0 | 6.0 | 26.6 | 11.3 | 2738 |
+| featuresparse:minecraft:flower_swamp@4 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.5 | 11.3 | 2738 |
+| featuresparse:minecraft:lush_caves_ceiling_vegetation@12 r=10 | overworld | 1 | 441 | 19.0 | 6.1 | 33.2 | 9.2 | 2209 |
+| featuresparse:minecraft:lush_caves_clay@12 r=10 | overworld | 1 | 441 | 17.0 | 6.1 | 31.5 | 9.1 | 2209 |
+| featuresparse:minecraft:lush_caves_vegetation@12 r=10 | overworld | 1 | 441 | 18.0 | 6.1 | 31.7 | 9.1 | 2209 |
+| featuresparse:minecraft:pale_moss_patch@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 11.4 | 2738 |
+| featuresparse:minecraft:patch_cactus_desert@4 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.7 | 11.6 | 2738 |
+| featuresparse:minecraft:patch_grass_forest@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.4 | 9.1 | 2209 |
+| featuresparse:minecraft:patch_grass_jungle@4 r=10 | overworld | 1 | 441 | 12.0 | 6.0 | 25.5 | 11.3 | 2738 |
+| featuresparse:minecraft:patch_grass_normal@4 r=10 | overworld | 1 | 441 | 12.0 | 6.0 | 25.5 | 11.5 | 2738 |
+| featuresparse:minecraft:patch_grass_plain@4 r=10 | overworld | 1 | 441 | 12.0 | 6.0 | 25.4 | 11.3 | 2738 |
+| featuresparse:minecraft:patch_grass_savanna@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 11.3 | 2738 |
+| featuresparse:minecraft:patch_grass_taiga@4 r=10 | overworld | 1 | 441 | 13.0 | 6.0 | 26.5 | 11.0 | 2678 |
+| featuresparse:minecraft:patch_melon@8 r=10 | overworld | 1 | 441 | 12.0 | 6.0 | 25.6 | 11.3 | 2738 |
+| featuresparse:minecraft:patch_pumpkin@8 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.5 | 11.4 | 2738 |
+| featuresparse:minecraft:patch_sugar_cane@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.6 | 11.4 | 2738 |
+| featuresparse:minecraft:patch_tall_grass@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 11.3 | 2738 |
+| featuresparse:minecraft:rooted_azalea_tree@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 9.1 | 2209 |
+| featuresparse:minecraft:seagrass_cold@4 r=10 | overworld | 1 | 441 | 19.0 | 9.0 | 37.3 | 10.7 | 2585 |
+| featuresparse:minecraft:seagrass_deep@4 r=10 | overworld | 1 | 441 | 17.0 | 9.0 | 33.7 | 11.4 | 2738 |
+| featuresparse:minecraft:seagrass_deep_cold@4 r=10 | overworld | 1 | 441 | 18.0 | 9.0 | 35.6 | 10.7 | 2585 |
+| featuresparse:minecraft:seagrass_deep_warm@4 r=10 | overworld | 1 | 441 | 14.0 | 9.1 | 33.9 | 11.3 | 2738 |
+| featuresparse:minecraft:seagrass_normal@4 r=10 | overworld | 1 | 441 | 24.1 | 15.2 | 48.2 | 11.3 | 2738 |
+| featuresparse:minecraft:seagrass_river@4 r=10 | overworld | 1 | 441 | 20.0 | 6.0 | 35.2 | 11.3 | 2738 |
+| featuresparse:minecraft:seagrass_swamp@4 r=10 | overworld | 1 | 441 | 20.0 | 9.1 | 38.3 | 11.5 | 2738 |
+| featuresparse:minecraft:seagrass_warm@4 r=10 | overworld | 1 | 441 | 16.0 | 12.1 | 36.1 | 10.3 | 2485 |
+| featuresparse:minecraft:spore_blossom@4 r=10 | overworld | 1 | 441 | 11.0 | 6.0 | 24.5 | 9.1 | 2209 |
+| featuresparse:minecraft:twisting_vines@4 r=10 | the_nether | 1 | 441 | 10.0 | 3.0 | 20.3 | 9.1 | 2209 |
+| featuresparse:minecraft:vines@4 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.7 | 11.3 | 2738 |
+| featuresparse:minecraft:warm_ocean_vegetation@32 r=10 | overworld | 1 | 441 | 10.0 | 6.0 | 23.5 | 11.3 | 2738 |
+| featuresparse:minecraft:warm_ocean_vegetation@8 r=10 | overworld | 1 | 441 | 15.0 | 6.0 | 28.9 | 11.4 | 2738 |
+| featuresparse:minecraft:warped_fungi@12 r=10 | the_nether | 1 | 441 | 11.0 | 3.0 | 21.4 | 9.1 | 2209 |
+| featuresparse:minecraft:weeping_vines@4 r=10 | the_nether | 1 | 441 | 11.0 | 3.0 | 21.3 | 9.1 | 2209 |
 | full r=8 | overworld | 39 | 289 | 13.1 | 9.4 | 30.3 | 12.0 | 2195 |
 | full r=10 | overworld | 3 | 441 | 28.4 | 25.3 | 63.1 | 13.2 | 2209 |
 | full r=8 | the_end | 3 | 289 | 12.3 | 3.0 | 22.7 | 7.6 | 1849 |
@@ -144,10 +245,10 @@ G2 30/30 (100 %, Nether/End/Overworld), G2v 15/15, G3 30/30, G4 29/30 (1 бло�
 | raw r=10 | the_end | 9 | 441 | 13.8 | 4.0 | 85.0 | 9.1 | 2209 |
 | raw r=5 | the_nether | 1 | 121 | 10.0 | 3.0 | 20.1 | 5.6 | 1369 |
 | raw r=10 | the_nether | 6 | 441 | 17.8 | 4.7 | 38.0 | 9.1 | 2209 |
-| structure:* r=8 | overworld | 39 | 289 | 12.1 | 4.5 | 24.3 | 9.1 | 2195 |
+| structure:* r=8 | overworld | 76 | 289 | 11.1 | 4.2 | 22.9 | 9.4 | 2258 |
 | structure:* r=10 | overworld | 1 | 441 | 12.0 | 9.1 | 29.0 | 9.4 | 2255 |
 | structure:* r=8 | the_end | 3 | 289 | 10.3 | 4.0 | 21.7 | 7.6 | 1849 |
-| structure:* r=8 | the_nether | 3 | 289 | 13.3 | 4.0 | 24.8 | 7.6 | 1849 |
+| structure:* r=8 | the_nether | 18 | 289 | 10.6 | 3.2 | 21.0 | 7.6 | 1849 |
 | surface r=10 | overworld | 15 | 441 | 17.9 | 7.0 | 33.0 | 10.8 | 2615 |
 | surface r=10 | the_end | 9 | 441 | 18.5 | 3.9 | 29.9 | 9.1 | 2209 |
 | surface r=10 | the_nether | 6 | 441 | 15.7 | 4.9 | 28.1 | 9.1 | 2209 |

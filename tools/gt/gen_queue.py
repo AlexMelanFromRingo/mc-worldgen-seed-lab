@@ -56,6 +56,7 @@ def main():
     ap.add_argument('--xmx', default='5g')
     ap.add_argument('--force', action='store_true')
     ap.add_argument('--group', default='all', choices=['all', 'ores', 'veg'], help='с --plan features: ores = руды/диски/источники/блобы/геология, veg = растительность')
+    ap.add_argument('--plan-file', default=None, help='JSON-список {feature, dim, seed, cx, cz, radius[, k]} (область задана вызывающим); варианты feature|featuresparse')
     ap.add_argument('--sparse', type=int, default=12, help='variant featuresparse: rarity_filter chance K')
     ap.add_argument('--tag', default='', help='суффикс каталога (повторные прогоны для --stable-with: rep1, rep2)')
     ap.add_argument('--bg-threads', type=int, default=None)
@@ -82,6 +83,15 @@ def main():
             for v in a.variants.split(','):
                 jobs.append((f'feature:{e["feature"]}' if v == 'feature' else f'featuresparse:{e["feature"]}@{a.sparse}' if v == 'featuresparse' else v, c))
         jobs.sort(key=lambda j: (feature_group(j[0].split(':', 1)[-1]) != 'ores', j[0]))      # сначала геология/руды, затем растительность
+    elif a.plan_file:
+        pl = json.load(open(a.plan_file))
+        pl = pl if isinstance(pl, list) else next(v for v in pl.values() if isinstance(v, list))
+        jobs = []
+        for e in pl:
+            fid = e['feature'] if ':' in e['feature'] else 'minecraft:' + e['feature']
+            c = {'dim': e['dim'], 'seed': e['seed'], 'cx': e['cx'], 'cz': e['cz'], 'radius': e.get('radius', 5), 'label': fid.split(':')[1]}
+            for v in a.variants.split(','):
+                jobs.append((f'feature:{fid}' if v == 'feature' else f'featuresparse:{fid}@{e.get("k", a.sparse)}' if v == 'featuresparse' else v, c))
     elif a.plan == 'custom':
         names = a.sets.split(',') if a.sets else sorted(f[:-5] for f in os.listdir(f'{ROOT}/tools/gt/custom') if f.endswith('.json'))
         jobs = []
@@ -120,7 +130,7 @@ def main():
             m = gen_world.generate(a.version, v, c['dim'], c['seed'], c['cx'], c['cz'], c['radius'], xmx=a.xmx, force=a.force, timeout=a.timeout, tag=a.tag, bg_threads=a.bg_threads)
             summary[wd.replace(ROOT + '/', '')] = {k: m.get(k) for k in ('ok', 'chunks_full', 'chunks_area', 'server_start_s', 'generate_s', 'total_s',
                                                                          'region_bytes', 'finished')} | {'label': c['label']}
-        except Exception as e:
+        except (Exception, SystemExit) as e:
             traceback.print_exc()
             summary[wd.replace(ROOT + '/', '')] = {'ok': False, 'error': f'{type(e).__name__}: {e}', 'label': c['label']}
         json.dump(summary, open(sp, 'w'), indent=1, ensure_ascii=False)

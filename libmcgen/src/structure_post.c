@@ -4,6 +4,7 @@
 #include "structure.h"
 #include "fluidpp.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 static int is_leaves_or_exception(const BsTab *bs, int st) {
     static _Thread_local const BsTab *kb; static _Thread_local int barrier, cp, jl, melon, pumpkin; static _Thread_local const u8 *shulk;
@@ -16,9 +17,80 @@ static int is_leaves_or_exception(const BsTab *bs, int st) {
 }
 static int sturdy_face(const BsTab *bs, int st, int dir) { return (bs->sturdy[st] >> dir) & 1; }
 
-/* BlockState.updateShape для поддержанных классов; −1 — класс не обрабатывается */
-static int update_shape(const BsTab *bs, FluidWorld *fw, int st, int x, int y, int z, int dir, int nst) {
+/* доступ к миру для обновления форм */
+typedef struct SGet { void *ud; int (*get)(void *ud, int x, int y, int z); int dark; } SGet;   /* dark: свет ещё не посчитан (генерация: getRawBrightness = 0) */
+static int fw_get(void *ud, int x, int y, int z) { FluidWorld *fw = ud; return fw->get(fw->ud, x, y, z); }
+static int stairs_shape_of(const BsTab *bs, const SGet *wg, int st, int x, int y, int z);
+
+static int dir_of_prop(const BsTab *bs, int st, const char *prop);
+static int sturdy_face(const BsTab *bs, int st, int dir);
+static int is_leaves_or_exception(const BsTab *bs, int st);
+
+/* WallBlock.isCovered(above.getCollisionShape().getFaceShape(DOWN), test): test 0..3 — TEST_SHAPES_WALL N/E/S/W (x 7..9, z 0..9 и повороты),
+ * 4 — TEST_SHAPE_POST (столбик 7..9). Полная нижняя грань накрывает всё; стена сверху: сторона накрыта её стороной того же направления
+ * (коллизия стороны 5..11 до края), столбик — её столбом (4..12) или любой стороной (проходят через центр). Прочие формы — нет. */
+static int wall_covered(const BsTab *bs, int above, int test) {
+    if (sturdy_face(bs, above, DIR_DOWN)) return 1;
+    if (!bs_is_a(bs, above, "WallBlock")) return 0;
+    static const char *SN[4] = { "north", "east", "south", "west" };
+    const char *v;
+    if (test < 4) { v = "none"; bs_get_prop(bs, above, SN[test], &v); return strcmp(v, "none") != 0; }
+    v = "false"; bs_get_prop(bs, above, "up", &v); if (!strcmp(v, "true")) return 1;
+    for (int i = 0; i < 4; i++) { v = "none"; bs_get_prop(bs, above, SN[i], &v); if (strcmp(v, "none") != 0) return 1; }
+    return 0;
+}
+/* WallBlock.updateShape: стороны (none/low/tall по isCovered) и столб (shouldRaisePost) */
+static int wall_update(const BsTab *bs, const SGet *wg, int st, int x, int y, int z, int dir, int nst) {
     const McGen *g = bs->g;
+    static const char *DN6[6] = { "down", "up", "north", "south", "west", "east" };
+    if (dir == DIR_DOWN) return st;
+    static _Thread_local const BsTab *kb; static _Thread_local const u8 *walls, *post_ovr;
+    if (kb != bs) { walls = gen_block_tag(g, "minecraft:walls"); post_ovr = gen_block_tag(g, "minecraft:wall_post_override"); kb = bs; }
+    int conn[6] = { 0 };
+    static const int HD[4] = { DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST };
+    for (int i = 0; i < 4; i++) { const char *v = "none"; bs_get_prop(bs, st, DN6[HD[i]], &v); conn[HD[i]] = strcmp(v, "none") != 0; }
+    int above;
+    if (dir == DIR_UP) above = nst;
+    else {
+        int opp = dir_opp(dir);
+        int gate = 0;
+        if (bs_is_a(bs, nst, "FenceGateBlock")) { int fd = dir_of_prop(bs, nst, "facing"); if (fd >= 0) { int cw = dir_cw(fd); gate = (cw == DIR_NORTH || cw == DIR_SOUTH) == (opp == DIR_NORTH || opp == DIR_SOUTH); } }
+        conn[dir] = (walls && walls[g->state_block[nst]]) || (!is_leaves_or_exception(bs, nst) && sturdy_face(bs, nst, opp)) || bs_is_a(bs, nst, "IronBarsBlock") || gate;
+        above = wg->get(wg->ud, x, y + 1, z);
+    }
+    int side[4];                                               /* 0 none, 1 low, 2 tall (порядок HD) */
+    int r = st;
+    for (int i = 0; i < 4; i++) {
+        side[i] = conn[HD[i]] ? (wall_covered(bs, above, i) ? 2 : 1) : 0;
+        int q = bs_with(bs, r, DN6[HD[i]], side[i] == 2 ? "tall" : side[i] == 1 ? "low" : "none"); if (q >= 0) r = q;
+    }
+    int up; const char *av;
+    if (bs_is_a(bs, above, "WallBlock") && bs_get_prop(bs, above, "up", &av) && !strcmp(av, "true")) up = 1;
+    else {
+        int nn = !side[0], en = !side[1], sn = !side[2], wn = !side[3];
+        if ((nn && sn && wn && en) || nn != sn || wn != en) up = 1;
+        else if ((side[0] == 2 && side[2] == 2) || (side[1] == 2 && side[3] == 2)) up = 0;
+        else up = (post_ovr && post_ovr[g->state_block[above]]) || wall_covered(bs, above, 4);
+    }
+    int q = bs_with(bs, r, "up", up ? "true" : "false"); if (q >= 0) r = q;
+    return r;
+}
+/* BlockState.updateShape для поддержанных классов (заборы, решётки, лестницы, «снежные» блоки, факелы, ladder); −1 — класс не обрабатывается */
+static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, int z, int dir, int nst) {
+    const McGen *g = bs->g;
+    /* CropBlock (VegetationBlock.updateShape → canSurvive): при генерации свет не посчитан, getRawBrightness < 8 → воздух */
+    if (wg->dark && bs_is_a(bs, st, "CropBlock")) return g->st_air;
+    if (bs_is_a(bs, st, "SnowyBlock") || bs_is_a(bs, st, "SpreadingSnowyBlock")) {
+        if (dir != DIR_UP) return st;
+        static _Thread_local const BsTab *kb; static _Thread_local const u8 *snow;
+        if (kb != bs) { snow = gen_block_tag(g, "minecraft:snow"); kb = bs; }
+        int r = bs_with(bs, st, "snowy", snow[g->state_block[nst]] ? "true" : "false");
+        return r < 0 ? st : r;
+    }
+    if (bs_is_a(bs, st, "StairBlock")) {
+        if (dir == DIR_DOWN || dir == DIR_UP) return st;
+        return stairs_shape_of(bs, wg, st, x, y, z);
+    }
     static const char *NM[6] = { "down", "up", "north", "south", "west", "east" };
     if (bs_is_a(bs, st, "FenceBlock") || bs_is_a(bs, st, "IronBarsBlock")) {
         if (dir == DIR_DOWN || dir == DIR_UP) return st;
@@ -49,14 +121,14 @@ static int update_shape(const BsTab *bs, FluidWorld *fw, int st, int x, int y, i
         int f = !strcmp(fv, "north") ? DIR_NORTH : !strcmp(fv, "south") ? DIR_SOUTH : !strcmp(fv, "west") ? DIR_WEST : DIR_EAST;
         if (dir_opp(dir) == f) {
             int ax = x + DIR_DX[dir_opp(f)], ay = y, az = z + DIR_DZ[dir_opp(f)];
-            int as = fw->get(fw->ud, ax, ay, az);
+            int as = wg->get(wg->ud, ax, ay, az);
             if (!sturdy_face(bs, as, f)) return g->st_air;
         }
         return st;
     }
     if (bs_is_a(bs, st, "TorchBlock") && !bs_is_a(bs, st, "RedstoneTorchBlock") && !bs_is_a(bs, st, "WallTorchBlock")) {
         if (dir == DIR_DOWN) {
-            int below = fw->get(fw->ud, x, y - 1, z);
+            int below = wg->get(wg->ud, x, y - 1, z);
             /* canSupportCenter(below, UP): прочная верхняя грань либо «центральная» опора (заборы, стены) */
             static _Thread_local const BsTab *kb3; static _Thread_local const u8 *fences, *walls;
             if (kb3 != bs) { fences = gen_block_tag(g, "minecraft:fences"); walls = gen_block_tag(g, "minecraft:walls"); kb3 = bs; }
@@ -66,22 +138,195 @@ static int update_shape(const BsTab *bs, FluidWorld *fw, int st, int x, int y, i
         }
         return st;
     }
+    if (bs_is_a(bs, st, "WallBlock")) return wall_update(bs, wg, st, x, y, z, dir, nst);
+    if (bs_is_a(bs, st, "DoorBlock")) {
+        const char *half = ""; bs_get_prop(bs, st, "half", &half);
+        int lower = !strcmp(half, "lower");
+        if ((dir != DIR_UP && dir != DIR_DOWN) || lower != (dir == DIR_UP)) {
+            if (lower && dir == DIR_DOWN && !sturdy_face(bs, wg->get(wg->ud, x, y - 1, z), DIR_UP)) return g->st_air;
+            return st;
+        }
+        const char *nh = "";
+        if (bs_is_a(bs, nst, "DoorBlock") && bs_get_prop(bs, nst, "half", &nh) && strcmp(nh, half) != 0) { int r = bs_with(bs, nst, "half", half); return r < 0 ? nst : r; }
+        return g->st_air;
+    }
+    if (bs_is_a(bs, st, "ChestBlock")) {
+        static const char *TYPES[3] = { "single", "left", "right" };
+        const char *tv = "single"; bs_get_prop(bs, st, "type", &tv);
+        int f = dir_of_prop(bs, st, "facing");
+        int conn_dir = !strcmp(tv, "left") ? dir_cw(f) : dir_ccw(f);
+        if (g->state_block[nst] == g->state_block[st] && dir != DIR_UP && dir != DIR_DOWN) {
+            const char *nt = "single"; bs_get_prop(bs, nst, "type", &nt);
+            int nf = dir_of_prop(bs, nst, "facing");
+            int nconn = !strcmp(nt, "left") ? dir_cw(nf) : dir_ccw(nf);
+            if (!strcmp(tv, "single") && strcmp(nt, "single") != 0 && f == nf && nconn == dir_opp(dir)) {
+                int r = bs_with(bs, st, "type", !strcmp(nt, "left") ? TYPES[2] : TYPES[1]); return r < 0 ? st : r;
+            }
+        } else if (conn_dir == dir) { int r = bs_with(bs, st, "type", "single"); return r < 0 ? st : r; }
+        return st;
+    }
+    if (bs_is_a(bs, st, "WallBannerBlock")) {
+        int f = dir_of_prop(bs, st, "facing");
+        if (dir == dir_opp(f)) {
+            int o = dir_opp(f);
+            if (!(bs->flags[wg->get(wg->ud, x + DIR_DX[o], y, z + DIR_DZ[o])] & BSF_SOLID)) return g->st_air;
+        }
+        return st;
+    }
+    if (bs_is_a(bs, st, "DoublePlantBlock")) {
+        const char *half = ""; bs_get_prop(bs, st, "half", &half);
+        int lower = !strcmp(half, "lower");
+        if ((dir == DIR_UP && lower) || (dir == DIR_DOWN && !lower)) {
+            if (g->state_block[nst] != g->state_block[st]) return g->st_air;
+            const char *nh = ""; bs_get_prop(bs, nst, "half", &nh);
+            if (!strcmp(nh, half)) return g->st_air;
+        }
+        return st;
+    }
     return -1;
 }
 
-/* Block.updateFromNeighbourShapes + setBlock(pos, new, 20) для не-жидкого блока */
-void structure_shape_update(void *fwp, int x, int y, int z) {
-    FluidWorld *fw = fwp;
-    const BsTab *bs = bs_get(fw->g);
-    int st = fw->get(fw->ud, x, y, z);
-    if (bs->flags[st] & BSF_LIQUID) return;                    /* LiquidBlock — не обновляется формой */
+/* лестницы: StairBlock.getStairsShape */
+static int dir_of_prop(const BsTab *bs, int st, const char *prop) {
+    const char *v; if (!bs_get_prop(bs, st, prop, &v)) return -1;
+    return !strcmp(v, "north") ? DIR_NORTH : !strcmp(v, "south") ? DIR_SOUTH : !strcmp(v, "west") ? DIR_WEST : !strcmp(v, "east") ? DIR_EAST : -1;
+}
+static int is_stairs(const BsTab *bs, int st) { return bs_is_a(bs, st, "StairBlock"); }
+static int same_half(const BsTab *bs, int a, int b) { const char *x, *y; return bs_get_prop(bs, a, "half", &x) && bs_get_prop(bs, b, "half", &y) && !strcmp(x, y); }
+static int can_take_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, int z, int nd) {
+    int ns = wg->get(wg->ud, x + DIR_DX[nd], y, z + DIR_DZ[nd]);
+    return !is_stairs(bs, ns) || dir_of_prop(bs, ns, "facing") != dir_of_prop(bs, st, "facing") || !same_half(bs, ns, st);
+}
+static int stairs_shape_of(const BsTab *bs, const SGet *wg, int st, int x, int y, int z) {
+    int facing = dir_of_prop(bs, st, "facing");
+    const char *shape = "straight";
+    int behind = wg->get(wg->ud, x + DIR_DX[facing], y, z + DIR_DZ[facing]);
+    int found = 0;
+    if (is_stairs(bs, behind) && same_half(bs, st, behind)) {
+        int bf = dir_of_prop(bs, behind, "facing");
+        int ax_b = (bf == DIR_NORTH || bf == DIR_SOUTH), ax_f = (facing == DIR_NORTH || facing == DIR_SOUTH);
+        if (ax_b != ax_f && can_take_shape(bs, wg, st, x, y, z, dir_opp(bf))) { shape = bf == dir_ccw(facing) ? "outer_left" : "outer_right"; found = 1; }
+    }
+    if (!found) {
+        int fo = dir_opp(facing);
+        int front = wg->get(wg->ud, x + DIR_DX[fo], y, z + DIR_DZ[fo]);
+        if (is_stairs(bs, front) && same_half(bs, st, front)) {
+            int ff = dir_of_prop(bs, front, "facing");
+            int ax_b = (ff == DIR_NORTH || ff == DIR_SOUTH), ax_f = (facing == DIR_NORTH || facing == DIR_SOUTH);
+            if (ax_b != ax_f && can_take_shape(bs, wg, st, x, y, z, ff)) shape = ff == dir_ccw(facing) ? "inner_left" : "inner_right";
+        }
+    }
+    int r = bs_with(bs, st, "shape", shape);
+    return r < 0 ? st : r;
+}
+
+/* Block.updateFromNeighbourShapes для одной позиции (порядок W, E, N, S, D, U); get/set — доступ к миру */
+static int update_from_neighbours(const BsTab *bs, const SGet *wg, int st, int x, int y, int z) {
     static const int ORDER[6] = { DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_DOWN, DIR_UP };
     int cur = st;
     for (int i = 0; i < 6; i++) {
         int d = ORDER[i];
-        int nst = fw->get(fw->ud, x + DIR_DX[d], y + DIR_DY[d], z + DIR_DZ[d]);
-        int r = update_shape(bs, fw, cur, x, y, z, d, nst);
+        int nst = wg->get(wg->ud, x + DIR_DX[d], y + DIR_DY[d], z + DIR_DZ[d]);
+        int r = update_shape(bs, wg, cur, x, y, z, d, nst);
         if (r >= 0) cur = r;
     }
+    return cur;
+}
+
+/* LiquidBlock.tick (LevelChunk.postProcessGeneration для помеченной жидкости: магма/песок душ помечают блок над собой):
+ * вода-источник над магмой/песком душ → BubbleColumnBlock.updateColumn (столб вверх по воде-источникам) */
+static void liquid_block_tick(FluidWorld *fw, const BsTab *bs, int st, int x, int y, int z) {
+    const McGen *g = bs->g;
+    static _Thread_local const BsTab *kb; static _Thread_local int water0, bubble, bub_drag, bub_up; static _Thread_local const u8 *down, *up;
+    if (kb != bs) {
+        water0 = gen_state_id(g, "minecraft:water[level=0]"); bubble = bs_block_index(bs, "minecraft:bubble_column");
+        bub_drag = gen_state_id(g, "minecraft:bubble_column[drag=true]"); bub_up = gen_state_id(g, "minecraft:bubble_column[drag=false]");
+        down = gen_block_tag(g, "minecraft:enables_bubble_column_drag_down"); up = gen_block_tag(g, "minecraft:enables_bubble_column_push_up"); kb = bs;
+    }
+    if (st != water0 || bubble < 0) return;                    /* shouldBubbleColumnOccupy: вода-источник, полная */
+    int below = fw->get(fw->ud, x, y - 1, z), bb = g->state_block[below];
+    int col;                                                   /* getColumnState */
+    if (bb == bubble) col = below;
+    else if (up && up[bb]) col = bub_up;
+    else if (down && down[bb]) col = bub_drag;
+    else return;                                               /* → occupyState (вода): без изменений */
+    for (int yy = y; yy < 4096; yy++) {                        /* canOccupy: вода-источник (LiquidBlock) или столб */
+        int o = fw->get(fw->ud, x, yy, z);
+        if (o != water0 && g->state_block[o] != bubble) break;
+        fw->set(fw->ud, x, yy, z, col);
+    }
+}
+
+/* Block.updateFromNeighbourShapes + setBlock(pos, new, 20) для не-жидкого блока (пометки построек) */
+void structure_shape_update(void *fwp, int x, int y, int z) {
+    FluidWorld *fw = fwp;
+    const BsTab *bs = bs_get(fw->g);
+    int st = fw->get(fw->ud, x, y, z);
+    if (bs->flags[st] & BSF_LIQUID) { liquid_block_tick(fw, bs, st, x, y, z); return; }   /* LiquidBlock: blockState.tick вместо обновления формы */
+    SGet wg = { fw, fw_get, 0 };
+    int cur = update_from_neighbours(bs, &wg, st, x, y, z);
     if (cur != st) fw->set(fw->ud, x, y, z, cur);
+}
+
+/* ---- StructureTemplate.placeInWorld при knownShape = false: updateShapeAtEdge + updateFromNeighbourShapes ---- */
+typedef struct { FCtx *fc; } FcAcc;
+static int fc_acc_get(void *ud, int x, int y, int z) { return fc_get(((FcAcc *)ud)->fc, x, y, z); }
+static void edge_face(FCtx *fc, const BsTab *bs, int flags, int dir, int x, int y, int z) {
+    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1 };
+    int nx = x + DIR_DX[dir], ny = y + DIR_DY[dir], nz = z + DIR_DZ[dir];
+    int st = fc_get(fc, x, y, z), nst = fc_get(fc, nx, ny, nz);
+    int r = update_shape(bs, &wg, st, x, y, z, dir, nst);
+    int newst = r >= 0 ? r : st;
+    if (newst != st) fc_set(fc, x, y, z, newst, flags & ~1);
+    int r2 = update_shape(bs, &wg, nst, nx, ny, nz, dir_opp(dir), newst);
+    int newn = r2 >= 0 ? r2 : nst;
+    if (newn != nst) fc_set(fc, nx, ny, nz, newn, flags & ~1);
+}
+/* placed — тройки (x, y, z) размещённых позиций в порядке размещения; flags — updateMode */
+void structure_update_after_template(FCtx *fc, const int *placed, int n, int flags) {
+    if (n <= 0) return;
+    const BsTab *bs = fc->bs;
+    int minx = placed[0], miny = placed[1], minz = placed[2], maxx = minx, maxy = miny, maxz = minz;
+    for (int i = 1; i < n; i++) {
+        int x = placed[3 * i], y = placed[3 * i + 1], z = placed[3 * i + 2];
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y; if (z < minz) minz = z; if (z > maxz) maxz = z;
+    }
+    int sx = maxx - minx + 1, sy = maxy - miny + 1, sz = maxz - minz + 1;
+    u8 *full = xcalloc((size_t)sx * sy * sz, 1);
+    #define IDX(x, y, z) (((size_t)(x) * sy + (y)) * sz + (z))
+    for (int i = 0; i < n; i++) full[IDX(placed[3 * i] - minx, placed[3 * i + 1] - miny, placed[3 * i + 2] - minz)] = 1;
+    /* forAllFaces: циклы осей NONE (z), FORWARD (y), BACKWARD (x) — порядок как в DiscreteVoxelShape */
+    for (int cyc = 0; cyc < 3; cyc++) {
+        int aSize = cyc == 0 ? sx : cyc == 1 ? sz : sy, bSize = cyc == 0 ? sy : cyc == 1 ? sx : sz, cSize = cyc == 0 ? sz : cyc == 1 ? sy : sx;
+        int neg = cyc == 0 ? DIR_NORTH : cyc == 1 ? DIR_DOWN : DIR_WEST, pos = cyc == 0 ? DIR_SOUTH : cyc == 1 ? DIR_UP : DIR_EAST;
+        for (int a = 0; a < aSize; a++) for (int b = 0; b < bSize; b++) {
+            int last = 0;
+            for (int c = 0; c <= cSize; c++) {
+                int fl = 0;
+                if (c != cSize) {
+                    int x = cyc == 0 ? a : cyc == 1 ? b : c, y = cyc == 0 ? b : cyc == 1 ? c : a, z = cyc == 0 ? c : cyc == 1 ? a : b;
+                    fl = full[IDX(x, y, z)];
+                }
+                if (!last && fl) {
+                    int x = cyc == 0 ? a : cyc == 1 ? b : c, y = cyc == 0 ? b : cyc == 1 ? c : a, z = cyc == 0 ? c : cyc == 1 ? a : b;
+                    edge_face(fc, bs, flags, neg, minx + x, miny + y, minz + z);
+                }
+                if (last && !fl) {
+                    int cc = c - 1;
+                    int x = cyc == 0 ? a : cyc == 1 ? b : cc, y = cyc == 0 ? b : cyc == 1 ? cc : a, z = cyc == 0 ? cc : cyc == 1 ? a : b;
+                    edge_face(fc, bs, flags, pos, minx + x, miny + y, minz + z);
+                }
+                last = fl;
+            }
+        }
+    }
+    #undef IDX
+    free(full);
+    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1 };
+    for (int i = 0; i < n; i++) {
+        int x = placed[3 * i], y = placed[3 * i + 1], z = placed[3 * i + 2];
+        int st = fc_get(fc, x, y, z);
+        int ns = update_from_neighbours(bs, &wg, st, x, y, z);
+        if (ns != st) fc_set(fc, x, y, z, ns, (flags & ~1) | 16);
+    }
 }
