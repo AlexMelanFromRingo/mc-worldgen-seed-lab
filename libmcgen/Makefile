@@ -50,6 +50,7 @@ test: all tests
 	python3 tests/nbt_check.py --version 26.3
 	python3 tests/tweaks_effect.py --version 26.3 --n 4
 	python3 tests/g5_order.py --versions 26.3     # FeatureSorter против выгрузки игры (стадия FEATURES)
+	python3 tests/g5_sched_order.py               # порядок FEATURES по умолчанию = модель планировщика; результат не зависит от числа потоков
 
 # необязательное ускорение на видеокарте (поток W7, docs/blender/gpu.md): CUDA Toolkit нужен только для сборки
 gpu:

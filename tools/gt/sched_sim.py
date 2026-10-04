@@ -86,13 +86,17 @@ class Task:
         self.pos, self.target, self.sched, self.layer, self.cancel = pos, target, None, [], False
 
 
-def simulate(radius=6, create='xz', async_ms=40.0, features_ms=27.0, jitter=0.0, seed=1):
+def simulate(radius=6, create='xz', async_ms=40.0, features_ms=27.0, jitter=0.0, seed=1, qfn=lambda l: l, workers=0, sigma=0.0):
+    return simulate_rect(-radius, -radius, radius, radius, create, async_ms, features_ms, jitter, seed, qfn, workers, sigma)
+
+
+def simulate_rect(ax0, az0, ax1, az1, create='xz', async_ms=40.0, features_ms=27.0, jitter=0.0, seed=1, qfn=lambda l: l, workers=0, sigma=0.0):
+    """порядок шагов FEATURES для прямоугольной области тикета [ax0..ax1]×[az0..az1] (чанки, включительно)"""
     rnd = random.Random(seed)
-    R = radius
     chunks = {}
-    for x in range(-R - MAXD - 3, R + MAXD + 4):
-        for z in range(-R - MAXD - 3, R + MAXD + 4):
-            d = max(max(-R - x, x - R, 0), max(-R - z, z - R, 0))
+    for x in range(ax0 - MAXD - 3, ax1 + MAXD + 4):
+        for z in range(az0 - MAXD - 3, az1 + MAXD + 4):
+            d = max(max(ax0 - x, x - ax1, 0), max(az0 - z, z - az1, 0))
             chunks[(x, z)] = Chunk((x, z), 31 + d)
     holders = [c for c in chunks if chunks[c].level <= 33]
     if create == 'xz': holders.sort()
@@ -113,9 +117,10 @@ def simulate(radius=6, create='xz', async_ms=40.0, features_ms=27.0, jitter=0.0,
     queue = {}                                         # уровень -> OrderedDict(pos -> [задачи])
     waiting = {}                                       # (pos, статус) -> задачи, ждущие этот future
     features = []
+    wfree = [0.0] * workers if workers else None       # свободное время рабочих пула асинхронных шагов (Util.backgroundExecutor)
 
     def submit(t):
-        queue.setdefault(chunks[t.pos].level, OrderedDict()).setdefault(t.pos, []).append(t)
+        queue.setdefault(qfn(chunks[t.pos].level), OrderedDict()).setdefault(t.pos, []).append(t)
 
     def complete(pos, status):
         chunks[pos].done.add(status)
@@ -127,8 +132,13 @@ def simulate(radius=6, create='xz', async_ms=40.0, features_ms=27.0, jitter=0.0,
             complete(c.pos, status); return 0.2
         if status == 'FEATURES':
             features.append(c.pos); complete(c.pos, status); return features_ms * (1 + rnd.uniform(-jitter, jitter))
-        dur = async_ms * (1 + rnd.uniform(-jitter, jitter)) * (0.05 if status in ('INITIALIZE_LIGHT', 'LIGHT', 'FULL', 'SPAWN') else (0.1 if status == 'BIOMES' else 1.0))
-        heapq.heappush(events, (now + dur, next(seq), (c.pos, status)))
+        base = async_ms * (0.05 if status in ('INITIALIZE_LIGHT', 'LIGHT', 'FULL', 'SPAWN') else (0.1 if status == 'BIOMES' else 1.0))
+        dur = base * (rnd.lognormvariate(-sigma * sigma / 2, sigma) if sigma else 1 + rnd.uniform(-jitter, jitter))
+        if wfree is not None:
+            k = min(range(len(wfree)), key=wfree.__getitem__); start = max(now, wfree[k]); wfree[k] = start + dur; end = wfree[k]
+        else:
+            end = now + dur
+        heapq.heappush(events, (end, next(seq), (c.pos, status)))
         return 0.0
 
     def run_until_wait(t):

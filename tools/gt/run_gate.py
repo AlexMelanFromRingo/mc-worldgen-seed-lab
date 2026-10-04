@@ -148,6 +148,7 @@ def main():
     ap.add_argument('--veins-mask', action='store_true', help='G2: вместо --tweak ore_veins=0 маскировать состояния жил руды')
     ap.add_argument('--png-dir', default=None, help='сохранять PNG-карты расхождений для FAIL-строк')
     ap.add_argument('--margin', type=int, default=None, help='переопределить margin (чанков вокруг области эталона)')
+    ap.add_argument('--area-only', action='store_true', help='G5/G6: сравнивать только запрошенную область, без внешних колец дампа (r+1…r+2); по умолчанию сравниваются и кольца (строже)')
     ap.add_argument('--threads', type=int, default=0)
     ap.add_argument('--top', type=int, default=5)
     a = ap.parse_args()
@@ -226,7 +227,9 @@ def main():
             print(f'{name}: {row["status"]}', flush=True)
             continue
         try:
-            R, o = diff.run(wd, dump, dim=c['dim'], version=a.version, ignore_state=ign, mask_ext=G['mask_ext'], min_match=G['min_match'],
+            # G5/G6 по умолчанию сравнивают весь дамп (область + кольца r+1…r+2); --area-only — только запрошенную область
+            cmp_margin = mg if (G['variant'] in ('features', 'full') and a.area_only) else 0
+            R, o = diff.run(wd, dump, dim=c['dim'], version=a.version, ignore_state=ign, mask_ext=G['mask_ext'], min_match=G['min_match'], margin=cmp_margin,
                             min_status=G.get('min_status', 'minecraft:full'), biomes=True, heightmaps=True, top=a.top, list=5,
                             mask_flow=not strict, stable_with=[w for w in (f'{wd}_rep1', f'{wd}_rep2') if os.path.isdir(w)])
         except Exception as e:

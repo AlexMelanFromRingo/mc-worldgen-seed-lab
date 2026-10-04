@@ -234,6 +234,7 @@ FWorld *features_world_get(McWorld *w) {
 static FeatStats g_stats; static double g_dec_secs;
 void features_get_stats(FeatStats *out) { *out = g_stats; }
 
+int features_sched_order(int ax0, int az0, int ax1, int az1, int **out_xz, int *n_out);        /* feature_sched.c */
 static void decorate_chunk(FCtx *c, int cx, int cz) {
     FWorld *fw = c->fw; McWorld *w = c->w;
     c->ccx = cx; c->ccz = cz; c->n_chunks++; c->sbb_valid = 0; c->region_rnd_ready = 0;
@@ -481,6 +482,59 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 }
             }
             g_stats.chunks += c.n_chunks; g_stats.placed_calls += c.n_calls; g_stats.unimpl_skipped += c.n_skipped;
+        } else if (!(getenv("MCGEN_FEATURES_SCHED") && !strcmp(getenv("MCGEN_FEATURES_SCHED"), "xz"))) {
+            /* порядок «как у настоящего сервера»: модель планировщика (feature_sched.c). Область тикета — запрошенный регион либо MCGEN_FEATURES_AREA="x0,z0,x1,z1".
+             * Параллельность без потери воспроизводимости: чанк идёт после всех более ранних чанков порядка, чьи окна 3×3 пересекаются с его (|dx|, |dz| ≤ 2);
+             * чанки одной «глубины» этого графа независимы и обрабатываются параллельно. MCGEN_FEATURES_SCHED=xz возвращает прежний обход «x, затем z» (волновой фронт). */
+            int ax0 = info.cx0, az0 = info.cz0, ax1 = info.cx0 + info.nx - 1, az1 = info.cz0 + info.nz - 1;
+            { const char *ea = getenv("MCGEN_FEATURES_AREA"); if (ea && *ea && strcmp(ea, "none")) sscanf(ea, "%d,%d,%d,%d", &ax0, &az0, &ax1, &az1); }
+            int *so = NULL, sn = 0; features_sched_order(ax0, az0, ax1, az1, &so, &sn);
+            int tot = dj.nx * dj.nz;
+            int *lx = xmalloc(sizeof(int) * (size_t)tot), *lz = xmalloc(sizeof(int) * (size_t)tot), *pos = xmalloc(sizeof(int) * (size_t)tot), *depth = xcalloc((size_t)tot, sizeof(int)), m = 0;
+            for (int i = 0; i < tot; i++) pos[i] = -1;
+            for (int i = 0; i < sn; i++) {
+                int x = so[2 * i], z = so[2 * i + 1];
+                if (x < dj.cx0 || x >= dj.cx0 + dj.nx || z < dj.cz0 || z >= dj.cz0 + dj.nz) continue;
+                int k = (z - dj.cz0) * dj.nx + (x - dj.cx0); if (pos[k] >= 0) continue;
+                pos[k] = m; lx[m] = x; lz[m] = z; m++;
+            }
+            for (int x = dj.cx0; x < dj.cx0 + dj.nx; x++) for (int z = dj.cz0; z < dj.cz0 + dj.nz; z++) {       /* чанки окна вне модели (кольцо дальше 3): в конец, порядок (x, z) */
+                int k = (z - dj.cz0) * dj.nx + (x - dj.cx0); if (pos[k] >= 0) continue;
+                pos[k] = m; lx[m] = x; lz[m] = z; m++;
+            }
+            free(so);
+            int maxd = 0;
+            for (int i = 0; i < m; i++) {
+                int d = 0;
+                for (int dz = -2; dz <= 2; dz++) for (int dx = -2; dx <= 2; dx++) {
+                    int x = lx[i] + dx, z = lz[i] + dz;
+                    if (x < dj.cx0 || x >= dj.cx0 + dj.nx || z < dj.cz0 || z >= dj.cz0 + dj.nz) continue;
+                    int j = pos[(z - dj.cz0) * dj.nx + (x - dj.cx0)];
+                    if (j >= 0 && j < i && depth[j] > d) d = depth[j];
+                }
+                depth[i] = d + 1; if (depth[i] > maxd) maxd = depth[i];
+                grid[(lz[i] - gz0) * gnx + (lx[i] - gx0)]->seq = i;
+            }
+            { const char *eo = getenv("MCGEN_FEATURES_ORDER_OUT"); FILE *fo = eo && *eo ? fopen(eo, "w") : NULL;
+              if (fo) { for (int i = 0; i < m; i++) fprintf(fo, "%d %d\n", lx[i], lz[i]); fclose(fo); } }
+            int *ox = xmalloc(sizeof(int) * (size_t)m), *oz = xmalloc(sizeof(int) * (size_t)m), *cnt = xcalloc((size_t)maxd + 2, sizeof(int)), *start = xcalloc((size_t)maxd + 2, sizeof(int));
+            for (int i = 0; i < m; i++) cnt[depth[i]]++;
+            for (int d = 1; d <= maxd; d++) start[d + 1] = start[d] + cnt[d];
+            { int *fill = xcalloc((size_t)maxd + 2, sizeof(int)); for (int i = 0; i < m; i++) { int p = start[depth[i]] + fill[depth[i]]++; ox[p] = lx[i]; oz[p] = lz[i]; } free(fill); }
+            dj.lx = ox; dj.lz = oz;
+            for (int d = 1; d <= maxd && !rc; d++) {
+                int base = start[d]; dj.count = cnt[d]; dj.next = 0;
+                if (!dj.count) continue;
+                /* dec_worker читает lx[k], lz[k] с k от 0: сдвигаем указатели на начало этой глубины */
+                dj.lx = ox + base; dj.lz = oz + base;
+                int nthr = nt < dj.count ? nt : dj.count; if (nthr < 1) nthr = 1;
+                if (nthr == 1) dec_worker(&dj);
+                else { McThread **th = xcalloc((size_t)nthr, sizeof(McThread *)); for (int i = 0; i < nthr; i++) th[i] = thread_start(dec_worker, &dj); for (int i = 0; i < nthr; i++) thread_join(th[i]); free(th); }
+                if ((d & 15) == 0 && cb && cb(ud, 0.9 + 0.08 * d / (maxd + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
+            }
+            free(ox); free(oz); free(cnt); free(start); free(lx); free(lz); free(pos); free(depth);
+            dj.lx = dj.lz = NULL;
+            g_stats.chunks += dj.done; g_stats.placed_calls += dj.calls; g_stats.unimpl_skipped += dj.skipped;
         } else {
             /* волновой фронт: чанки с равным t = iz + 3·ix не пересекаются окнами 3×3 (|dx| ≥ 3), а все пересекающиеся «более ранние» чанки
              * порядка (x, затем z) имеют меньшее t — результат идентичен последовательному обходу при любом числе потоков */
