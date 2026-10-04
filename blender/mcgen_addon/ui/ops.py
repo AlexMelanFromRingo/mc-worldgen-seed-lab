@@ -106,6 +106,8 @@ class McGenPumpOperator(Operator):
     bl_options = {'REGISTER'}
     _timer = None
     _pump = None
+    _last_key = None
+    _last_ui = 0.0
 
     def start(self, context):
         raise NotImplementedError
@@ -141,15 +143,21 @@ class McGenPumpOperator(Operator):
             return {'PASS_THROUGH'}
         p = self._pump
         p.poll()
-        context.window_manager.progress_update(int(p.fraction * 1000))
-        try:
-            context.workspace.status_text_set(rpt('{title}: {msg}  [{pct}%]   Esc = cancel', title=rpt(self.status_title), msg=i18n.progress_text(p.message), pct=int(p.fraction * 100)))
-        except AttributeError:
-            pass
-        if not p.finished:
+        if p.finished:
+            return self._end(context)
+        # интерфейс обновляем при смене текста/процента и не чаще 5 раз в секунду: безусловная перерисовка всех областей каждые 50 мс заставляла Blender
+        # рисовать все панели (в том числе с обходом диска) 20 раз в секунду
+        now = time.monotonic()
+        key = (p.message, int(p.fraction * 100))
+        if key != self._last_key and now - self._last_ui >= 0.2:
+            self._last_key, self._last_ui = key, now
+            context.window_manager.progress_update(int(p.fraction * 1000))
+            try:
+                context.workspace.status_text_set(rpt('{title}: {msg}  [{pct}%]   Esc = cancel', title=rpt(self.status_title), msg=i18n.progress_text(p.message), pct=int(p.fraction * 100)))
+            except AttributeError:
+                pass
             tag_redraw(context)
-            return {'RUNNING_MODAL'}
-        return self._end(context)
+        return {'RUNNING_MODAL'}
 
     def _end(self, context):
         wm = context.window_manager
@@ -163,6 +171,7 @@ class McGenPumpOperator(Operator):
             pass
         if self in _active:
             _active.remove(self)
+        pack.invalidate_cache_size()                  # любая задача могла изменить кэш: размер для панели пересчитается в фоне
         res = self.finish(context, self._pump.obj)
         tag_redraw(context)
         return res or {'FINISHED'}
@@ -531,11 +540,10 @@ class MCGEN_OT_build_gpu(McGenPumpOperator):
     status_title = 'MC World GPU build'
 
     def start(self, context):
-        tc = gpu_build.toolchain()
-        if tc['problem']:
-            self.report({'ERROR'}, rpt(tc['problem'][0], **tc['problem'][1]))
+        # поиск nvcc / Visual Studio / видеокарты запускает программы (nvcc --version, nvidia-smi, vswhere: секунды) — только в фоновой задаче, не в потоке интерфейса
+        if not gpu_build.sources_dir():
+            self.report({'ERROR'}, rpt('The CUDA sources were not found in this installation (gpu_src folder).'))
             return None
-        self.report({'INFO'}, rpt('Building the GPU library with nvcc {v} for {a} …', v=tc['nvcc_version'] or '?', a=', '.join('sm_' + x for x in tc['arches']) or 'sm_75 … sm_89'))
         return Task('gpu_build', gpu_build.build_worker).start()
 
     def finish(self, context, task):

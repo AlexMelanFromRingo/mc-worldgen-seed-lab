@@ -268,7 +268,7 @@ def draw_resources(layout, context, prefs=None, in_prefs=False):
     row = layout.row(align=True)
     row.operator('mcgen.open_cache', icon='FILEBROWSER')
     row.operator('mcgen.clear_cache', icon='TRASH')
-    layout.label(text=iface_('Cache: {size} in {path}').format(size=_fmt_bytes(pack.cache_size()), path=paths.cache_dir(False)))
+    layout.label(text=iface_('Cache: {size} in {path}').format(size=(_fmt_bytes(sz) if (sz := pack.cache_size_cached()) is not None else '…'), path=paths.cache_dir(False)))
     tpl, kw = backend.describe_parts()
     layout.label(text=iface_('Generator: {d}').format(d=iface_(tpl).format(**kw))[:110], icon='SYSTEM')
 

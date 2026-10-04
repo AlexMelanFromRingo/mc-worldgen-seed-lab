@@ -45,6 +45,24 @@ def sources_dir():
     return None
 
 
+def stage_sources(src_dir, out_dir):
+    """Копия исходников (libmcgen/gpu + ../../engine) в <кэш>/gpu/src/. Внешние программы (cl.exe, nvcc) не видят файлов расширения в AppData у Blender из Microsoft Store
+    (виртуализация: «cannot open source file … mcgpu_core.cu»), а каталог кэша им виден (его проверяет check_children_visible). Возвращает каталог libmcgen/gpu копии."""
+    root = os.path.join(out_dir, 'src')
+    dst_gpu = os.path.join(root, 'libmcgen', 'gpu')
+    dst_eng = os.path.join(root, 'engine')
+    shutil.rmtree(root, ignore_errors=True)
+    os.makedirs(dst_gpu)
+    os.makedirs(dst_eng)
+    for fn in sorted(os.listdir(src_dir)):
+        if fn.endswith(('.cu', '.cuh', '.h', '.map')):
+            shutil.copyfile(os.path.join(src_dir, fn), os.path.join(dst_gpu, fn))
+    eng = os.path.normpath(os.path.join(src_dir, '..', '..', 'engine'))
+    for fn in ('mc_rng.h', 'mc_common.h'):
+        shutil.copyfile(os.path.join(eng, fn), os.path.join(dst_eng, fn))
+    return dst_gpu
+
+
 def gpu_dir(create=False):
     d = os.path.join(paths.cache_dir(create), 'gpu')
     if create:
@@ -275,14 +293,44 @@ def _kill(proc):
         pass
 
 
+def oem_codepage():
+    """OEM-кодовая страница системной локали (866 для русской) независимо от режима «Unicode UTF-8 для всех языков»; 0 — неизвестно / не Windows."""
+    if not WINDOWS:
+        return 0
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(16)
+        if ctypes.windll.kernel32.GetLocaleInfoW(0x0800, 0x0B, buf, 16):          # LOCALE_SYSTEM_DEFAULT, LOCALE_IDEFAULTCODEPAGE
+            return int(buf.value)
+    except (OSError, AttributeError, ValueError):
+        pass
+    return 0
+
+
+def decode_output(raw, oem=None):
+    """Строка вывода дочерней программы -> текст: UTF-8 (chcp 65001), иначе OEM-кодовая страница (cl.exe, cmd до chcp), иначе с заменой."""
+    try:
+        return raw.decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+    cp = oem if oem is not None else oem_codepage()
+    if cp and cp != 65001:
+        try:
+            return raw.decode(f'cp{cp}')
+        except (UnicodeDecodeError, LookupError):
+            pass
+    return raw.decode('utf-8', 'replace')
+
+
 def _run(task, argv, cwd, label):
     """Запускает argv, читает вывод в журнал, передаёт прогресс по времени, по отмене убивает дерево процессов. -> (код, текст вывода)."""
-    proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace', creationflags=paths.NO_WINDOW)      # .bat включает chcp 65001
+    proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=paths.NO_WINDOW)      # байты: кодировку строки определяет decode_output
     lines = []
+    oem = oem_codepage()
 
     def reader():
         for ln in proc.stdout:
-            lines.append(ln.rstrip())
+            lines.append(decode_output(ln.rstrip(b'\r\n'), oem))
 
     th = threading.Thread(target=reader, daemon=True)
     th.start()
@@ -316,8 +364,8 @@ def build(task, nvcc_hint='', arches=None, keep_log=True):
     tc = toolchain(nvcc_hint)
     _problem(tc)
     check_children_visible()                          # nvcc и cmd должны видеть файлы кэша (Blender из Microsoft Store их прячет в AppData)
-    src_dir = tc['sources']
     out_dir = gpu_dir(create=True)
+    src_dir = stage_sources(tc['sources'], out_dir)      # копия в кэше: cl.exe/nvcc не видят AppData расширения у Store-Blender
     work = os.path.join(out_dir, 'work')
     shutil.rmtree(work, ignore_errors=True)
     os.makedirs(work)

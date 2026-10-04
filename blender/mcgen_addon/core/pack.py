@@ -594,6 +594,10 @@ def run_block_flags(server_jar, java, out_path, task=None, timeout=900):
     try:
         cp = bundle_classpath(server_jar, java, work, task)
         cls_dir = flags_class_dir()
+        if cls_dir is not None:                      # Java — внешний процесс: у Blender из Microsoft Store файлов расширения в AppData он не видит — кладём класс в рабочий каталог кэша
+            local = os.path.join(work, 'cls')
+            shutil.copytree(cls_dir, local)
+            cls_dir = local
         if cls_dir is None:
             src, javac = flags_source(), find_javac(java)
             if not src or not javac:
@@ -791,7 +795,40 @@ def clear_cache(what='all'):
         if os.path.isdir(d):
             shutil.rmtree(d, ignore_errors=True)
             n += 1
+    invalidate_cache_size()
     return n
+
+
+_size_state = {'value': None, 'time': 0.0, 'running': False, 'path': None}
+
+
+def invalidate_cache_size():
+    """Кэш изменился (подготовка, загрузка, очистка): следующий запрос интерфейса пересчитает размер."""
+    _size_state['time'] = 0.0
+
+
+def cache_size_cached(max_age=120.0):
+    """Размер кэша для ИНТЕРФЕЙСА: значение последнего подсчёта (None — ещё не посчитано), а подсчёт идёт в фоновом потоке не чаще раза в max_age секунд.
+    Панель перерисовывается десятки раз в секунду, а полный обход кэша (десятки тысяч файлов; в Windows с антивирусом — секунды) в потоке интерфейса давал «2 fps»."""
+    root = paths.cache_dir(False)
+    now = time.monotonic()
+    st = _size_state
+    if st['path'] != root:
+        st['value'], st['time'], st['path'] = None, 0.0, root
+    if not st['running'] and now - st['time'] >= max_age:
+        st['running'] = True
+        st['time'] = now
+
+        def work():
+            try:
+                st['value'] = cache_size(root)
+            except Exception:       # noqa: BLE001 - размер только для показа
+                pass
+            finally:
+                st['running'] = False
+        import threading
+        threading.Thread(target=work, daemon=True).start()
+    return st['value']
 
 
 def cache_size(path=None):

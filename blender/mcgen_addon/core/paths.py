@@ -69,15 +69,24 @@ def set_cache_override(path):
     _cache_override = path or None
 
 
+_bpy_cache_val = []
+
+
 def _bpy_cache():
+    """Каталог кэша по умолчанию, предлагаемый Blender (None вне Blender). Путь постоянен — запоминаем: cache_dir() вызывается десятки раз за перерисовку панели."""
+    if _bpy_cache_val:
+        return _bpy_cache_val[0]
     try:
         import bpy
         pkg = (__package__ or '').rsplit('.', 1)[0]
         if pkg.startswith('bl_ext.'):
-            return bpy.utils.extension_path_user(pkg, path='cache', create=True)
-        return os.path.join(bpy.utils.user_resource('DATAFILES', create=True), 'mcgen_cache')
+            d = bpy.utils.extension_path_user(pkg, path='cache', create=True)
+        else:
+            d = os.path.join(bpy.utils.user_resource('DATAFILES', create=True), 'mcgen_cache')
     except Exception:
         return None
+    _bpy_cache_val.append(d)
+    return d
 
 
 # Windows: путь файла не длиннее 259 символов (MAX_PATH; Blender и Java/C без «длинных путей»). Самая длинная запись датапака — 139 символов, плюс каталог распаковки

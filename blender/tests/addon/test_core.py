@@ -728,6 +728,37 @@ class PackSyntheticTests(unittest.TestCase):
         d = tempfile.mkdtemp()
         self.assertTrue(paths.children_see_files(d))                    # вне Windows проверка не нужна
 
+    def test_cache_size_for_ui_does_not_block(self):
+        """Панель рисуется десятки раз в секунду: размер кэша считается в фоне, а draw получает последнее значение мгновенно."""
+        root = tempfile.mkdtemp()
+        for i in range(300):
+            with open(os.path.join(root, f'f{i}.bin'), 'wb') as f:
+                f.write(b'x' * 10)
+        paths.set_cache_override(root)
+        pack._size_state.update(value=None, time=0.0, running=False, path=None)
+        try:
+            t0 = time.perf_counter()
+            first = pack.cache_size_cached()
+            self.assertLess(time.perf_counter() - t0, 0.05)                      # не ждёт обхода
+            for _ in range(200):
+                if pack._size_state['value'] is not None:
+                    break
+                time.sleep(0.01)
+            self.assertEqual(pack.cache_size_cached(), 3000)
+            open(os.path.join(root, 'new.bin'), 'wb').write(b'y' * 5)
+            self.assertEqual(pack.cache_size_cached(), 3000)                     # в пределах max_age — без повторного обхода
+            pack.invalidate_cache_size()
+            pack.cache_size_cached()
+            for _ in range(200):
+                if pack._size_state['value'] == 3005:
+                    break
+                time.sleep(0.01)
+            self.assertEqual(pack._size_state['value'], 3005)
+            self.assertIn(first, (None, 3000))
+        finally:
+            paths.set_cache_override(None)
+            pack._size_state.update(value=None, time=0.0, running=False, path=None)
+
     def test_javaw_is_replaced_by_java(self):
         d = tempfile.mkdtemp()
         for n in ('javaw.exe', 'java.exe'):
@@ -1498,6 +1529,27 @@ class GpuBuildTests(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(d, f)), f)
         self.assertTrue(os.path.isfile(os.path.join(d, '..', '..', 'engine', 'mc_rng.h')))
         self.assertEqual(len(gpu_build.sources_hash(d)), 12)
+
+    def test_stage_sources_copies_into_cache(self):
+        """cl.exe/nvcc не видят файлов расширения в AppData у Store-Blender — исходники копируются в каталог кэша."""
+        out = tempfile.mkdtemp()
+        d = gpu_build.stage_sources(gpu_build.sources_dir(), out)
+        self.assertTrue(d.startswith(out))
+        for f in gpu_build.SRC_FILES + ('mcgpu.map', 'mcgpu_internal.h', 'mcgen_gpu_abi.h'):
+            self.assertTrue(os.path.isfile(os.path.join(d, f)), f)
+        self.assertTrue(os.path.isfile(os.path.join(d, '..', '..', 'engine', 'mc_rng.h')))
+        self.assertTrue(os.path.isfile(os.path.join(d, '..', '..', 'engine', 'mc_common.h')))
+        self.assertEqual(gpu_build.sources_hash(d), gpu_build.sources_hash(gpu_build.sources_dir()))
+        cmd = gpu_build.nvcc_command('nvcc', d, 'o', ['89'])
+        self.assertTrue(all(a.startswith(out) for a in cmd if a.endswith('.cu')))               # в командной строке — только копия
+
+    def test_decode_output_utf8_and_oem(self):
+        self.assertEqual(gpu_build.decode_output('не найден файл'.encode('utf-8'), 866), 'не найден файл')
+        raw = 'не удаётся открыть файл'.encode('cp866')
+        self.assertEqual(gpu_build.decode_output(raw, 866), 'не удаётся открыть файл')        # cl.exe печатает в OEM-странице независимо от chcp
+        self.assertNotIn('\ufffd', gpu_build.decode_output(raw, 866))
+        self.assertIn('\ufffd', gpu_build.decode_output(raw, 65001))                          # неизвестная страница — замена, без исключения
+        self.assertEqual(gpu_build.decode_output(b'plain ascii', 0), 'plain ascii')
 
     def test_activate_without_build(self):
         paths.set_cache_override(os.path.join(tempfile.mkdtemp(), 'cache'))
