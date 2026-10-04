@@ -11,6 +11,8 @@
  * Сам порядок игры недетерминирован (между прогонами различается у ≈5 % пар соседних чанков); модель воспроизводит его с расхождением ≈9 % против 19 % у обхода «x, затем z»,
  * а суммарное расхождение с эталонами G5 ниже на ≈20 % (Nether seed 12345: 26,9 → 6,3 тыс. блоков). */
 #include "feature.h"
+#include <stdlib.h>
+#include <string.h>
 
 enum { S_EMPTY, S_STRUCT_STARTS, S_STRUCT_REFS, S_BIOMES, S_TERRAIN, S_FEATURES, S_INIT_LIGHT, S_LIGHT, S_SPAWN, S_FULL, S_N };
 /* ChunkStep.getAccumulatedRadiusOf(статус) для целей FULL и INITIALIZE_LIGHT (порт ChunkStep.Builder; проверка — tools/gt/sched_sim.py --print-pyramid) */
