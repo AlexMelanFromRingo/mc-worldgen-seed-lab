@@ -1038,7 +1038,7 @@ class T07_Translations(unittest.TestCase):
         # перевод реально действует в интерфейсе
         tr = bpy.app.translations.pgettext_iface
         same_in_ru = {k for k, v in translations.RU.items() if k == v}                      # одинаково звучащие термины (X, Z, Java …)
-        not_applied = [s for s in strings if tr(s) == s and s not in same_in_ru and s not in ('X', 'Z', 'Java', 'libmcgen', 'UVMap', '1 × 1', '2 × 2', '4 × 4', '8 × 8')]
+        not_applied = [s for s in strings if tr(s) == s and s not in same_in_ru and s not in ('X', 'Z', 'Java', 'libmcgen', 'UVMap', 'CPU', '1 × 1', '2 × 2', '4 × 4', '8 × 8')]    # CPU: в ru_RU у самого Blender тот же вариант написания, перекрыть его нельзя
         self.assertFalse(not_applied, 'перевод не применяется: ' + '; '.join(not_applied[:20]))
 
     def test_exception_messages_are_translated(self):
