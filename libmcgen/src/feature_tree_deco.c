@@ -445,6 +445,10 @@ void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, in
         cache.u.supports_cocoa = gen_block_tag(c->g, "minecraft:supports_cocoa");
     }
     const UpdCls *u = &cache.u;
+    { static int tx, ty, tz, tr = -1;      /* отладка: MCGEN_TRACE_POS="x,y,z" — деревья, у которых форма (±1) охватывает клетку */
+      if (tr < 0) { const char *e = getenv("MCGEN_TRACE_POS"); tr = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
+      if (tr && tx >= minx - 1 && tx <= minx + sx && ty >= miny - 1 && ty <= miny + sy && tz >= minz - 1 && tz <= minz + sz)
+          fprintf(stderr, "TREEEDGE chunk(%d,%d) shape min(%d,%d,%d) size(%d,%d,%d)\n", c->ccx, c->ccz, minx, miny, minz, sx, sy, sz); }
     #define FULL(x_, y_, z_) (shape[(((size_t)(x_) * sy) + (size_t)(y_)) * sz + (size_t)(z_)])
     #define CONSUME(dir_, x_, y_, z_) do { \
         int px = minx + (x_), py = miny + (y_), pz = minz + (z_); \

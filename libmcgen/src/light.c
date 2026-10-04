@@ -27,11 +27,12 @@ static void push(LightScratch *s, int cost, int idx) {
     s->pool_i[n] = idx; s->pool_n[n] = s->head[cost]; s->head[cost] = n;
 }
 
-int light_sky_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int height, int x, int y, int z) {
+static int light_search(const BsTab *bs, LightGetFn get, void *ud, int min_y, int height, int x, int y, int z, int block) {
     int max_y = min_y + height - 1;
-    if (y < min_y || y > max_y) return 15;
+    if (y < min_y || y > max_y) return block ? 0 : 15;
     LightScratch *s = g_ls;
     if (!s) { s = g_ls = calloc(1, sizeof *s); }
+    int best = 0;
     memset(s->g, 255, sizeof s->g);
     for (int i = 0; i <= LR; i++) s->head[i] = -1;
     for (int i = 0; i < LD * LD; i++) s->low[i] = 0x7fffffff;
@@ -47,15 +48,21 @@ int light_sky_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int he
             if (s->g[idx] != cost) continue;                         /* устаревшая запись (нашли путь дешевле) */
             int dx = idx % LD - LR, dz = (idx / LD) % LD - LR, dy = idx / (LD * LD) - LR;
             int px = x + dx, py = y + dy, pz = z + dz;
-            /* источник: y ≥ lowestSourceY колонки (самый высокий блок с затуханием ≠ 0, плюс 1; нет такого — вся колонка источник) */
-            int *low = &s->low[(dz + LR) * LD + (dx + LR)];
-            if (*low == 0x7fffffff) {
-                int l = min_y - 1;
-                for (int yy = max_y; yy >= min_y; yy--) if (damp_of(bs, get(ud, px, yy, pz)) != 0) { l = yy + 1; break; }
-                *low = l;
-            }
-            if (py >= *low) return 15 - cost;                         /* Дейкстра: первый найденный источник — самый дешёвый путь */
             int st = get(ud, px, py, pz);
+            if (block) {                                              /* блочный свет: источник — блок со свечением e; уровень = e − стоимость, берём максимум */
+                int e = BSF_LIGHT(bs->flags[st]);
+                if (e - cost > best) best = e - cost;
+                if (best >= 15 - cost) return best;                   /* дальше стоимость выше, а свечение ≤ 15: лучше не найти */
+            } else {
+                /* источник: y ≥ lowestSourceY колонки (самый высокий блок с затуханием ≠ 0, плюс 1; нет такого — вся колонка источник) */
+                int *low = &s->low[(dz + LR) * LD + (dx + LR)];
+                if (*low == 0x7fffffff) {
+                    int l = min_y - 1;
+                    for (int yy = max_y; yy >= min_y; yy--) if (damp_of(bs, get(ud, px, yy, pz)) != 0) { l = yy + 1; break; }
+                    *low = l;
+                }
+                if (py >= *low) return 15 - cost;                     /* Дейкстра: первый найденный источник — самый дешёвый путь */
+            }
             int op = damp_of(bs, st); if (op < 1) op = 1;             /* стоимость входа в эту клетку при движении источник → клетка */
             int nc = cost + op;
             if (nc > LR) continue;
@@ -68,5 +75,18 @@ int light_sky_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int he
             }
         }
     }
-    return 0;
+    return block ? best : 0;
+}
+
+int light_sky_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int height, int x, int y, int z) {
+    return light_search(bs, get, ud, min_y, height, x, y, z, 0);
+}
+int light_block_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int height, int x, int y, int z) {
+    return light_search(bs, get, ud, min_y, height, x, y, z, 1);
+}
+int light_raw_final(const BsTab *bs, LightGetFn get, void *ud, int min_y, int height, int has_sky, int x, int y, int z) {
+    int b = light_block_final(bs, get, ud, min_y, height, x, y, z);
+    if (!has_sky || b >= 15) return b;
+    int s = light_sky_final(bs, get, ud, min_y, height, x, y, z);
+    return s > b ? s : b;
 }

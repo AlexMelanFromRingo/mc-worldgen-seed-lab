@@ -39,13 +39,13 @@ def load(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('jfr'); ap.add_argument('--step', default='features'); ap.add_argument('--out'); ap.add_argument('--txt', help='порядок шага --step как «cx cz» по строкам'); ap.add_argument('--fluid-txt', help='порядок постобработки жидкостей: чанки по моменту готовности 3×3 (max конца шага full у 9 чанков)'); ap.add_argument('-v', action='store_true')
+    ap.add_argument('jfr'); ap.add_argument('--step', default='features'); ap.add_argument('--dim', default='overworld', help='измерение (имя в событии level: overworld | the_nether | the_end)'); ap.add_argument('--out'); ap.add_argument('--txt', help='порядок шага --step как «cx cz» по строкам'); ap.add_argument('--fluid-txt', help='порядок постобработки жидкостей: чанки по моменту готовности 3×3 (max конца шага full у 9 чанков)'); ap.add_argument('-v', action='store_true')
     a = ap.parse_args()
     rows = load(a.jfr)
     print('событий:', len(rows))
     c = collections.Counter((r['status'], r['thread']) for r in rows)
     for (s, t), n in sorted(c.items()): print(f'  {s:22s} {t:34s} {n}')
-    st = sorted([r for r in rows if r['status'].split(':')[-1] == a.step and r['level'].endswith('overworld')], key=lambda r: r['start'])
+    st = sorted([r for r in rows if r['status'].split(':')[-1] == a.step and r['level'].endswith(a.dim)], key=lambda r: r['start'])
     # одновременность: перекрытие интервалов [start, start+dur) у шагов РАЗНЫХ чанков; отдельно — у соседних (≤1 по Чебышёву) и «опасных» (≤2: общие записываемые окна)
     over = near1 = near2 = 0
     for i in range(len(st)):
@@ -63,7 +63,7 @@ def main():
     if a.txt:
         # третье поле — маска 5×5 вокруг чанка (бит (dz+2)*5+dx+2): чанк уже прошёл INITIALIZE_LIGHT к началу шага (конец события initialize_light ≤ начало шага);
         # libmcgen (fc_sky_light) по ней знает, какие секции света «зарегистрированы» к этому моменту (свет читает MushroomBlock.canSurvive)
-        init_end = {(r['cx'], r['cz']): r['start'] + r['dur'] for r in rows if r['status'].split(':')[-1] == 'initialize_light' and r['level'].endswith('overworld')}
+        init_end = {(r['cx'], r['cz']): r['start'] + r['dur'] for r in rows if r['status'].split(':')[-1] == 'initialize_light' and r['level'].endswith(a.dim)}
         lines = []
         for r in st:
             m = 0
@@ -77,7 +77,7 @@ def main():
     if a.fluid_txt:
         full = {}
         for r in rows:
-            if r['status'].split(':')[-1] == 'full' and r['level'].endswith('overworld'):
+            if r['status'].split(':')[-1] == 'full' and r['level'].endswith(a.dim):
                 full[(r['cx'], r['cz'])] = r['start'] + r['dur']
         ready = {}
         for (cx, cz) in full:

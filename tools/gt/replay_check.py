@@ -19,9 +19,10 @@ def run(world, jfr, stages, ring, margin, replay, dimname, out_mcr):
     env = dict(os.environ)
     if replay:
         base = os.path.splitext(jfr)[0]
-        subprocess.run([sys.executable, f'{ROOT}/tools/gt/jfr_order.py', jfr, '--txt', base + '_order.txt', '--fluid-txt', base + '_fluid.txt'], check=True, stdout=subprocess.DEVNULL)
+        jdim = {'overworld': 'overworld', 'nether': 'the_nether', 'the_nether': 'the_nether', 'end': 'the_end', 'the_end': 'the_end'}[man['dim']]
+        subprocess.run([sys.executable, f'{ROOT}/tools/gt/jfr_order.py', jfr, '--dim', jdim, '--txt', base + '_order.txt', '--fluid-txt', base + '_fluid.txt'], check=True, stdout=subprocess.DEVNULL)
         env.update(MCGEN_FEATURES_SEQ='file', MCGEN_FEATURES_ORDER=base + '_order.txt', MCGEN_FEATURES_RING=str(ring), MCGEN_FLUID_ORDER=base + '_fluid.txt')
-    dim = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether', 'end': 'minecraft:the_end'}[man['dim']]
+    dim = {'overworld': 'minecraft:overworld', 'nether': 'minecraft:the_nether', 'the_nether': 'minecraft:the_nether', 'end': 'minecraft:the_end', 'the_end': 'minecraft:the_end'}[man['dim']]
     cmd = [f'{ROOT}/libmcgen/build/mcgen-cli', '--pack', f'{ROOT}/run/pack-{man["version"]}', '--version', man['version'], '--dim', dim, '--preset', 'normal',
            '--seed', str(man['seed']), '--cx0', str(cx0), '--cz0', str(cz0), '--nx', str(nx), '--nz', str(nz), '--stages', hex(stages), '--threads', '12', '--pp-margin', str(margin - 1), '--out', out_mcr]
     subprocess.run(cmd, env=env, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

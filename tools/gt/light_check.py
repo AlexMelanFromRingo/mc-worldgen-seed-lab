@@ -11,6 +11,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import anvil
 
+BLOCK = '--block' in sys.argv
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
@@ -26,7 +27,7 @@ def load_window(w, cx, cz, r=1):
             raw = rf[key].raw(x, z)
             nbt = anvil.parse_nbt(raw)
             ch = anvil.parse_chunk(nbt, w.states, w.biomes, w.extent)
-            sky = {s['Y']: s.get('SkyLight') for s in nbt['sections']}
+            sky = {s['Y']: s.get('BlockLight' if BLOCK else 'SkyLight') for s in nbt['sections']}
             out[(x, z)] = (ch, sky, nbt)
     for f in rf.values(): f.close()
     return out
@@ -71,13 +72,38 @@ def compute_sky(D, shape_mask=None, iters=15):
     return np.clip(L, 0, 15).astype(np.uint8)
 
 
+def compute_block(E, D, iters=15):
+    """E: свечение блоков [y][z][x] (0..15), D: затухание. Блочный свет: источник = свечение, сосед = уровень − max(1, затухание приёмника)."""
+    L = E.astype(np.int16)
+    op = np.maximum(1, D.astype(np.int16))
+    for _ in range(iters):
+        best = np.zeros_like(L)
+        for ax, sh in ((0, 1), (0, -1), (1, 1), (1, -1), (2, 1), (2, -1)):
+            r = np.roll(L, sh, axis=ax)
+            if ax == 0:
+                if sh == 1: r[0] = 0
+                else: r[-1] = 0
+            elif ax == 1:
+                if sh == 1: r[:, 0] = 0
+                else: r[:, -1] = 0
+            else:
+                if sh == 1: r[:, :, 0] = 0
+                else: r[:, :, -1] = 0
+            best = np.maximum(best, r)
+        L2 = np.maximum(L, best - op)
+        if (L2 == L).all(): break
+        L = L2
+    return np.clip(L, 0, 15).astype(np.uint8)
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('world'); ap.add_argument('--cx', type=int, default=0); ap.add_argument('--cz', type=int, default=0)
-    ap.add_argument('--version', default='26.3'); ap.add_argument('--dim', default='overworld'); ap.add_argument('--n', type=int, default=1)
+    ap.add_argument('--version', default='26.3'); ap.add_argument('--dim', default='overworld'); ap.add_argument('--n', type=int, default=1); ap.add_argument('--block', action='store_true', help='проверять блочный свет (BlockLight), а не небесный')
     a = ap.parse_args()
     w = anvil.World(a.world + '/world' if os.path.isdir(a.world + '/world') else a.world, a.dim, a.version, use_cache=False)
     fl = json.load(open(f'{ROOT}/run/pack-{a.version}/reports/block_flags.json'))
     damp = np.array(fl['damp'], dtype=np.uint8)
+    emit = ((np.array(fl['flags'], dtype=np.int64) >> 20) & 15).astype(np.uint8)
     tot = bad = 0
     for k in range(a.n):
         cx, cz = a.cx + k, a.cz
@@ -87,7 +113,14 @@ def main():
         for (x, z), (ch, sky, nbt) in win.items():
             ox, oz = (x - (cx - 1)) * 16, (z - (cz - 1)) * 16
             D[:, oz:oz + 16, ox:ox + 16] = damp[ch.blocks]
-        L = compute_sky(D)
+        if a.block:
+            E = np.zeros((H, 48, 48), dtype=np.uint8)
+            for (x, z), (ch, sky, nbt) in win.items():
+                ox, oz = (x - (cx - 1)) * 16, (z - (cz - 1)) * 16
+                E[:, oz:oz + 16, ox:ox + 16] = emit[ch.blocks]
+            L = compute_block(E, D)
+        else:
+            L = compute_sky(D)
         ch, sky, nbt = win[(cx, cz)]
         ours = L[:, 16:32, 16:32]
         ref = np.zeros((H, 16, 16), dtype=np.uint8); have = np.zeros(H // 16, bool)
@@ -98,7 +131,7 @@ def main():
             b = sky.get(sy)
             if b is not None:
                 ref[s * 16:(s + 1) * 16] = nib(b)
-            elif sy > top_stored:
+            elif sy > top_stored and not a.block:
                 ref[s * 16:(s + 1) * 16] = 15          # выше верхней хранимой секции — небо (игра света там не хранит)
             have[s] = True                              # не сохранённая нижняя секция — все нули (пустой слой не пишется)
         m = np.repeat(have, 16)[:, None, None] & np.ones((1, 16, 16), bool)

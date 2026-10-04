@@ -168,11 +168,16 @@ def scenario_panels():
     sp.context = 'SCENE'
     yield 0.5
     bpy.ops.mcgen.generate('EXEC_DEFAULT')       # статистика и список построек для панели Stats
+    log('world', s.seed_mode, s.seed, s.seed_climate, s.seed_terrain, s.seed_structures, s.seed_features, 'faces', s.stats.faces, [(e.name, tuple(e.bb)) for e in s.stats.structure_starts])
     yield 0.5
     maximize(win, ar)
-    for _ in range(5):                      # панели Blender анимируют изменение высоты: ждём, пока раскладка устоится (иначе подпанели «слипаются»)
-        redraw_all()
-        yield 0.8
+    win, ar = find_area('PROPERTIES')
+    sp = ar.spaces.active
+    for ctx in ('RENDER', 'SCENE'):         # смена вкладки заставляет Properties заново посчитать высоты подпанелей (иначе после Generate они могут остаться «старыми»)
+        sp.context = ctx
+        for _ in range(3):
+            redraw_all()
+            yield 0.6
     yield from shoot(f'panels-{A.variant}-{A.lang}.png')
     yield 0.2
 

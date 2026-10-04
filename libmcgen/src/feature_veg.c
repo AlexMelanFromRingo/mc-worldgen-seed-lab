@@ -743,8 +743,8 @@ int veg_survive(FCtx *c, int st, int x, int y, int z, int *res) {
         if (veg_in_tag(c, veg_tag(c, "minecraft:overrides_mushroom_light_requirement"), below)) { *res = 1; return 1; }
         /* getRawBrightness(pos, 0) на стадии FEATURES: свет читается из движка «как есть» (fc_sky_light, feature_region.c): 0 в секциях, зарегистрированных световым потоком, 15 в остальных
          * (чанки без данных). Nether (has_skylight=false): skyEngine == null → яркость 0 < 13; Overworld/End — небесный свет по модели. */
-        if (c->w->dim_kind == 1) *res = (bs->flags[below] & BSF_SOLID_RENDER) != 0;
-        else if (c->post) *res = light_sky_final(bs, c->ext_get, c->ext_ud, c->min_y, c->height, x, y, z) < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;   /* LevelChunk.postProcessGeneration: свет настоящий */
+        if (c->post) *res = light_raw_final(bs, c->ext_get, c->ext_ud, c->min_y, c->height, c->w->dim_kind != 1, x, y, z) < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;   /* LevelChunk.postProcessGeneration: свет настоящий (небо и блочный) */
+        else if (c->w->dim_kind == 1) *res = (bs->flags[below] & BSF_SOLID_RENDER) != 0;            /* FEATURES, Nether: неба нет, блочный свет ещё не посчитан */
         else *res = fc_sky_light(c, x, y, z) < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;
         return 1;
     case VK_FIRE: *res = veg_sturdy(c, below, DIR_UP); return 1;

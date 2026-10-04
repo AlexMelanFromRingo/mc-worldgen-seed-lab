@@ -15,7 +15,7 @@ public class Agent {
             @Override public byte[] transform(Module m, ClassLoader l, String name, Class<?> c, ProtectionDomain pd, byte[] bytes) {
                 final boolean wgr = "net/minecraft/server/level/WorldGenRegion".equals(name);
                 final boolean msh = "net/minecraft/world/level/block/MushroomBlock".equals(name);
-                final boolean chk = "net/minecraft/world/level/chunk/LevelChunk".equals(name) || (System.getProperty("dbg.protoset") != null && "net/minecraft/world/level/chunk/ProtoChunk".equals(name));
+                final boolean chk = "net/minecraft/world/level/chunk/LevelChunk".equals(name) || ((System.getProperty("dbg.protoset") != null || System.getProperty("dbg.rm") != null) && "net/minecraft/world/level/chunk/ProtoChunk".equals(name));
                 final boolean mrk = "net/minecraft/world/level/chunk/ProtoChunk".equals(name);
                 if (!wgr && !msh && !chk && !mrk && !"net/minecraft/world/level/levelgen/feature/treedecorators/PlaceOnGroundDecorator".equals(name)) return null;
                 try {
@@ -51,7 +51,7 @@ public class Agent {
                     if (chk || mrk) {
                         ClassTransform t = null;
                         if (chk) t = tChk;
-                        if (name.endsWith("ProtoChunk") && System.getProperty("dbg.protoset") == null) t = tMrk;
+                        if (name.endsWith("ProtoChunk") && System.getProperty("dbg.protoset") == null && System.getProperty("dbg.rm") == null) t = tMrk;
                         if (t == null) return null;
                         return cf.transformClass(cm, t);
                     }

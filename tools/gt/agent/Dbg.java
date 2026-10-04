@@ -113,8 +113,23 @@ public class Dbg {
         } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
     }
     /** ProtoChunk/LevelChunk.setBlockState: запись в наблюдаемую клетку с кратким стеком (кто и откуда меняет клетку — в том числе после FEATURES) */
+    static final Set<String> RM = new HashSet<>(Arrays.asList(System.getProperty("dbg.rm", "").isEmpty() ? new String[0] : System.getProperty("dbg.rm").split(",")));
     public static void chunkSet(Object chunk, Object pos, Object state, int flags) {
         try {
+            if (!RM.isEmpty()) {         // -Ddbg.rm=CocoaBlock,VineBlock: любая замена блока этих классов (старое → новое) со стеком
+                Object old = call(chunk, "getBlockState", pos);
+                String cn = call(old, "getBlock").getClass().getSimpleName();
+                if (RM.contains(cn) && !old.equals(state)) {
+                    int rx = (Integer) call(pos, "getX"), ry = (Integer) call(pos, "getY"), rz = (Integer) call(pos, "getZ");
+                    StringBuilder sb = new StringBuilder(); int n = 0;
+                    for (StackTraceElement e : new Throwable().getStackTrace()) {
+                        String c2 = e.getClassName(); if (c2.equals("Dbg")) continue;
+                        sb.append(c2.substring(c2.lastIndexOf('.') + 1)).append('.').append(e.getMethodName()).append(' ');
+                        if (++n >= 16) break;
+                    }
+                    synchronized (Dbg.class) { w().println("R " + chunk.getClass().getSimpleName() + " " + rx + " " + ry + " " + rz + " | " + old + " -> " + state + " flags=" + flags + " | " + Thread.currentThread().getName() + " | " + sb); }
+                }
+            }
             if (WATCH.isEmpty()) return;
             int wx = (Integer) call(pos, "getX"), wy = (Integer) call(pos, "getY"), wz = (Integer) call(pos, "getZ");
             if (!WATCH.contains(wx + "," + wy + "," + wz)) return;
