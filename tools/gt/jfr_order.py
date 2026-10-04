@@ -39,7 +39,7 @@ def load(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('jfr'); ap.add_argument('--step', default='features'); ap.add_argument('--dim', default='overworld', help='измерение (имя в событии level: overworld | the_nether | the_end)'); ap.add_argument('--out'); ap.add_argument('--txt', help='порядок шага --step как «cx cz» по строкам'); ap.add_argument('--fluid-txt', help='порядок постобработки жидкостей: чанки по моменту готовности 3×3 (max конца шага full у 9 чанков)'); ap.add_argument('-v', action='store_true')
+    ap.add_argument('jfr'); ap.add_argument('--step', default='features'); ap.add_argument('--dim', default='overworld', help='измерение (имя в событии level: overworld | the_nether | the_end)'); ap.add_argument('--out'); ap.add_argument('--txt', help='порядок шага --step как «cx cz» по строкам'); ap.add_argument('--sched', help='единый файл расписания .mcsched (порядок FEATURES с масками света + порядок пост-обработки) — для libmcgen/аддона'); ap.add_argument('--fluid-txt', help='порядок постобработки жидкостей: чанки по моменту готовности 3×3 (max конца шага full у 9 чанков)'); ap.add_argument('-v', action='store_true')
     a = ap.parse_args()
     rows = load(a.jfr)
     print('событий:', len(rows))
@@ -87,6 +87,24 @@ def main():
         seq = sorted(ready, key=lambda k: (ready[k], k))
         open(a.fluid_txt, 'w').write(''.join(f'{x} {z}\n' for x, z in seq))
         print(f'порядок жидкостей: {len(seq)} чанков (из {len(full)} full) -> {a.fluid_txt}')
+    if a.sched:
+        init_end = {(r['cx'], r['cz']): r['start'] + r['dur'] for r in rows if r['status'].split(':')[-1] == 'initialize_light' and r['level'].endswith(a.dim)}
+        full = {(r['cx'], r['cz']): r['start'] + r['dur'] for r in rows if r['status'].split(':')[-1] == 'full' and r['level'].endswith(a.dim)}
+        ready = {}
+        for (cx, cz) in full:
+            nb = [full.get((cx + i, cz + j)) for i in (-1, 0, 1) for j in (-1, 0, 1)]
+            if all(v is not None for v in nb): ready[(cx, cz)] = max(nb)
+        out = ['# MCSCHED 1', f'# dim {a.dim}', '# F cx cz mask — шаг FEATURES (mask: окно 5×5, чанки с уже выполненным INITIALIZE_LIGHT); P cx cz — пост-обработка (FULL у всех 8 соседей)']
+        for r in st:
+            m = 0
+            for dz in range(-2, 3):
+                for dx in range(-2, 3):
+                    e = init_end.get((r['cx'] + dx, r['cz'] + dz))
+                    if e is not None and e <= r['start'] and (dx or dz): m |= 1 << ((dz + 2) * 5 + dx + 2)
+            out.append(f"F {r['cx']} {r['cz']} {m:x}")
+        for (x, z) in sorted(ready, key=lambda k: (ready[k], k)): out.append(f'P {x} {z}')
+        open(a.sched, 'w').write('\n'.join(out) + '\n')
+        print(f'расписание: {len(st)} шагов FEATURES, {len(ready)} чанков пост-обработки -> {a.sched}')
     if a.out:
         json.dump(order, open(a.out, 'w'))
         print('порядок записан:', a.out)

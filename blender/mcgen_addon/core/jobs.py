@@ -72,7 +72,7 @@ def _generate_worker(task, params, pack_dir, reuse):
     if world is None:
         t0 = time.perf_counter()
         task.report(0.02, 'Creating world')
-        world = gen.world(params.dimension, params.preset, params.seeds, params.tweaks_dict())
+        world = gen.world(params.dimension, params.preset, params.seeds, params.tweaks_dict(), params.schedule)
         t['world'] = time.perf_counter() - t0
     stage_times = {}
     last = [time.perf_counter(), None]

@@ -140,6 +140,8 @@ def draw_layers(layout, context):
     sub.prop(s, 'use_surface')
     sub.prop(s, 'use_caves')
     sub.prop(s, 'use_features')
+    if s.use_features:
+        sub.prop(s, 'schedule_file')
     sub.prop(s, 'use_structures')
     if not s.use_terrain:
         layout.label(text=iface_('Without Terrain only biomes are computed'), icon='INFO')

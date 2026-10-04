@@ -90,6 +90,10 @@ MCGEN_API const McTweakInfo *mcgen_tweak_info(const McGen *g, int i);
 MCGEN_API int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const McSeeds *seeds,
                               const McTweakValue *tweaks, int ntweaks, McWorld **out, char *err, size_t errlen);
 MCGEN_API void mcgen_world_free(McWorld *w);
+/* Расписание записанного прогона настоящего сервера (необязательно): файл .mcsched (tools/gt/jfr_order.py --sched, формат — src/schedule.h). С ним порядок шагов декораций и
+ * пост-обработки жидкостей берётся из файла, и мир повторяет тот прогон игры (0 расхождений на записанных прогонах; без файла — модель планировщика, у самой игры порядок
+ * недетерминирован). path = NULL или "" сбрасывает расписание. Вызывать до mcgen_generate_region. Возвращает 0 либо код ошибки (E_IO — файл, E_ARG — другое измерение). */
+MCGEN_API int mcgen_world_set_schedule(McWorld *w, const char *path, char *err, size_t errlen);
 MCGEN_API int mcgen_world_min_y(const McWorld *w);
 MCGEN_API int mcgen_world_height(const McWorld *w);        /* кратно 16 */
 MCGEN_API int mcgen_world_sea_level(const McWorld *w);

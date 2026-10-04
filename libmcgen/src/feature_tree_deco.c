@@ -436,7 +436,7 @@ static int upd_shape(FCtx *c, const UpdCls *u, int st, int x, int y, int z, int 
     return st;
 }
 int structure_update_shape_fc(FCtx *fc, int st, int x, int y, int z, int dir, int nst);      /* structure_post.c */
-void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, int sy, int sz, const u8 *shape) {
+static const UpdCls *upd_classes(FCtx *c) {
     static _Thread_local struct { const McGen *g; UpdCls u; } cache;
     if (cache.g != c->g) {
         cache.g = c->g;
@@ -444,7 +444,12 @@ void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, in
         cache.u.shelf = bs_block_index(c->bs, "minecraft:shelf_mushroom");
         cache.u.supports_cocoa = gen_block_tag(c->g, "minecraft:supports_cocoa");
     }
-    const UpdCls *u = &cache.u;
+    return &cache.u;
+}
+/* BlockState.updateShape для лозы, какао и грибов-полок (пост-обработка помеченных позиций, structure_post.c): новое состояние либо st */
+int tree_upd_shape(FCtx *c, int st, int x, int y, int z, int d) { return upd_shape(c, upd_classes(c), st, x, y, z, d); }
+void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, int sy, int sz, const u8 *shape) {
+    const UpdCls *u = upd_classes(c);
     { static int tx, ty, tz, tr = -1;      /* отладка: MCGEN_TRACE_POS="x,y,z" — деревья, у которых форма (±1) охватывает клетку */
       if (tr < 0) { const char *e = getenv("MCGEN_TRACE_POS"); tr = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
       if (tr && tx >= minx - 1 && tx <= minx + sx && ty >= miny - 1 && ty <= miny + sy && tz >= minz - 1 && tz <= minz + sz)

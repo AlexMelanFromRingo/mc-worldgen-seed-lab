@@ -287,6 +287,8 @@ class McGenSettings(PropertyGroup):
     use_caves: BoolProperty(name='Caves', description='Caves and canyons (carvers)', default=True, update=_auto_update)
     use_features: BoolProperty(name='Features', description='Trees, plants, ores and other decoration', default=False, update=_auto_update)
     use_structures: BoolProperty(name='Structures', description='Villages, temples, strongholds and other structures', default=False, update=_auto_update)
+    schedule_file: StringProperty(name='Server schedule', description='Optional .mcsched file recorded from a real server run (tools/gt/record_schedule.py): '
+                                  'decoration and fluid order are taken from it, so the world repeats that run of the game', subtype='FILE_PATH', default='', update=_auto_update)
 
     # World Tweaks
     use_tweaks: BoolProperty(name='World tweaks', description='Apply the settings below (off = exactly like the game)', default=False, update=_auto_update)

@@ -57,7 +57,7 @@ def collect_params(scene, prefs=None):
         version=s.version, dimension=s.dimension, preset=s.preset, seeds=tuple(sd),
         tweaks=s.tweaks_changed() if s.use_tweaks else (), cx0=cx0, cz0=cz0, nx=s.size_x, nz=s.size_z,
         stages=P.stage_mask(s.use_terrain, s.use_surface, s.use_caves, s.use_features, s.use_structures),
-        threads=(prefs.threads if prefs else 0), view=tuple(sorted(view.items())))
+        threads=(prefs.threads if prefs else 0), schedule=(bpy.path.abspath(s.schedule_file) if (s.use_features and s.schedule_file) else ''), view=tuple(sorted(view.items())))
 
 
 def resource_overrides(prefs):

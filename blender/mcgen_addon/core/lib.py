@@ -118,6 +118,7 @@ class Library:
         'mcgen_world_new': (C.c_int, [_P, C.c_char_p, C.c_char_p, C.POINTER(_McSeeds), C.POINTER(_McTweakValue), C.c_int,
                                        C.POINTER(_P), C.c_char_p, C.c_size_t], True),
         'mcgen_world_free': (None, [_P], True),
+        'mcgen_world_set_schedule': (C.c_int, [_P, C.c_char_p, C.c_char_p, C.c_size_t], False),
         'mcgen_world_min_y': (C.c_int, [_P], True),
         'mcgen_world_height': (C.c_int, [_P], True),
         'mcgen_world_sea_level': (C.c_int, [_P], True),
@@ -314,9 +315,13 @@ class McGen:
             out.append(TweakInfo(_s(t.id), _s(t.label), _s(t.group), _s(t.description), t.dflt, t.min, t.max, t.soft_min, t.soft_max, bool(t.is_int)))
         return out
 
-    def world(self, dimension, preset, seeds, tweaks=None):
-        """seeds: (climate, terrain, structures, features) int64 либо один int (единый); tweaks: {id: значение} или None."""
-        return McWorld.create(self, dimension, preset, seeds, tweaks)
+    def world(self, dimension, preset, seeds, tweaks=None, schedule=''):
+        """seeds: (climate, terrain, structures, features) int64 либо один int (единый); tweaks: {id: значение} или None;
+        schedule: путь к .mcsched — расписание записанного прогона сервера (необязательно)."""
+        w = McWorld.create(self, dimension, preset, seeds, tweaks)
+        if schedule:
+            w.set_schedule(schedule)
+        return w
 
 
 def _norm_seeds(seeds):
@@ -380,6 +385,16 @@ class McWorld:
         if not self._h:
             raise McError(MCGEN_E_ARG, 'McWorld is closed')
         return self._h
+
+    def set_schedule(self, path):
+        """Расписание записанного прогона настоящего сервера (.mcsched, tools/gt/jfr_order.py --sched): порядок шагов декораций и пост-обработки берётся из файла,
+        мир повторяет тот прогон игры. '' — сбросить (модель планировщика). Вызывать до generate_region."""
+        fn = self._lib.mcgen_world_set_schedule
+        if fn is None:
+            raise McError(MCGEN_E_UNSUPPORTED, 'The library has no mcgen_world_set_schedule')
+        err = C.create_string_buffer(ERR_BUF)
+        rc = fn(self._need(), _b(path or ''), err, ERR_BUF)
+        _check(rc, err, 'mcgen_world_set_schedule')
 
     def biome_at(self, x, y, z):
         return self._lib.mcgen_biome_at(self._need(), int(x), int(y), int(z))

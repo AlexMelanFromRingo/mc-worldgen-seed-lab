@@ -92,8 +92,10 @@ const McPreset *gen_find_preset(const McGen *g, const char *dim, const char *pre
 /* ---- мир ---- */
 typedef struct NoiseInst { const char *name; int domain; NStack ns; OldNormal on; int ready; } NoiseInst;
 
+struct McSchedule;
 struct McWorld {
     McGen *g;
+    struct McSchedule *sched;   /* расписание записанного прогона сервера (mcgen_world_set_schedule) или NULL */
     const McPreset *preset;
     const NoiseSettings *ns;
     int dim_kind;               /* 0 OW, 1 Nether, 2 End */

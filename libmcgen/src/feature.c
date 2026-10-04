@@ -1,6 +1,7 @@
 /* feature.c — стадия FEATURES: реестр типов фич, разбор конфигураций из JSON датапака, мир фич (FWorld), окно чанков региона и цикл
  * ChunkGenerator.applyBiomeDecoration. Подробно — docs/blender/features.md. */
 #include "feature.h"
+#include "schedule.h"
 #include <limits.h>
 #include "carver.h"
 #include "surface.h"
@@ -361,7 +362,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     McRegionInfo info; mcgen_region_info(r, &info);
     uint32_t stages = region_stages(r);
     /* кольцо декорации (чанки вне региона, фичи которых заходят в регион): по умолчанию 1; MCGEN_FEATURES_RING=N — N (игра декорирует ещё r+2, r+3: каскад порядка у края) */
-    int ring = 1; { const char *e = getenv("MCGEN_FEATURES_RING"); if (e && *e) ring = atoi(e); if (ring < 0) ring = 0; if (ring > 6) ring = 6; }
+    int ring = w->sched ? 3 : 1; { const char *e = getenv("MCGEN_FEATURES_RING"); if (e && *e) ring = atoi(e); if (ring < 0) ring = 0; if (ring > 6) ring = 6; }
     int gx0 = info.cx0 - ring - 1, gz0 = info.cz0 - ring - 1, gnx = info.nx + 2 * ring + 2, gnz = info.nz + 2 * ring + 2;
     size_t H = (size_t)w->height;
     FChunk *chunks = xcalloc((size_t)gnx * gnz, sizeof(FChunk));
@@ -423,9 +424,10 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         double t_dec0 = now_sec();
         DecJob dj; memset(&dj, 0, sizeof dj);
         dj.c = &c; dj.lock = mutex_new(); dj.cx0 = info.cx0 - ring; dj.cz0 = info.cz0 - ring; dj.nx = info.nx + 2 * ring; dj.nz = info.nz + 2 * ring;
-        int seq = getenv("MCGEN_FEATURES_SEQ") != NULL;
+        int seq = getenv("MCGEN_FEATURES_SEQ") != NULL || (w->sched && w->sched->nf > 0);
         if (seq) {
-            const char *ord = getenv("MCGEN_FEATURES_SEQ"); if (!ord || !*ord) ord = "xz";           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
+            const char *ord = getenv("MCGEN_FEATURES_SEQ"); if (!ord || !*ord) ord = "xz";
+            if (w->sched && w->sched->nf > 0) ord = "file";                    /* расписание записанного прогона (mcgen_world_set_schedule) */           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
             if (!strcmp(ord, "zx-")) { for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) decorate_seq(&c, cx, cz); }
             else if (!strcmp(ord, "xz-")) { for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) decorate_seq(&c, cx, cz); }
             else if (!strcmp(ord, "xzw") || !strcmp(ord, "xzw_last") || !strcmp(ord, "xzw_first")) {
@@ -443,6 +445,16 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                     int d = abs(cx - mx) > abs(cz - mz) ? abs(cx - mx) : abs(cz - mz);
                     if (d == rr) decorate_seq(&c, cx, cz);
                 }
+            }
+            else if (!strcmp(ord, "file") && w->sched && w->sched->nf > 0) {
+                const McSchedule *sc = w->sched;
+                for (int i = 0; i < sc->nf; i++) {
+                    int ox = sc->fx[i], oz = sc->fz[i];
+                    if (ox < dj.cx0 || ox >= dj.cx0 + dj.nx || oz < dj.cz0 || oz >= dj.cz0 + dj.nz) continue;
+                    c.init_override_set = 1; c.init_override = sc->fmask[i];
+                    decorate_seq(&c, ox, oz);
+                }
+                c.init_override_set = 0;
             }
             else if (!strcmp(ord, "file")) {
                 /* воспроизведение записанного порядка шагов FEATURES настоящего сервера (tools/gt/jfr_order.py --txt):

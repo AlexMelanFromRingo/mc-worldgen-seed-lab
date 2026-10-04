@@ -1,5 +1,6 @@
 /* world.c — McWorld: измерение + пресет + сиды по доменам + тонкие настройки; экземпляры шумов, компиляция роутера. */
 #include "mcgen_internal.h"
+#include "schedule.h"
 #include "df_old.h"
 #include "surface.h"
 #include <stdio.h>
@@ -212,6 +213,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
 
 void mcgen_world_free(McWorld *w) {
     if (!w) return;
+    sched_free(w->sched);
     gpu_world_free(w);   /* gpu_bridge.c */
     features_world_free(w);
     structures_world_free(w);
@@ -252,4 +254,17 @@ int world_df_point(McWorld *w, const char *id, int n, const int *xyz, double *ou
         return MCGEN_OK;
     }
     return old_df_point(w->old, f, n, xyz, out, err, errlen);
+}
+
+int mcgen_world_set_schedule(McWorld *w, const char *path, char *err, size_t errlen) {
+    if (!w) return MCGEN_E_ARG;
+    if (!path || !*path) { sched_free(w->sched); w->sched = NULL; return MCGEN_OK; }
+    McSchedule *s = sched_load(path, err, errlen);
+    if (!s) return MCGEN_E_IO;
+    if (s->dim_kind >= 0 && s->dim_kind != w->dim_kind) {
+        if (err && errlen) snprintf(err, errlen, "расписание записано для другого измерения");
+        sched_free(s); return MCGEN_E_ARG;
+    }
+    sched_free(w->sched); w->sched = s;
+    return MCGEN_OK;
 }

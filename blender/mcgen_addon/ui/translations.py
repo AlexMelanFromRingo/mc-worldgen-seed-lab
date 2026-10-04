@@ -263,6 +263,8 @@ RU = {
     'Caves': 'Пещеры',
     'Caves and canyons (carvers)': 'Пещеры и каньоны (карверы)',
     'Trees, plants, ores and other decoration': 'Деревья, растения, руды и прочие декорации',
+    'Server schedule': 'Расписание сервера',
+    'Optional .mcsched file recorded from a real server run (tools/gt/record_schedule.py): decoration and fluid order are taken from it, so the world repeats that run of the game': 'Необязательный файл .mcsched, записанный с настоящего прогона сервера (tools/gt/record_schedule.py): порядок декораций и жидкостей берётся из него, и мир повторяет тот прогон игры',
     'Villages, temples, strongholds and other structures': 'Деревни, храмы, крепости и другие постройки',
     'Without Terrain only biomes are computed': 'Без слоя «Рельеф» считаются только биомы',
     'World tweaks': 'Настройки мира',

@@ -2,6 +2,7 @@
 #include "mcgen_internal.h"
 #include "mcgen_test.h"
 #include "fluidpp.h"
+#include "schedule.h"
 #include "carver.h"
 #include "surface.h"
 #include "feature.h"
@@ -275,6 +276,18 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     /* воспроизведение записанного порядка постобработки настоящего сервера (tools/gt/jfr_order.py --fluid-txt):
      * MCGEN_FLUID_ORDER=<файл> — строки «cx cz» в порядке, в котором чанки стали «тикающими» (все 8 соседей FULL); только при pp_margin >= 0 */
     int ordered = 0;
+    if (w->sched && w->sched->np > 0) {            /* расписание записанного прогона: порядок «тикающих» чанков из файла (.mcsched, строки P) */
+        const McSchedule *sc = w->sched; int pm = pp_margin < 0 ? 0 : pp_margin; ordered = 1;
+        for (int i = 0; i < sc->np; i++) {
+            int ox = sc->px[i], oz = sc->pz[i];
+            if (!(ox >= cx0 && ox < cx0 + nx && oz >= cz0 && oz < cz0 + nz)) continue;
+            int d = ox - cx0; if (cx0 + nx - 1 - ox < d) d = cx0 + nx - 1 - ox;
+            if (oz - cz0 < d) d = oz - cz0;
+            if (cz0 + nz - 1 - oz < d) d = cz0 + nz - 1 - oz;
+            if (d >= pm) fluidpp_chunk(&fw, &r->marks[chunk_index(r, ox, oz)], ox, oz, w->min_y);
+            if (r->stages & MC_STAGE_FEATURES) features_post_chunk(&fw, w, ox, oz);
+        }
+    } else
     { const char *fo = getenv("MCGEN_FLUID_ORDER"); FILE *fp = (fo && *fo && pp_margin >= 0) ? fopen(fo, "r") : NULL;
       if (fp) { int ox, oz; ordered = 1;
           while (fscanf(fp, "%d %d", &ox, &oz) == 2) {

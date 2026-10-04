@@ -260,8 +260,10 @@ class McGen:
     def tweaks(self):
         return list(self._tweaks)
 
-    def world(self, dimension, preset, seeds, tweaks=None):
-        return McWorld(self, dimension, preset, seeds, tweaks)
+    def world(self, dimension, preset, seeds, tweaks=None, schedule=''):
+        w = McWorld(self, dimension, preset, seeds, tweaks)
+        w.schedule = schedule or ''           # макет расписание не использует
+        return w
 
 
 class McWorld:

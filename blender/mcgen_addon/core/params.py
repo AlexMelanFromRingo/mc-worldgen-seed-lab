@@ -42,6 +42,7 @@ class GenParams:
     nz: int = 8
     stages: int = 7                                       # маска MC_STAGE_* (BIOMES всегда включена)
     threads: int = 0
+    schedule: str = ''                                    # путь к .mcsched — расписание записанного прогона сервера (воспроизведение декораций); пусто = модель планировщика
     view: tuple = ()                                      # ((ключ, значение), …) — только отображение, не влияет на данные
 
     def tweaks_dict(self):
@@ -51,7 +52,7 @@ class GenParams:
         return dict(self.view)
 
     def world_key(self):
-        return (self.version, self.dimension, self.preset, self.seeds, self.tweaks)
+        return (self.version, self.dimension, self.preset, self.seeds, self.tweaks, self.schedule)
 
     def area(self):
         return (self.cx0, self.cz0, self.nx, self.nz)
@@ -102,6 +103,9 @@ def diff(old, new):
         if od.get(k) != nd.get(k):
             touched.add(tweak_stage(k))
             r['reasons'].append('tweak ' + k)
+    if old.schedule != new.schedule:
+        touched.add('features')
+        r['reasons'].append('schedule')
     if touched:
         r['world'] = True
     if old.stages != new.stages:

@@ -78,12 +78,13 @@ static int wall_update(const BsTab *bs, const SGet *wg, int st, int x, int y, in
     return r;
 }
 /* BlockState.updateShape для поддержанных классов (заборы, решётки, лестницы, «снежные» блоки, факелы, ladder); −1 — класс не обрабатывается */
+int tree_upd_shape(FCtx *c, int st, int x, int y, int z, int d);                 /* feature_tree_deco.c */
 static int update_shape_interest(const BsTab *bs, int st) {         /* блоки классов, обрабатываемых update_shape (остальные — сразу −1): кэш по блокам */
     static _Thread_local const BsTab *kb; static _Thread_local u8 *tab;
     if (kb != bs || !tab) {
         free(tab); tab = xcalloc((size_t)bs->nblocks, 1); kb = bs;
         static const char *CL[] = { "CropBlock", "SnowyBlock", "SpreadingSnowyBlock", "StairBlock", "FenceBlock", "IronBarsBlock", "WallTorchBlock", "LadderBlock", "TorchBlock",
-                                    "WallBlock", "DoorBlock", "ChestBlock", "WallBannerBlock", "DoublePlantBlock", "VegetationBlock", "MultifaceBlock", NULL };
+                                    "WallBlock", "DoorBlock", "ChestBlock", "WallBannerBlock", "DoublePlantBlock", "VegetationBlock", "MultifaceBlock", "VineBlock", "CocoaBlock", NULL };
         for (int b = 0; b < bs->nblocks; b++) {
             if (bs->blk[b].count <= 0) continue;
             for (int i = 0; CL[i]; i++) if (bs_is_a(bs, bs->blk[b].first, CL[i])) { tab[b] = 1; break; }
@@ -191,6 +192,7 @@ static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, i
         }
         return st;
     }
+    if (wg->fc && (bs_is_a(bs, st, "VineBlock") || bs_is_a(bs, st, "CocoaBlock"))) return tree_upd_shape(wg->fc, st, x, y, z, dir);   /* VineBlock/CocoaBlock.updateShape (опора: feature_tree_deco.c) */
     if (bs_is_a(bs, st, "MultifaceBlock")) {            /* MultifaceBlock.updateShape (светящийся лишайник, скульк-жилы): грань без опоры снимается, без граней — воздух */
         static const char *FN[6] = { "down", "up", "north", "south", "west", "east" };
         const char *fv = NULL;
