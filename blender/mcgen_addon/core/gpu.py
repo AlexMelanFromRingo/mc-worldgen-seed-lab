@@ -121,6 +121,14 @@ def set_mode(mode, device=-1):
     return L.dll.mcgen_gpu_set_compute(_MODE_CODE.get(mode, 2), int(device)) == 0
 
 
+AUTO_TERRAIN_MIN_CHUNKS = 256        # с этой площади (16×16 чанков) рельеф на GPU в режиме Auto окупается: измерено — на 8×8 GPU медленнее процессора (накладные расходы), на 16×16 быстрее
+
+
+def configure_for_area(chunks):
+    """Режим Auto: рельеф считает видеокарта для областей от AUTO_TERRAIN_MIN_CHUNKS чанков (меньше — быстрее процессор); режим GPU всегда считает всё, что умеет."""
+    return set_terrain_in_auto(chunks >= AUTO_TERRAIN_MIN_CHUNKS)
+
+
 def set_terrain_in_auto(on):
     """Разрешить в режиме AUTO и рельеф на GPU (по умолчанию в AUTO на GPU считаются только биомы)."""
     L = _library()

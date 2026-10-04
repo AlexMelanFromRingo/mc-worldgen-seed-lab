@@ -125,18 +125,31 @@ class W4Sink(SceneSink):
 
     @staticmethod
     def _cropped(reg, c, view):
-        """Массив блоков чанка; если задан диапазон высот уже мира, блоки вне диапазона заменяются воздухом (копия, срез мира)."""
+        """Массив блоков чанка; блоки вне диапазона высот и вне точной области в блоках (view['crop'] = (x0, z0, x1, z1), x1/z1 исключительно) заменяются воздухом
+        (копия — данные региона не меняются; копируются только краевые чанки)."""
         a = reg.blocks(*c)
         lo = view.get('y_min')
         hi = view.get('y_max')
+        crop = view.get('crop')
         min_y, h = reg.info.min_y, reg.info.height
-        if (lo is None or lo <= min_y) and (hi is None or hi >= min_y + h - 1):
+        cut_y = not ((lo is None or lo <= min_y) and (hi is None or hi >= min_y + h - 1))
+        lx0 = lx1 = lz0 = lz1 = None
+        if crop:
+            lx0, lx1 = max(0, crop[0] - c[0] * 16), min(16, crop[2] - c[0] * 16)
+            lz0, lz1 = max(0, crop[1] - c[1] * 16), min(16, crop[3] - c[1] * 16)
+        cut_xz = crop is not None and (lx0 > 0 or lx1 < 16 or lz0 > 0 or lz1 < 16)
+        if not cut_y and not cut_xz:
             return a.reshape(-1)
         a = a.copy()
         if lo is not None and lo > min_y:
             a[:max(0, min(h, lo - min_y))] = 0
         if hi is not None and hi < min_y + h - 1:
             a[max(0, hi - min_y + 1):] = 0
+        if cut_xz:                                               # оси блоков чанка: [y][z][x]
+            a[:, :max(0, lz0), :] = 0
+            a[:, max(0, lz1):, :] = 0
+            a[:, :, :max(0, lx0)] = 0
+            a[:, :, max(0, lx1):] = 0
         return a.reshape(-1)
 
     def step(self, budget_s):

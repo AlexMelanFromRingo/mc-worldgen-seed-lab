@@ -1582,6 +1582,70 @@ class GpuBuildTests(unittest.TestCase):
             paths.set_cache_override(None)
 
 
+class GpuAutoTests(unittest.TestCase):
+    def test_auto_terrain_threshold(self):
+        from mcgen_addon.core import gpu
+        self.assertEqual(gpu.AUTO_TERRAIN_MIN_CHUNKS, 256)
+        gpu.configure_for_area(64)                      # без GPU-функций в библиотеке (макет) — просто False, без исключений
+        if not gpu.status().get('ready'):
+            self.skipTest('нет GPU')
+        gpu.set_mode('AUTO')
+        gpu.configure_for_area(64)
+        self.assertEqual(gpu.status()['features'], 'biomes')                       # 8×8 чанков: процессор быстрее
+        gpu.configure_for_area(1024)
+        self.assertEqual(gpu.status()['features'], 'biomes+terrain')               # 32×32: рельеф на GPU
+        gpu.configure_for_area(64)
+
+
+class AreaCropTests(unittest.TestCase):
+    """Область в блоках: сцена обрезается точно по границам (W4Sink._cropped, только краевые чанки копируются)."""
+
+    class Reg:
+        class info:
+            min_y, height = -64, 32
+
+        def __init__(self):
+            self.src = {}
+
+        def blocks(self, cx, cz):
+            return self.src.setdefault((cx, cz), np.ones((32, 16, 16), dtype=np.uint16))
+
+    def crop(self, c, view):
+        from mcgen_addon.core import w4_adapter
+        return w4_adapter.W4Sink._cropped(self.Reg(), c, view).reshape(32, 16, 16)
+
+    def test_no_crop_returns_the_same_data(self):
+        reg = self.Reg()
+        from mcgen_addon.core import w4_adapter
+        a = w4_adapter.W4Sink._cropped(reg, (0, 0), {})
+        self.assertTrue(np.shares_memory(a, reg.src[(0, 0)]))                  # без обрезки — без копии
+        b = w4_adapter.W4Sink._cropped(reg, (0, 0), {'crop': (0, 0, 32, 32)})  # область кратна чанкам и охватывает чанк целиком
+        self.assertTrue(np.shares_memory(b, reg.src[(0, 0)]))
+
+    def test_24_by_8_blocks(self):
+        view = {'crop': (0, 0, 24, 8)}                                         # 24 × 8 блока: чанки (0,0) и (1,0)
+        a = self.crop((0, 0), view)
+        self.assertEqual(int(a[:, :8, :].min()), 1)
+        self.assertEqual(int(a[:, 8:, :].max()), 0)                            # z ≥ 8 — воздух
+        b = self.crop((1, 0), view)
+        self.assertEqual(int(b[:, :8, :8].min()), 1)                           # x 16..23 остаются
+        self.assertEqual(int(b[:, :, 8:].max()), 0)                            # x ≥ 24 — воздух
+        self.assertEqual(int(b[:, 8:, :].max()), 0)
+        self.assertEqual(int((a != 0).sum() + (b != 0).sum()), 32 * 24 * 8)     # ровно 24 × 8 колонок высотой 32
+
+    def test_negative_origin_and_height_crop_together(self):
+        view = {'crop': (-17, -3, 5, 20), 'y_min': -60, 'y_max': -40}
+        a = self.crop((-2, -1), view)                                          # блоки x -32..-17, z -16..-1: попадает x == -17 и z -3..-1
+        self.assertEqual(int((a != 0).sum()), 1 * 3 * 21)                      # 1 столбец по x, 3 по z, 21 слой по y
+        self.assertEqual(int(a[:4].max()), 0)                                  # y -64..-61 ниже y_min
+
+    def test_source_data_is_never_modified(self):
+        reg = self.Reg()
+        from mcgen_addon.core import w4_adapter
+        w4_adapter.W4Sink._cropped(reg, (0, 0), {'crop': (0, 0, 5, 5)})
+        self.assertEqual(int(reg.src[(0, 0)].min()), 1)
+
+
 class CatalogTests(unittest.TestCase):
     def test_defaults_and_update(self):
         catalog.clear()

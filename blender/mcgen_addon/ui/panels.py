@@ -114,17 +114,23 @@ def draw_area(layout, context):
     col.prop(s, 'origin_x', text=iface_('Origin X'))
     col.prop(s, 'origin_z', text=iface_('Origin Z'))
     col = layout.column(align=True)
-    col.prop(s, 'size_x')
-    col.prop(s, 'size_z')
+    if s.unit == 'BLOCKS':                                   # размер в тех же единицах, что и начало: в блоках — любой, область обрезается точно по нему
+        col.prop(s, 'width')
+        col.prop(s, 'depth')
+    else:
+        col.prop(s, 'size_x')
+        col.prop(s, 'size_z')
     col = layout.column(align=True)
     col.prop(s, 'y_min')
     col.prop(s, 'y_max')
-    cx0, cz0 = s.origin_chunks()
-    n = s.size_x * s.size_z
+    cx0, cz0, nx, nz = s.area_chunks()
+    x0, z0, x1, z1 = s.block_box()
+    n = nx * nz
     box = layout.box()
-    box.label(text=iface_('{w} × {d} blocks, {n} chunks').format(w=s.size_x * 16, d=s.size_z * 16, n=n), icon='MESH_GRID')
-    box.label(text=iface_('Chunks {a},{b} to {c},{d}').format(a=cx0, b=cz0, c=cx0 + s.size_x - 1, d=cz0 + s.size_z - 1))
-    need = sysinfo.estimate_bytes(s.dimension, s.size_x, s.size_z)
+    box.label(text=iface_('{w} × {d} blocks, {n} chunks').format(w=x1 - x0, d=z1 - z0, n=n), icon='MESH_GRID')
+    box.label(text=iface_('Blocks X {a} to {b}, Z {c} to {d}').format(a=x0, b=x1 - 1, c=z0, d=z1 - 1))
+    box.label(text=iface_('Chunks {a},{b} to {c},{d}').format(a=cx0, b=cz0, c=cx0 + nx - 1, d=cz0 + nz - 1))
+    need = sysinfo.estimate_bytes(s.dimension, nx, nz)
     box.label(text=iface_('Voxel data: about {m}').format(m=_fmt_bytes(need)), icon='INFO')
     if n > 1024:
         box.label(text=iface_('Large area: generation and the scene will take long'), icon='ERROR')
@@ -283,6 +289,9 @@ def draw_gpu(layout, context):
     row.operator('mcgen.gpu_benchmark', text='', icon='TIME')
     if st.get('ready'):
         box.label(text=st.get('device', '')[:90], icon='OUTLINER_DATA_LIGHTPROBE')
+        box.label(text=iface_('GPU computes: {f}').format(f=st.get('features', '?')))
+        if st.get('mode') == 'Auto':
+            box.label(text=iface_('Auto: terrain on the GPU from {n} chunks; choose GPU in View > Compute to always use it').format(n=gpu.AUTO_TERRAIN_MIN_CHUNKS))
         res = gpu.last_selftest()
         if res:
             ok, txt = list(res.values())[-1]

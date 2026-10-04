@@ -154,6 +154,8 @@ CPU-путь не сломан: `make -C libmcgen test` проходит; G2 26.
 `mcgen_gpu_status(buf, n)` (строки «ключ: значение»: mode, state, features, device, library, worlds_ok/failed, last_fallback, selftest, reason), `mcgen_gpu_selftest(McGen*, n, report, len)`,
 `mcgen_gpu_biome_grid` / `mcgen_biome_grid_cpu` (строго GPU / строго CPU), `mcgen_gpu_biome_points`. `mcgen_biome_grid` сама выбирает путь (Auto: сетки ≥ 16 384 точек, GPU готов и проверен).
 
+**Что считает видеокарта в режиме Auto (аддон, `core/gpu.py`):** карты биомов — всегда, когда GPU готов и самопроверка не провалена; **рельеф — для областей от 256 чанков (16×16)** (`AUTO_TERRAIN_MIN_CHUNKS`; измерено на RTX 4080 SUPER, стадия 0x3, 12 потоков CPU, включая запуск процесса: 8×8 — CPU 0,62 с против GPU 0,80 с, 16×16 — 1,50 против 1,08 с, 32×32 — 3,71 против 2,60 с). Меньшие области быстрее на процессоре: у GPU есть постоянные накладные расходы на описание мира. В режиме **GPU** (View ▸ Compute) рельеф считается на видеокарте всегда. Панель Stats показывает строку «GPU считает: …».
+
 **Переменные окружения** (CLI, тесты): `MCGEN_COMPUTE=cpu|gpu|auto`, `MCGEN_CUDA_LIB=<файл>`, `MCGEN_GPU_AUTO_TERRAIN=1`, `MCGEN_GPU_DEBUG=1` (сообщения моста: время описания мира, занятость GPU, ожидания),
 `MCGPU_PROFILE=1` (время ядер по видам узлов и фазам пакета, размеры арены).
 

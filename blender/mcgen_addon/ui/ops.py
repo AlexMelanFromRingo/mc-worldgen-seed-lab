@@ -50,12 +50,13 @@ def collect_params(scene, prefs=None):
         sd = seeds.domains(s.seed, 'UNIFIED', None)
     else:
         sd = seeds.domains(None, 'SPLIT', (s.seed_climate, s.seed_terrain, s.seed_structures, s.seed_features))
-    cx0, cz0 = s.origin_chunks()
+    cx0, cz0, nx, nz = s.area_chunks()
+    gpu_mod.configure_for_area(nx * nz)    # Auto: рельеф на видеокарте — только для областей, где она быстрее процессора
     view = {'tint_biomes': s.tint_biomes, 'water_style': s.water_style, 'chunks_per_object': int(s.chunks_per_object), 'greedy_merge': s.greedy_merge,
-            'lod_mode': s.lod_mode, 'lod_near': s.lod_near, 'pixel_style': s.pixel_style, 'y_min': s.y_min, 'y_max': s.y_max}
+            'lod_mode': s.lod_mode, 'lod_near': s.lod_near, 'pixel_style': s.pixel_style, 'y_min': s.y_min, 'y_max': s.y_max, 'crop': s.crop_box()}
     return P.GenParams(
         version=s.version, dimension=s.dimension, preset=s.preset, seeds=tuple(sd),
-        tweaks=s.tweaks_changed() if s.use_tweaks else (), cx0=cx0, cz0=cz0, nx=s.size_x, nz=s.size_z,
+        tweaks=s.tweaks_changed() if s.use_tweaks else (), cx0=cx0, cz0=cz0, nx=nx, nz=nz,
         stages=P.stage_mask(s.use_terrain, s.use_surface, s.use_caves, s.use_features, s.use_structures),
         threads=(prefs.threads if prefs else 0), schedule=(bpy.path.abspath(s.schedule_file) if (s.use_features and s.schedule_file) else ''), view=tuple(sorted(view.items())))
 

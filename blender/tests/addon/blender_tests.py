@@ -265,6 +265,44 @@ class T02_Properties(unittest.TestCase):
         self.assertEqual((s.origin_x, s.origin_z), (160, -48))
         self.assertEqual(s.origin_chunks(), (10, -3))
 
+    def test_block_size_is_exact(self):
+        """Units = Blocks: размер задаётся в блоках (например 24 × 8), генерируются накрывающие чанки, сцена обрезается по точным границам."""
+        s = S()
+        s.unit = 'BLOCKS'
+        s.origin_x = s.origin_z = 0
+        s.width, s.depth = 24, 8
+        self.assertEqual((s.width, s.depth), (24, 8))
+        self.assertEqual(s.area_chunks(), (0, 0, 2, 1))
+        self.assertEqual(s.crop_box(), (0, 0, 24, 8))
+        p = ops.collect_params(bpy.context.scene, None)
+        self.assertEqual((p.cx0, p.cz0, p.nx, p.nz), (0, 0, 2, 1))
+        self.assertEqual(dict(p.view)['crop'], (0, 0, 24, 8))
+        s.origin_x = 8                                                          # область 8..31 по x: чанки 0 и 1
+        self.assertEqual((s.area_chunks(), s.crop_box()), ((0, 0, 2, 1), (8, 0, 32, 8)))
+        s.width, s.depth = 32, 32                                               # по x начало сдвинуто на 8 — область 8..39 накрывает 3 чанка, по z (0..31) — 2
+        self.assertEqual(s.area_chunks(), (0, 0, 3, 2))
+        s.origin_x = 0
+        self.assertIsNone(s.crop_box())                                         # начало и размер кратны чанкам — обрезки нет
+        # размер в чанках сбрасывает точный размер в блоках
+        s.width = 24
+        s.size_x = 3
+        self.assertEqual(s.width, 48)
+
+    def test_unit_switch_converts_the_whole_area(self):
+        s = S()
+        s.unit = 'BLOCKS'
+        s.origin_x, s.origin_z = 8, 0
+        s.width, s.depth = 24, 8                                                # блоки 8..31 x 0..7
+        s.unit = 'CHUNKS'
+        self.assertEqual((s.origin_x, s.origin_z, s.size_x, s.size_z), (0, 0, 2, 1))   # ближайшая сетка чанков, накрывающая область
+        s.unit = 'BLOCKS'
+        self.assertEqual((s.origin_x, s.origin_z, s.width, s.depth), (0, 0, 32, 16))
+        self.assertIsNone(s.crop_box())
+        s.unit = 'CHUNKS'
+        s.size_x = s.size_z = 5
+        s.unit = 'BLOCKS'
+        self.assertEqual((s.width, s.depth), (80, 80))
+
     def test_collect_params(self):
         s = S()
         s.seed_mode = 'SPLIT'
@@ -275,7 +313,9 @@ class T02_Properties(unittest.TestCase):
         s.tweaks.ore_density = 2.0
         p = ops.collect_params(bpy.context.scene, props.get_prefs())
         self.assertEqual(p.seeds, (99162322, 12345, -7, 113318802))
-        self.assertEqual((p.cx0, p.cz0, p.nx, p.nz), (-2, 1, 5, 3))
+        # режим Blocks: область точная — x -17..62, z 31..78 накрывают чанки -2..3 и 1..4 (раньше начало «прижималось» к сетке чанков)
+        self.assertEqual((p.cx0, p.cz0, p.nx, p.nz), (-2, 1, 6, 4))
+        self.assertEqual(dict(p.view)['crop'], (-17, 31, 63, 79))
         self.assertEqual(p.stages, 1 | 2 | 4 | 8 | 16)
         self.assertEqual(p.tweaks, (('ore_density', 2.0),))
         s.use_tweaks = False
