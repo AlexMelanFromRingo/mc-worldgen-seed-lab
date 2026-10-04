@@ -1,0 +1,44 @@
+mode: GPU
+state: GPU готово
+features: biomes+terrain
+device: NVIDIA GeForce RTX 4080 SUPER (sm_89, 16375 МБ)
+library: ./libmcgen/build/gpu/libmcgen_cuda.so
+worlds_ok: 0
+worlds_failed: 0
+last_fallback: -
+selftest: не запускалась
+
+26.1               minecraft:overworld    normal                : точек    500000  расхождений 0  (GPU→CPU: 1)  сеток   167207 расхождений 0  GPU 0.08 с, CPU 1.31 с 
+26.1               minecraft:overworld    amplified             : точек    500000  расхождений 0  (GPU→CPU: 1)  сеток   196864 расхождений 0  GPU 0.07 с, CPU 1.34 с 
+26.1               minecraft:overworld    large_biomes          : точек    500000  расхождений 0  (GPU→CPU: 1)  сеток   193422 расхождений 0  GPU 0.07 с, CPU 1.35 с 
+26.1               minecraft:overworld    single_biome_surface  : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   193045 расхождений 0  GPU 0.01 с, CPU 0.01 с 
+26.1               minecraft:overworld    floating_islands      : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   221293 расхождений 0  GPU 0.02 с, CPU 0.15 с 
+26.1               minecraft:overworld    caves                 : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   192760 расхождений 0  GPU 0.02 с, CPU 0.17 с 
+26.1               minecraft:the_nether   normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   156633 расхождений 0  GPU 0.01 с, CPU 0.07 с 
+26.1               minecraft:the_end      normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   204790 расхождений 0  GPU 0.16 с, CPU 0.87 с 
+26.2               minecraft:overworld    normal                : точек    500000  расхождений 0  (GPU→CPU: 1)  сеток   184252 расхождений 0  GPU 0.14 с, CPU 1.36 с 
+26.2               minecraft:overworld    amplified             : точек    500000  расхождений 0  (GPU→CPU: 1)  сеток   183421 расхождений 0  GPU 0.30 с, CPU 1.57 с 
+26.2               minecraft:overworld    large_biomes          : точек    500000  расхождений 0  (GPU→CPU: 4)  сеток   203763 расхождений 0  GPU 0.42 с, CPU 1.83 с 
+26.2               minecraft:overworld    single_biome_surface  : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   165553 расхождений 0  GPU 0.03 с, CPU 0.02 с 
+26.2               minecraft:overworld    floating_islands      : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   190435 расхождений 0  GPU 0.05 с, CPU 0.19 с 
+26.2               minecraft:overworld    caves                 : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   180628 расхождений 0  GPU 0.05 с, CPU 0.18 с 
+26.2               minecraft:the_nether   normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   185092 расхождений 0  GPU 0.06 с, CPU 0.08 с 
+26.2               minecraft:the_end      normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   216169 расхождений 0  GPU 0.35 с, CPU 1.14 с 
+26.3               minecraft:overworld    normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   170135 расхождений 0  GPU 0.16 с, CPU 2.11 с 
+26.3               minecraft:overworld    amplified             : точек    500000  расхождений 0  (GPU→CPU: 2)  сеток   183094 расхождений 0  GPU 0.29 с, CPU 1.45 с 
+26.3               minecraft:overworld    large_biomes          : точек    500000  расхождений 0  (GPU→CPU: 2)  сеток   180552 расхождений 0  GPU 0.28 с, CPU 1.24 с 
+26.3               minecraft:overworld    single_biome_surface  : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   186666 расхождений 0  GPU 0.04 с, CPU 0.03 с 
+26.3               minecraft:overworld    floating_islands      : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   198240 расхождений 0  GPU 0.07 с, CPU 0.21 с 
+26.3               minecraft:overworld    caves                 : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   183636 расхождений 0  GPU 0.13 с, CPU 0.28 с 
+26.3               minecraft:the_nether   normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   166348 расхождений 0  GPU 0.04 с, CPU 0.08 с 
+26.3               minecraft:the_end      normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   190070 расхождений 0  GPU 0.39 с, CPU 1.36 с 
+26.4-snapshot-2    minecraft:overworld    normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   194217 расхождений 0  GPU 0.12 с, CPU 1.48 с 
+26.4-snapshot-2    minecraft:overworld    amplified             : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   207717 расхождений 0  GPU 0.19 с, CPU 1.12 с 
+26.4-snapshot-2    minecraft:overworld    large_biomes          : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   187060 расхождений 0  GPU 0.21 с, CPU 0.81 с 
+26.4-snapshot-2    minecraft:overworld    single_biome_surface  : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   166952 расхождений 0  GPU 0.05 с, CPU 0.03 с 
+26.4-snapshot-2    minecraft:overworld    floating_islands      : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   182858 расхождений 0  GPU 0.08 с, CPU 0.31 с 
+26.4-snapshot-2    minecraft:overworld    caves                 : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   188625 расхождений 0  GPU 0.07 с, CPU 0.32 с 
+26.4-snapshot-2    minecraft:the_nether   normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   184794 расхождений 0  GPU 0.06 с, CPU 0.10 с 
+26.4-snapshot-2    minecraft:the_end      normal                : точек    500000  расхождений 0  (GPU→CPU: 0)  сеток   176839 расхождений 0  GPU 0.60 с, CPU 1.48 с 
+
+ИТОГО: конфигураций 32, точек 16000000, расхождений 0 (GPU→CPU 13), точек в сетках 5983130, расхождений 0

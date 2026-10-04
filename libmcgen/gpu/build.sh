@@ -3,6 +3,7 @@
 #   libmcgen/gpu/build.sh                    # sm_89 (RTX 40xx) + PTX compute_75 для совместимости вперёд -> libmcgen/build/gpu/libmcgen_cuda.so
 #   CUDA_ARCH="75 80 86 89" libmcgen/gpu/build.sh   # несколько cubin-архитектур (релизная сборка)
 #   OUT=/путь libmcgen/gpu/build.sh          # другой каталог результата
+#   libmcgen/gpu/build.sh --install          # + скопировать в blender/mcgen_addon/lib/linux-x64/ (рядом с libmcgen.so: аддон найдёт сам)
 # Нужен только CUDA Toolkit при сборке; у пользователя — драйвер NVIDIA (libcuda.so); cudart и libstdc++ слинкованы статически.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -19,7 +20,10 @@ set -x
 "$NVCC" -O3 -std=c++17 --shared -Xcompiler -fPIC,-ffp-contract=off,-fvisibility=hidden -Xlinker -z,noexecstack \
   "${GEN[@]}" --fmad=false -prec-div=true -prec-sqrt=true -ftz=false \
   -Xptxas -O3 -lineinfo -I"$HERE" -I"$HERE/../../engine" ${EXTRA_NVFLAGS:-} \
-  -Xcompiler -static-libstdc++,-static-libgcc \
+  -Xcompiler -static-libstdc++,-static-libgcc -Xlinker --version-script="$HERE/mcgpu.map" \
   -o "$OUT/libmcgen_cuda.so" "${SRCS[@]}"
 set +x
 echo "OK: $OUT/libmcgen_cuda.so"
+if [ "${1:-}" = "--install" ]; then
+  DEST="$HERE/../../blender/mcgen_addon/lib/linux-x64"; mkdir -p "$DEST"; cp "$OUT/libmcgen_cuda.so" "$DEST/"; echo "установлено: $DEST/libmcgen_cuda.so"
+fi

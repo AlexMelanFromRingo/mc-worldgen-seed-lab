@@ -13,6 +13,7 @@
  * плиты, растения…) — задача стадий декораций; здесь всё непрозрачное считается полным блоком.
  */
 #include "mcgen_internal.h"
+#include "blockstate.h"
 #include "fluidpp.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@ typedef struct { u8 type, source, amount, falling; } FS;   /* FluidState */
 
 typedef struct {
     const McGen *g;
+    const struct BsTab *bs;        /* флаги состояний блоков: форма столкновения/опорная грань (при block_flags.json), иначе всё непрозрачное — «полный» блок */
     int water[16], lava[16];       /* состояния water[level=i], lava[level=i] */
     int obsidian, cobblestone, stone;
     const u8 *washed;              /* тег washed_away_by_fluids (26.3+) */
@@ -33,7 +35,7 @@ static FTab *ftab_get(const McGen *g) {
     static _Thread_local FTab *cache; static _Thread_local const McGen *owner;
     if (owner == g && cache) return cache;
     FTab *t = xcalloc(1, sizeof *t);
-    t->g = g;
+    t->g = g; t->bs = bs_get(g);
     for (int i = 0; i < 16; i++) {
         char n[64];
         snprintf(n, sizeof n, "minecraft:water[level=%d]", i); t->water[i] = gen_state_id(g, n);
@@ -84,6 +86,12 @@ static FS fluid_of(const FTab *t, int st) {
         else { f.amount = 8; f.falling = 1; }
         return f;
     }
+    if (t->bs->exported) {          /* BlockState.getFluidState() из настоящих классов игры (waterlogged, морская трава, ламинария, пузырьки…) */
+        u16 fl = t->bs->fluid[st]; int ty = BS_FL_TYPE(fl);
+        if (ty == FL_WATER || ty == FL_FLOWING_WATER) f.type = FT_WATER; else if (ty == FL_LAVA || ty == FL_FLOWING_LAVA) f.type = FT_LAVA; else return f;
+        f.source = (u8)BS_FL_SOURCE(fl); f.amount = (u8)BS_FL_AMOUNT(fl); f.falling = (u8)BS_FL_FALLING(fl);
+        return f;
+    }
     if (g->state_cls[st] & 4) { f.type = FT_WATER; f.source = 1; f.amount = 8; }   /* waterlogged и т. п. */
     return f;
 }
@@ -100,7 +108,19 @@ static inline int full_shape(const FTab *t, int st) {
     if (blk == t->g->blk_water || blk == t->g->blk_lava) return 0;
     return 1;
 }
-static inline int is_solid(const FTab *t, int st) { return full_shape(t, st); }
+/* грань блока в направлении dir (0 вниз, 1 вверх, 2 N, 3 S, 4 W, 5 E) закрывает клетку целиком: полный блок столкновения или полная опорная грань (приближение
+ * Shapes.mergedFaceOccludes: пустые формы — растения, лишайник, ковры сбоку — жидкость пропускают). Без block_flags.json — прежнее «всё непрозрачное полное». */
+static inline int face_full(const FTab *t, int st, int dir) {
+    if (!full_shape(t, st)) return 0;
+    const struct BsTab *bs = t->bs;
+    if (!bs->exported) return 1;
+    return ((bs->flags[st] & BSF_FULL_COLL) != 0) || ((bs->sturdy[st] >> dir) & 1);
+}
+/* BSF_SOLID: BlockState.isSolid() — для правила «бесконечной воды» (твёрдое под клеткой) */
+static inline int is_solid(const FTab *t, int st) {
+    if (!full_shape(t, st)) return 0;
+    return t->bs->exported ? (t->bs->flags[st] & BSF_SOLID) != 0 : 1;
+}
 static inline int can_hold_any(const FTab *t, int st) {
     if (t->legacy_hold) return t->legacy_hold[st];
     return t->washed && t->washed[t->g->state_block[st]];
@@ -144,14 +164,17 @@ static void set_and_update(Ctx *c, int x, int y, int z, int st) {
     for (int i = 0; i < 6; i++) lava_check(c, x + UX[i], y + UY[i], z + UZ[i]);
 }
 
-static int can_pass_wall(Ctx *c, int src_st, int tgt_st) { return !full_shape(c->t, tgt_st) && !full_shape(c->t, src_st); }
+static const int HDIR[4] = { 2, 5, 3, 4 };      /* горизонтальное h (N, E, S, W) → номер грани (DOWN 0, UP 1, N 2, S 3, W 4, E 5) */
+static inline int opp_dir(int d) { return d ^ 1; }
+/* FlowingFluid.canPassThroughWall(direction, from, to): !mergedFaceOccludes(from.collision, to.collision, direction) */
+static int can_pass_wall(Ctx *c, int src_st, int tgt_st, int dir) { return !face_full(c->t, src_st, dir) && !face_full(c->t, tgt_st, opp_dir(dir)); }
 static int is_source_of_type(Ctx *c, FS f) { return f.type == c->ft && f.source; }
-static int can_maybe_pass(Ctx *c, int src_st, int tgt_st) {
+static int can_maybe_pass(Ctx *c, int src_st, int tgt_st, int dir) {
     FS tf = fluid_of(c->t, tgt_st);
-    return !is_source_of_type(c, tf) && can_hold_any(c->t, tgt_st) && can_pass_wall(c, src_st, tgt_st);
+    return !is_source_of_type(c, tf) && can_hold_any(c->t, tgt_st) && can_pass_wall(c, src_st, tgt_st, dir);
 }
 static int is_water_hole(Ctx *c, int top_st, int bot_st) {
-    if (!can_pass_wall(c, top_st, bot_st)) return 0;
+    if (!can_pass_wall(c, top_st, bot_st, 0)) return 0;
     FS bf = fluid_of(c->t, bot_st);
     return same_fluid(bf.type, c->ft) ? 1 : can_hold_any(c->t, bot_st);
 }
@@ -160,7 +183,7 @@ static FS new_liquid(Ctx *c, int x, int y, int z, int st) {
     for (int h = 0; h < 4; h++) {
         int ns = G(c, x + HX[h], y, z + HZ[h]);
         FS nf = fluid_of(c->t, ns);
-        if (same_fluid(nf.type, c->ft) && can_pass_wall(c, st, ns)) {
+        if (same_fluid(nf.type, c->ft) && can_pass_wall(c, st, ns, HDIR[h])) {
             if (nf.source) sources++;
             if (nf.amount > highest) highest = nf.amount;
         }
@@ -173,7 +196,7 @@ static FS new_liquid(Ctx *c, int x, int y, int z, int st) {
     }
     int as = G(c, x, y + 1, z);
     FS af = fluid_of(c->t, as);
-    if (af.type != FT_NONE && same_fluid(af.type, c->ft) && can_pass_wall(c, st, as)) { r.type = (u8)c->ft; r.amount = 8; r.falling = 1; return r; }
+    if (af.type != FT_NONE && same_fluid(af.type, c->ft) && can_pass_wall(c, st, as, 1)) { r.type = (u8)c->ft; r.amount = 8; r.falling = 1; return r; }
     int amount = highest - drop_off(c);
     if (amount <= 0) return r;
     r.type = (u8)c->ft; r.amount = (u8)amount;
@@ -211,7 +234,7 @@ static int slope_distance(Ctx *c, Spread *s, int x, int y, int z, int pass, int 
         if (h == from_h) continue;
         int tx = x + HX[h], tz = z + HZ[h];
         int ts = sc_state(c, s, tx, y, tz);
-        if (can_maybe_pass(c, st, ts)) {   /* canHoldSpecificFluid — только для LiquidBlockContainer (здесь их нет) */
+        if (can_maybe_pass(c, st, ts, HDIR[h])) {   /* canHoldSpecificFluid — только для LiquidBlockContainer (здесь их нет) */
             if (sc_hole(c, s, tx, y, tz)) return pass;
             if (pass < slope_dist(c)) {
                 int v = slope_distance(c, s, tx, y, tz, pass + 1, opposite_h(h), ts);
@@ -251,7 +274,7 @@ static void spread_to_sides(Ctx *c, int x, int y, int z, FS f, int st) {
         int tx = x + HX[h], tz = z + HZ[h];
         int ts = G(c, tx, y, tz);
         FS tf = fluid_of(c->t, ts);
-        if (!can_maybe_pass(c, st, ts)) continue;
+        if (!can_maybe_pass(c, st, ts, HDIR[h])) continue;
         FS newf = new_liquid(c, tx, y, tz, ts);
         if (!s) { memset(&sp, 0, sizeof sp); sp.ox = x; sp.oz = z; s = &sp; }
         int dist = sc_hole(c, s, tx, y, tz) ? 0 : slope_distance(c, s, tx, y, tz, 1, opposite_h(h), ts);
@@ -278,7 +301,7 @@ static void spread(Ctx *c, int x, int y, int z, int st, FS f) {
     if (f.type == FT_NONE) return;
     int bs = G(c, x, y - 1, z);
     FS bf = fluid_of(c->t, bs);
-    if (can_maybe_pass(c, st, bs)) {
+    if (can_maybe_pass(c, st, bs, 0)) {
         FS nb = new_liquid(c, x, y - 1, z, bs);
         if (can_be_replaced(c, bf, x, y - 1, z, nb.type, 1)) {
             spread_to(c, x, y - 1, z, bs, 1, nb);

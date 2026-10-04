@@ -15,12 +15,19 @@
 
 
 void veins_apply_new(McWorld *w, SCtx *x, int cx, int cz, int y0, int ny, uint16_t *blocks);
+typedef struct Beard Beard;
+Beard *beard_for_chunk(McWorld *w, int cx, int cz);
+void beard_free(Beard *b);
+float beard_value(const Beard *b, int x, int y, int z);
+void beard_volume(const Beard *b, float *out, const Vol *v);
+static float bcb_v(void *ud, int x, int y, int z) { return beard_value(ud, x, y, z); }
+static void bcb_vol(void *ud, float *o, const Vol *v) { beard_volume(ud, o, v); }
 static double now(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return (double)t.tv_sec + 1e-9 * (double)t.tv_nsec; }
 static uint64_t rng_next(uint64_t *s) { uint64_t x = *s; x ^= x << 13; x ^= x >> 7; x ^= x << 17; *s = x; return x; }
 
 int main(int argc, char **argv) {
     const char *run = NULL, *lib = NULL, *vers = "26.3,26.4-snapshot-2", *dims = "all";
-    int nchunks = 256, nseeds = 3, presets = 0, structures = 0;
+    int nchunks = 256, nseeds = 3, presets = 0, structures = 0, tweaks = 0;
     for (int i = 1; i < argc; i++) {
         const char *k = argv[i], *v = i + 1 < argc ? argv[i + 1] : NULL;
         if (!strcmp(k, "--run") && v) { run = v; i++; }
@@ -31,6 +38,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(k, "--dims") && v) { dims = v; i++; }
         else if (!strcmp(k, "--presets")) presets = 1;
         else if (!strcmp(k, "--structures")) structures = 1;
+        else if (!strcmp(k, "--tweaks")) tweaks = 1;
     }
     if (!run) { printf("g9_terrain --run <run> --lib <libmcgen_cuda.so> … — пропуск\n"); return 0; }
     if (lib) mcgen_gpu_set_library_path(lib);
@@ -38,7 +46,7 @@ int main(int argc, char **argv) {
     char st[1500];
     if (!mcgen_gpu_status(st, sizeof st)) { printf("GPU недоступно:\n%s\n", st); return 3; }
     static const int64_t SEEDS[] = { 12345, -4172144997902289642LL, 0, 987654321987LL, 7 };
-    long long tot_chunks = 0, tot_bad_d = 0, tot_bad_v = 0, tot_bad_c = 0, tot_elems = 0; int configs = 0, fails = 0;
+    long long tot_chunks = 0, tot_bad_d = 0, tot_bad_v = 0, tot_bad_c = 0, tot_elems = 0, tot_vchunks = 0, tot_patches = 0, tot_cells = 0; int configs = 0, fails = 0;
     char *vcopy = strdup(vers); uint64_t rs = 0x1234ABCDULL;
     for (char *ver = strtok(vcopy, ","); ver; ver = strtok(NULL, ",")) {
         char pack[512], err[512]; McGen *g;
@@ -55,10 +63,11 @@ int main(int argc, char **argv) {
                     int64_t seed = SEEDS[si % 5];
                     McSeeds sd = mcgen_seeds_unified(seed);
                     McWorld *w; char e2[512];
-                    if (mcgen_world_new(g, dn, pn, &sd, NULL, 0, &w, e2, sizeof e2)) continue;
+                    McTweakValue tv[6] = { { "terrain_amplitude", 1.6 }, { "terrain_steepness", 2.0 }, { "climate_scale_xz", 1.7 }, { "climate_scale_y", 0.8 }, { "cave_density", 0.6 }, { "sea_level_offset", 7 } };
+                    if (mcgen_world_new(g, dn, pn, &sd, tweaks ? tv : NULL, tweaks ? 6 : 0, &w, e2, sizeof e2)) continue;
                     w->struct_on = structures;
-                    int nmin, nh, bmax; char why[300] = {0};
-                    if (gpu_terrain_dims(w, &nmin, &nh, &bmax)) { printf("%-16s %-22s %-14s seed %-20lld: рельеф на GPU недоступен\n", ver, dn, pn, (long long)seed); fails++; mcgen_world_free(w); continue; }
+                    int nmin, nh, bmax, veins_on = 0; char why[300] = {0};
+                    if (gpu_terrain_dims(w, &nmin, &nh, &bmax, &veins_on)) { printf("%-16s %-22s %-14s seed %-20lld: рельеф на GPU недоступен\n", ver, dn, pn, (long long)seed); fails++; mcgen_world_free(w); continue; }
                     size_t nd = (size_t)16 * nh * 16;
                     int *cx = malloc(sizeof(int) * nchunks), *cz = malloc(sizeof(int) * nchunks);
                     for (int i = 0; i < nchunks; i++) {
@@ -78,7 +87,7 @@ int main(int argc, char **argv) {
                     if (!rc) rc = gpu_terrain_batch_raw(w, nchunks, cx, cz, dens, vein, cells, which, why, sizeof why);
                     double tg = now() - t0;
                     if (rc) { printf("%-16s %-22s %-14s seed %-20lld: ОТКАЗ GPU: %s\n", ver, dn, pn, (long long)seed, why); fails++; mcgen_world_free(w); free(cx); free(cz); free(dens); free(vein); free(cells); continue; }
-                    long long bad_d = 0, bad_v = 0, bad_c = 0, n_inj = 0, n_noinj = 0, n_unknown = 0; double tcpu = 0;
+                    long long n_beard = 0, n_patch = 0, n_vchunks = 0, bad_d = 0, bad_v = 0, bad_c = 0, n_inj = 0, n_noinj = 0, n_unknown = 0; double tcpu = 0;
                     SCtx *x = sctx_new(w->nc, 1);
                     float *cd = malloc(sizeof(float) * nd);
                     uint16_t *bc = malloc(sizeof(uint16_t) * (size_t)w->height * 256), *bg = malloc(sizeof(uint16_t) * (size_t)w->height * 256);
@@ -91,7 +100,12 @@ int main(int argc, char **argv) {
                         if (has_aq) s_volume(x, w->s_aq[AQ_SURFACE_LEVEL], surf, &q);
                         Vol v = { 16, nh, 16, cx[i] * 16, nmin, cz[i] * 16, 1, 1, 1 };
 
+                        Beard *bd = structures ? beard_for_chunk(w, cx[i], cz[i]) : NULL;     /* как terrain_fill_chunk */
+                        SBeard sbd = { bd, bcb_v, bcb_vol };
+                        n_beard += bd != NULL;
+                        sctx_set_beardifier(x, bd ? &sbd : NULL);
                         s_volume(x, w->s_rf[RF_FINAL_DENSITY], cd, &v);
+                        sctx_set_beardifier(x, NULL); beard_free(bd);
                         tcpu += now() - t1;
                         if (memcmp(cd, dens + (size_t)i * nd, sizeof(float) * nd)) { for (size_t k = 0; k < nd; k++) if (memcmp(&cd[k], &dens[(size_t)i * nd + k], 4)) bad_d++; }
                         /* ячейки кэшей: каждая, которую GPU возвращает (which ≥ 0), должна совпасть с ячейкой CPU; -2 — «неизвестно» (считать нельзя) */
@@ -110,7 +124,9 @@ int main(int argc, char **argv) {
                             } else n_inj++;
                         }
                         /* жилы: сплошной камень, CPU-правила против заплаток GPU */
-                        if (w->veins && ((int *)w->veins)[0] > 0 && w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0) {
+                        if (veins_on && w->veins && ((int *)w->veins)[0] > 0 && w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0) {
+                            n_vchunks++;
+                            for (size_t kk = 0; kk < nd; kk++) n_patch += vein[(size_t)i * nd + kk] != 0xFFFF;
                             for (size_t k = 0; k < (size_t)w->height * 256; k++) bc[k] = bg[k] = (uint16_t)w->def_block;
                             veins_apply_new(w, x, cx[i], cz[i], nmin - w->min_y, nh, bc);
                             GpuChunk gc; memset(&gc, 0, sizeof gc); gc.veins = vein + (size_t)i * nd;
@@ -118,9 +134,9 @@ int main(int argc, char **argv) {
                             if (memcmp(bc, bg, sizeof(uint16_t) * (size_t)w->height * 256)) bad_v++;
                         }
                     }
-                    tot_chunks += nchunks; tot_elems += (long long)nd * nchunks; tot_bad_d += bad_d; tot_bad_v += bad_v; tot_bad_c += bad_c; configs++;
-                    printf("%-16s %-22s %-14s seed %-20lld: чанков %d, элементов плотности %lld, расхождений плотности %lld, чанков с расхождением жил %lld, ячейки кэшей: совпало %lld, расхождений %lld, без вставки %lld, неизвестно %lld; GPU %.3f с (%.0f ч/с), CPU(объёмы) %.3f с\n",
-                           ver, dn, pn, (long long)seed, nchunks, (long long)nd * nchunks, bad_d, bad_v, n_inj, bad_c, n_noinj, n_unknown, tg, nchunks / tg, tcpu);
+                    tot_chunks += nchunks; tot_elems += (long long)nd * nchunks; tot_bad_d += bad_d; tot_bad_v += bad_v; tot_bad_c += bad_c; configs++; tot_vchunks += n_vchunks; tot_patches += n_patch; tot_cells += n_inj;
+                    printf("%-16s %-22s %-14s seed %-20lld: чанков %d, элементов плотности %lld, расхождений плотности %lld, жилы: чанков %lld (позиций с жилой %lld), расхождений %lld, ячейки кэшей: совпало %lld, расхождений %lld, без вставки %lld, неизвестно %lld; чанков с Beardifier %lld; GPU %.3f с (%.0f ч/с), CPU(объёмы) %.3f с\n",
+                           ver, dn, pn, (long long)seed, nchunks, (long long)nd * nchunks, bad_d, n_vchunks, n_patch, bad_v, n_inj, bad_c, n_noinj, n_unknown, n_beard, tg, nchunks / tg, tcpu);
                     fflush(stdout);
                     sctx_free(x); free(cd); free(bc); free(bg); free(surf);
                     free(cx); free(cz); free(dens); free(vein); free(cells); free(which);
@@ -130,7 +146,7 @@ int main(int argc, char **argv) {
         }
         mcgen_close(g);
     }
-    printf("\nИТОГО: конфигураций %d, чанков %lld, элементов %lld; расхождений плотности %lld, жил (чанков) %lld, ячеек кэша %lld; отказов %d\n", configs, tot_chunks, tot_elems, tot_bad_d, tot_bad_v, tot_bad_c, fails);
+    printf("\nИТОГО: конфигураций %d, чанков %lld, элементов плотности %lld; РАСХОЖДЕНИЙ плотности %lld; жилы: чанков %lld, позиций с жилой %lld, РАСХОЖДЕНИЙ (чанков) %lld; ячейки кэшей: совпало %lld, РАСХОЖДЕНИЙ %lld; отказов %d\n", configs, tot_chunks, tot_elems, tot_bad_d, tot_vchunks, tot_patches, tot_bad_v, tot_cells, tot_bad_c, fails);
     free(vcopy);
     return (tot_bad_d || tot_bad_v || tot_bad_c || fails || !configs) ? 1 : 0;
 }

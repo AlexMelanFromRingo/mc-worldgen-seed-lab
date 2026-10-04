@@ -401,8 +401,12 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
     int defb = w->def_block;
     for (int z = 0; z < 16; z++) for (int xx = 0; xx < 16; xx++) for (int y = nh - 1; y >= 0; y--) {
         int by = nmin + y;
-        int st = aq_substance(&aq, cx * 16 + xx, by, cz * 16 + z, (double)dens[vol_idx(&v, xx, y, z)]);
-        if (st < 0) st = defb;
+        double dv = (double)dens[vol_idx(&v, xx, y, z)];
+        int st;
+        /* быстрые ветки aq_substance без вызова (результат тот же): плотность > 0 — камень; выше skip_above_y (или без aquifer) — жидкость/воздух по глобальному уровню */
+        if (dv > 0.0) { aq.sched = 0; st = defb; }
+        else if (!aq.enabled || by > aq.skip_above_y) { aq.sched = 0; st = fluid_at(g, pick(&aq.pk, by), by); }
+        else { st = aq_substance(&aq, cx * 16 + xx, by, cz * 16 + z, dv); if (st < 0) st = defb; }
         blocks[((size_t)(by - w->min_y) * 16 + z) * 16 + xx] = (uint16_t)st;
         if (aq.sched && (g->state_cls[st] & 4)) ppmarks_add(&t->marks, (by - w->min_y) >> 4, xx, by & 15, z);
     }

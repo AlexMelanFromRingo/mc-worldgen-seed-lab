@@ -6,6 +6,7 @@
 import importlib
 import os
 import sys
+import tempfile
 import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,7 +14,7 @@ BLENDER_DIR = os.path.dirname(os.path.dirname(HERE))
 ADDON_DIR = os.path.join(BLENDER_DIR, 'mcgen_addon')
 REPO = os.path.dirname(BLENDER_DIR)
 JARS = os.path.join(REPO, 'jars')
-SCRATCH = os.environ.get('MCGEN_SCRATCH') or os.path.join(os.environ.get('TMPDIR', '/tmp'), 'mcgen-tests')
+SCRATCH = os.environ.get('MCGEN_SCRATCH') or os.path.join(tempfile.gettempdir(), 'mcgen-tests')
 
 
 def load_core():

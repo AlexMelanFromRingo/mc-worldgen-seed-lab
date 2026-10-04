@@ -96,6 +96,11 @@ static int load_flags(BsTab *t, const McGen *g) {
             t->blk[bi].chain = sb_take(&sb);
         }
         t->exported = 1;
+        Js *dm = js_get(root, "damp"), *ls = js_get(root, "lshape");       /* затухание света (добавлено позже: старые файлы без него — формула по флагам) */
+        if (js_is_arr(dm) && dm->n == t->nstates) {
+            t->damp = xcalloc((size_t)t->nstates, 1); t->lshape = xcalloc((size_t)t->nstates, 1);
+            for (int i = 0; i < t->nstates; i++) { t->damp[i] = (u8)(i32)dm->items[i]->d; if (js_is_arr(ls) && ls->n == t->nstates) t->lshape[i] = (u8)(i32)ls->items[i]->d; }
+        }
     }
     js_free(d);
     return ok;
@@ -170,6 +175,13 @@ const BsTab *bs_get(const McGen *gc) {
         if (getenv("MCGEN_FEATURES_DEBUG")) fprintf(stderr, "libmcgen: нет reports/block_flags.json (python3 libmcgen/tests/g5_blockflags.py) — эвристика\n");
         heuristic_flags(t, g);
     }
+    if (!t->damp) {          /* BlockStateBase.lightBlock: solidRender → 15, иначе пропускает небесный свет → 0, иначе 1 (вода, листва, паутина…) */
+        t->damp = xcalloc((size_t)t->nstates, 1); t->lshape = xcalloc((size_t)t->nstates, 1);
+        for (int i = 0; i < t->nstates; i++) {
+            u32 f = t->flags[i];
+            t->damp[i] = (f & BSF_SOLID_RENDER) ? 15 : (f & BSF_AIR) ? 0 : (f & BSF_LIQUID) ? 1 : (f & BSF_LEAVES) ? 1 : (f & BSF_SKY) ? 0 : (f & BSF_SOLID) ? 15 : 0;
+        }
+    }
     t->st_air = g->st_air; t->st_cave_air = g->st_cave_air; t->st_void_air = gen_state_id(g, "minecraft:void_air");
     build_hmcls(t, g);
     mutex_lock(g->lock);
@@ -188,7 +200,7 @@ void bs_free(void *tab) {
         free(b->pname); free(b->pn); free(b->pval); free(b->stride);
     }
     free(t->blk); sm_free(&t->block_ids, NULL);
-    free(t->flags); free(t->fluid); free(t->sturdy); free(t->hmcls); free(t);
+    free(t->flags); free(t->fluid); free(t->sturdy); free(t->hmcls); free(t->damp); free(t->lshape); free(t);
 }
 
 int bs_block_index(const BsTab *t, const char *name) {
@@ -288,7 +300,8 @@ int bs_fluid_block_from_json(const BsTab *t, const Js *v) {
         else if (!strcmp(pr->keys[i], "level")) amount = atoi(vs);
     }
     if (source) amount = 8;
-    int level = 8 - (amount < 8 ? amount : 8) + (falling ? 8 : 0);
+    /* FlowingFluid.getLegacyLevel: источник → 0 при любом falling; иначе 8 − min(amount, 8) + (falling ? 8 : 0) */
+    int level = source ? 0 : 8 - (amount < 8 ? amount : 8) + (falling ? 8 : 0);
     int blk = bs_block_index(t, water ? "minecraft:water" : "minecraft:lava");
     char lv[16]; snprintf(lv, sizeof lv, "%d", level);
     return blk < 0 ? -1 : bs_with(t, t->blk[blk].def, "level", lv);

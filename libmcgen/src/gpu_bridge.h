@@ -35,7 +35,7 @@ void gpu_terrain_apply_veins(McWorld *w, const GpuChunk *c, uint16_t *blocks);
 void gpu_terrain_inject_cells(McWorld *w, SCtx *x, int cx, int cz, const GpuChunk *c);
 /* прямой пакетный расчёт (тесты): n чанков → плотность (n × 16·nh·16), заплатки (n × nh·256, может быть NULL), ячейки (может быть NULL); 0 — ок */
 int gpu_terrain_batch_raw(McWorld *w, int n, const int *cx, const int *cz, float *dens, uint16_t *veins, float *cells, signed char *which, char *why, size_t whylen);
-int gpu_terrain_dims(McWorld *w, int *nmin, int *nh, int *max_chunks);
+int gpu_terrain_dims(McWorld *w, int *nmin, int *nh, int *max_chunks, int *veins_on);
 
 
 /* вызывается из mcgen_biome_grid: 0 — сетка посчитана на GPU (недостающие точки — на CPU), иначе −1 → считать на CPU.

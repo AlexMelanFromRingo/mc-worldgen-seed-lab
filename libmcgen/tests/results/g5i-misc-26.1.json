@@ -1,0 +1,382 @@
+{
+ "version": "26.1",
+ "rows": [
+  {
+   "feature": "minecraft:amethyst_geode",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 12651,
+   "top": []
+  },
+  {
+   "feature": "minecraft:basalt_blobs",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c-48_26-r10",
+   "blocks": 28901376,
+   "mismatch": 134928,
+   "match_pct": 99.53314333545919,
+   "chunks": 441,
+   "effect": 5347116,
+   "top": [
+    {
+     "ours": "minecraft:basalt[axis=y]",
+     "ref": "minecraft:netherrack",
+     "count": 68757
+    },
+    {
+     "ours": "minecraft:netherrack",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 66171
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:basalt_pillar",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c-7_26-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 1262,
+   "top": []
+  },
+  {
+   "feature": "minecraft:chorus_plant",
+   "dim": "the_end",
+   "world": "end-s12345-c-40_-90-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 2556,
+   "top": []
+  },
+  {
+   "feature": "minecraft:delta",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c-48_26-r10",
+   "blocks": 28901376,
+   "mismatch": 404,
+   "match_pct": 99.99860214267999,
+   "chunks": 441,
+   "effect": 29723,
+   "top": [
+    {
+     "ours": "minecraft:lava[level=0]",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 77
+    },
+    {
+     "ours": "minecraft:lava[level=0]",
+     "ref": "minecraft:blackstone",
+     "count": 60
+    },
+    {
+     "ours": "minecraft:lava[level=0]",
+     "ref": "minecraft:magma_block",
+     "count": 51
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:desert_well",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r20",
+   "blocks": 165248968,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 1681,
+   "effect": 108,
+   "top": []
+  },
+  {
+   "feature": "minecraft:dripstone_cluster",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-177_86-r5",
+   "blocks": 11894755,
+   "mismatch": 2415,
+   "match_pct": 99.97969693364848,
+   "chunks": 121,
+   "effect": 39223,
+   "top": [
+    {
+     "ours": "minecraft:dripstone_block",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 805
+    },
+    {
+     "ours": "minecraft:stone",
+     "ref": "minecraft:dripstone_block",
+     "count": 444
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:dripstone_block",
+     "count": 435
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:end_island_decorated",
+   "dim": "the_end",
+   "world": "end-s8675309-c90_0-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 5592,
+   "top": []
+  },
+  {
+   "feature": "minecraft:end_spike",
+   "dim": "the_end",
+   "world": "end-s8675309-c0_0-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 40665,
+   "top": []
+  },
+  {
+   "feature": "minecraft:forest_rock",
+   "dim": "overworld",
+   "world": "overworld-s12345-c0_0-r5",
+   "blocks": 11894767,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 0,
+   "top": []
+  },
+  {
+   "feature": "minecraft:fossil_upper",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 43,
+   "top": []
+  },
+  {
+   "feature": "minecraft:freeze_top_layer",
+   "dim": "overworld",
+   "world": "overworld-s12345-c54_-28-r5",
+   "blocks": 11894776,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 49237,
+   "top": []
+  },
+  {
+   "feature": "minecraft:glowstone",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 199,
+   "top": []
+  },
+  {
+   "feature": "minecraft:glowstone_extra",
+   "dim": "the_nether",
+   "world": "nether-s-7048155917072976836-c60_-60-r5",
+   "blocks": 7929856,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 18,
+   "top": []
+  },
+  {
+   "feature": "minecraft:ice_spike",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c-135_-151-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 36720,
+   "top": []
+  },
+  {
+   "feature": "minecraft:iceberg_blue",
+   "dim": "overworld",
+   "world": "overworld-s-7048155917072976836-c-39_-28-r5",
+   "blocks": 11894778,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 850,
+   "top": []
+  },
+  {
+   "feature": "minecraft:large_basalt_columns",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c-48_26-r10",
+   "blocks": 28901376,
+   "mismatch": 5079,
+   "match_pct": 99.9824264422566,
+   "chunks": 441,
+   "effect": 482709,
+   "top": [
+    {
+     "ours": "minecraft:basalt[axis=y]",
+     "ref": "minecraft:air",
+     "count": 1726
+    },
+    {
+     "ours": "minecraft:lava[level=0]",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 1163
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 1132
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:large_dripstone",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-177_86-r5",
+   "blocks": 11894755,
+   "mismatch": 552,
+   "match_pct": 99.99535929911966,
+   "chunks": 121,
+   "effect": 14712,
+   "top": [
+    {
+     "ours": "minecraft:dripstone_block",
+     "ref": "minecraft:air",
+     "count": 523
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:dripstone_block",
+     "count": 27
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:monster_room_deep",
+   "dim": "overworld",
+   "world": "overworld-s8675309-c-114_-51-r5",
+   "blocks": 11894781,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 402,
+   "top": []
+  },
+  {
+   "feature": "minecraft:pointed_dripstone",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-177_86-r5",
+   "blocks": 11894755,
+   "mismatch": 2,
+   "match_pct": 99.99998318586637,
+   "chunks": 121,
+   "effect": 7504,
+   "top": [
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:water[level=0]",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:sculk_patch_deep_dark",
+   "dim": "overworld",
+   "world": "overworld-s12345-c16_-6-r5",
+   "blocks": 11894784,
+   "mismatch": 13510,
+   "match_pct": 99.88642080427859,
+   "chunks": 121,
+   "effect": 24668,
+   "top": [
+    {
+     "ours": "minecraft:sculk",
+     "ref": "minecraft:deepslate[axis=y]",
+     "count": 4011
+    },
+    {
+     "ours": "minecraft:deepslate[axis=y]",
+     "ref": "minecraft:sculk",
+     "count": 2163
+    },
+    {
+     "ours": "minecraft:stone",
+     "ref": "minecraft:sculk",
+     "count": 992
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:sculk_vein",
+   "dim": "overworld",
+   "world": "overworld-s12345-c16_-6-r5",
+   "blocks": 11894784,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 262,
+   "top": []
+  },
+  {
+   "feature": "minecraft:small_basalt_columns",
+   "dim": "the_nether",
+   "world": "nether-s8675309-c-48_26-r10",
+   "blocks": 28901376,
+   "mismatch": 149,
+   "match_pct": 99.99948445361217,
+   "chunks": 441,
+   "effect": 95072,
+   "top": [
+    {
+     "ours": "minecraft:basalt[axis=y]",
+     "ref": "minecraft:lava[level=0]",
+     "count": 48
+    },
+    {
+     "ours": "minecraft:lava[level=0]",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 43
+    },
+    {
+     "ours": "minecraft:air",
+     "ref": "minecraft:basalt[axis=y]",
+     "count": 34
+    }
+   ]
+  },
+  {
+   "feature": "minecraft:underwater_magma",
+   "dim": "overworld",
+   "world": "overworld-s12345-c-1_5-r5",
+   "blocks": 11894752,
+   "mismatch": 0,
+   "match_pct": 100.0,
+   "chunks": 121,
+   "effect": 421,
+   "top": []
+  }
+ ]
+}

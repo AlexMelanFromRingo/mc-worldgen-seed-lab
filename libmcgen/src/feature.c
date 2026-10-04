@@ -1,6 +1,7 @@
 /* feature.c — стадия FEATURES: реестр типов фич, разбор конфигураций из JSON датапака, мир фич (FWorld), окно чанков региона и цикл
  * ChunkGenerator.applyBiomeDecoration. Подробно — docs/blender/features.md. */
 #include "feature.h"
+#include <limits.h>
 #include "carver.h"
 #include "surface.h"
 void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int cx, int cz);   /* structure.c */
@@ -237,6 +238,7 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
     FWorld *fw = c->fw; McWorld *w = c->w;
     c->ccx = cx; c->ccz = cz; c->n_chunks++; c->sbb_valid = 0; c->region_rnd_ready = 0;
     FRnd rnd; memset(&rnd, 0, sizeof rnd); c->rnd = &rnd;
+    fc_init_mask(c, cx, cz);                     /* какие соседние чанки уже «видны» движку света (для фич, зависящих от света: грибы) */
     int ox = cx * 16, oz = cz * 16, oy = c->min_y;
     i64 seed = w->seeds.features;
     /* WorldgenRandom.setDecorationSeed(seed, minBlockX, minBlockZ) */
@@ -278,11 +280,20 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
             }
         }
     }
+    fc_snapshot_sections(c, c->grid[(cz - c->gz0) * c->gnx + (cx - c->gx0)]);      /* непустые секции чанка — для видимости света соседям (INITIALIZE_LIGHT идёт сразу после FEATURES) */
+}
+
+/* последовательные порядки: номер шага назначается в момент декорации (модель задержки света — «лаг в шагах») */
+static void decorate_seq(FCtx *c, int cx, int cz) {
+    FChunk *ch = c->grid[(cz - c->gz0) * c->gnx + (cx - c->gx0)];
+    if (ch->seq == INT_MAX) ch->seq = c->seq_next++;
+    decorate_chunk(c, cx, cz);
 }
 
 /* ====================================================================== окно чанков региона */
 typedef struct RingJob {
     McWorld *w; uint32_t stages; int total, next; McMutex *lock; FChunk *chunks; int height; int fail; char err[256];
+    int dx0, dz0, dnx, dnz, outer_mode;       /* прямоугольник декорируемых чанков; за его пределами — «внешнее кольцо» (эксперимент MCGEN_FEATURES_OUTER) */
 } RingJob;
 
 static void ring_worker(void *arg) {
@@ -298,9 +309,15 @@ static void ring_worker(void *arg) {
         if (bx) sctx_reset_caches(bx);
         world_chunk_biomes(w, bx, ch->cx, ch->cz, ch->biomes);
         int rc = terrain_fill_chunk(w, t, ch->cx, ch->cz, ch->blocks, e, sizeof e);
+        uint32_t st_ = j->stages; int use_sc = sc != NULL;
+        if (j->outer_mode && (ch->cx < j->dx0 || ch->cx >= j->dx0 + j->dnx || ch->cz < j->dz0 || ch->cz >= j->dz0 + j->dnz)) {
+            if (j->outer_mode == 1) { st_ &= ~(uint32_t)(MC_STAGE_SURFACE | MC_STAGE_CARVERS); use_sc = 0; }
+            else if (j->outer_mode == 2) st_ &= ~(uint32_t)MC_STAGE_CARVERS;
+            else if (j->outer_mode == 3) { st_ &= ~(uint32_t)MC_STAGE_SURFACE; use_sc = 0; }
+        }
         /* как worker() региона: 26.4 с SURFACE — карвинг внутри прохода поверхности (surface_apply_chunk_ex), carvers_apply_chunk не вызывается */
-        if (!rc && sc) rc = surface_apply_chunk_ex(w, sc, ch->cx, ch->cz, ch->blocks, ch->biomes, terrain_marks_rw(t), t, (j->stages & MC_STAGE_CARVERS) != 0, e, sizeof e);
-        if (!rc && (j->stages & MC_STAGE_CARVERS) && !(sc && surface_carves_inside(w))) rc = carvers_apply_chunk(w, t, ch->cx, ch->cz, ch->blocks, terrain_marks_rw(t), e, sizeof e);
+        if (!rc && use_sc) rc = surface_apply_chunk_ex(w, sc, ch->cx, ch->cz, ch->blocks, ch->biomes, terrain_marks_rw(t), t, (st_ & MC_STAGE_CARVERS) != 0, e, sizeof e);
+        if (!rc && (st_ & MC_STAGE_CARVERS) && !(use_sc && surface_carves_inside(w))) rc = carvers_apply_chunk(w, t, ch->cx, ch->cz, ch->blocks, terrain_marks_rw(t), e, sizeof e);
         if (rc) { mutex_lock(j->lock); if (!j->fail) { j->fail = 1; snprintf(j->err, sizeof j->err, "%s", e); } mutex_unlock(j->lock); break; }
     }
     terrain_ctx_free(t);
@@ -322,17 +339,14 @@ static void prime_worker(void *arg) {
     }
 }
 
-typedef struct DecJob { FCtx *c; McMutex *lock; int cx0, cz0, nx, nz, t, next, count; long done, calls, skipped; } DecJob;
+typedef struct DecJob { FCtx *c; McMutex *lock; int cx0, cz0, nx, nz, t, next, count; long done, calls, skipped; int *lx, *lz; } DecJob;
 static void dec_worker(void *arg) {
     DecJob *j = arg;
     FCtx c = *j->c;                       /* копия контекста потока: центр чанка и ГСЧ — свои */
     for (;;) {
         mutex_lock(j->lock); int k = j->next++; mutex_unlock(j->lock);
         if (k >= j->count) break;
-        /* k-й чанк волны t: перебор ix по возрастанию (iz = t − 3·ix внутри [0, nz)) */
-        int iz = 0, ix = 0, seen = -1;
-        for (ix = 0; ix < j->nx; ix++) { iz = j->t - 3 * ix; if (iz >= 0 && iz < j->nz && ++seen == k) break; }
-        decorate_chunk(&c, j->cx0 + ix, j->cz0 + iz);
+        decorate_chunk(&c, j->lx[k], j->lz[k]);       /* k-й чанк текущей волны (список заполняет features_apply_region) */
     }
     mutex_lock(j->lock); j->done += c.n_chunks; j->calls += c.n_calls; j->skipped += c.n_skipped; mutex_unlock(j->lock);
 }
@@ -346,7 +360,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     McRegionInfo info; mcgen_region_info(r, &info);
     uint32_t stages = region_stages(r);
     /* кольцо декорации (чанки вне региона, фичи которых заходят в регион): по умолчанию 1; MCGEN_FEATURES_RING=N — N (игра декорирует ещё r+2, r+3: каскад порядка у края) */
-    int ring = 1; { const char *e = getenv("MCGEN_FEATURES_RING"); if (e && *e) ring = atoi(e); if (ring < 1) ring = 1; if (ring > 6) ring = 6; }
+    int ring = 1; { const char *e = getenv("MCGEN_FEATURES_RING"); if (e && *e) ring = atoi(e); if (ring < 0) ring = 0; if (ring > 6) ring = 6; }
     int gx0 = info.cx0 - ring - 1, gz0 = info.cz0 - ring - 1, gnx = info.nx + 2 * ring + 2, gnz = info.nz + 2 * ring + 2;
     size_t H = (size_t)w->height;
     FChunk *chunks = xcalloc((size_t)gnx * gnz, sizeof(FChunk));
@@ -354,7 +368,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     int nring = 0;
     for (int iz = 0; iz < gnz; iz++) for (int ix = 0; ix < gnx; ix++) {
         FChunk *ch = &chunks[iz * gnx + ix]; grid[iz * gnx + ix] = ch;
-        ch->cx = gx0 + ix; ch->cz = gz0 + iz;
+        ch->cx = gx0 + ix; ch->cz = gz0 + iz; ch->seq = INT_MAX;
         uint16_t *b = mcgen_region_blocks(r, ch->cx, ch->cz);
         if (b) { ch->blocks = b; ch->biomes = mcgen_region_biomes(r, ch->cx, ch->cz); ch->marks = region_chunk_marks(r, ch->cx, ch->cz); }
         else {
@@ -370,6 +384,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         /* chunks[i].marks == NULL только у колец (у региона marks всегда не NULL) */
         RingJob j; memset(&j, 0, sizeof j);
         j.w = w; j.stages = stages; j.total = nring; j.lock = mutex_new(); j.chunks = rl; j.height = (int)H;
+        { const char *eo = getenv("MCGEN_FEATURES_OUTER"); j.outer_mode = eo && *eo ? atoi(eo) : 0; j.dx0 = info.cx0 - ring; j.dz0 = info.cz0 - ring; j.dnx = info.nx + 2 * ring; j.dnz = info.nz + 2 * ring; }
         int nth = nt < nring ? nt : nring; if (nth < 1) nth = 1;
         if (nth == 1) ring_worker(&j);
         else {
@@ -384,6 +399,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
     if (!rc) {
         FCtx c; memset(&c, 0, sizeof c);
         c.w = w; c.g = w->g; c.bs = bs0; c.fw = fw; c.no_features = !want_feat;
+        c.init_lag = 3; { const char *e_ = getenv("MCGEN_FEATURES_INITLAG"); if (e_ && *e_) c.init_lag = atoi(e_); }
         c.grid = grid; c.gx0 = gx0; c.gz0 = gz0; c.gnx = gnx; c.gnz = gnz;
         c.min_y = w->min_y; c.height = w->height; c.sea_level = w->sea_level;
         c.gen_min_y = w->ns->min_y > w->min_y ? w->ns->min_y : w->min_y;
@@ -409,31 +425,48 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
         int seq = getenv("MCGEN_FEATURES_SEQ") != NULL;
         if (seq) {
             const char *ord = getenv("MCGEN_FEATURES_SEQ"); if (!ord || !*ord) ord = "xz";           /* порядок обхода (эксперимент): zx (по умолчанию), xz, zx-, xz-, ring */
-            if (!strcmp(ord, "zx-")) { for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) decorate_chunk(&c, cx, cz); }
-            else if (!strcmp(ord, "xz-")) { for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) decorate_chunk(&c, cx, cz); }
+            if (!strcmp(ord, "zx-")) { for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) decorate_seq(&c, cx, cz); }
+            else if (!strcmp(ord, "xz-")) { for (int cx = dj.cx0 + dj.nx - 1; cx >= dj.cx0; cx--) for (int cz = dj.cz0 + dj.nz - 1; cz >= dj.cz0; cz--) decorate_seq(&c, cx, cz); }
             else if (!strcmp(ord, "xzw") || !strcmp(ord, "xzw_last") || !strcmp(ord, "xzw_first")) {
                 /* порядок билетов forceload W6: окна 16×16 от угла области (x внешний, z внутренний), внутри окна x, затем z; чанки вне области — до/после */
                 int last = !strcmp(ord, "xzw_last"), first = !strcmp(ord, "xzw_first");
                 int x0 = dj.cx0 + 1, z0 = dj.cz0 + 1, x1 = dj.cx0 + dj.nx - 2, z1 = dj.cz0 + dj.nz - 2;
-                if (first) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_chunk(&c, cx, cz); }
+                if (first) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_seq(&c, cx, cz); }
                 for (int ax = x0; ax <= x1; ax += 16) for (int az = z0; az <= z1; az += 16)
-                    for (int cx = ax; cx <= (ax + 15 < x1 ? ax + 15 : x1); cx++) for (int cz = az; cz <= (az + 15 < z1 ? az + 15 : z1); cz++) decorate_chunk(&c, cx, cz);
-                if (last || (!first && !last)) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_chunk(&c, cx, cz); }
+                    for (int cx = ax; cx <= (ax + 15 < x1 ? ax + 15 : x1); cx++) for (int cz = az; cz <= (az + 15 < z1 ? az + 15 : z1); cz++) decorate_seq(&c, cx, cz);
+                if (last || (!first && !last)) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) { if (cx < x0 || cx > x1 || cz < z0 || cz > z1) decorate_seq(&c, cx, cz); }
             }
             else if (!strcmp(ord, "ring")) {      /* от центра наружу по кольцам */
                 int mx = dj.cx0 + dj.nx / 2, mz = dj.cz0 + dj.nz / 2, rmax = dj.nx > dj.nz ? dj.nx : dj.nz;
                 for (int rr = 0; rr <= rmax; rr++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) {
                     int d = abs(cx - mx) > abs(cz - mz) ? abs(cx - mx) : abs(cz - mz);
-                    if (d == rr) decorate_chunk(&c, cx, cz);
+                    if (d == rr) decorate_seq(&c, cx, cz);
                 }
             }
-            else if (!strcmp(ord, "zx")) { for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) decorate_chunk(&c, cx, cz); }
+            else if (!strcmp(ord, "file")) {
+                /* воспроизведение записанного порядка шагов FEATURES настоящего сервера (tools/gt/jfr_order.py --txt):
+                 * MCGEN_FEATURES_ORDER=<файл> — строки «cx cz» в порядке выполнения; чанки вне окна пропускаются */
+                const char *fo = getenv("MCGEN_FEATURES_ORDER"); FILE *fp = fo ? fopen(fo, "r") : NULL;
+                if (fp) {
+                    char line[128];
+                    while (fgets(line, sizeof line, fp)) {
+                        int ox, oz; unsigned msk = 0; int n = sscanf(line, "%d %d %x", &ox, &oz, &msk);
+                        if (n < 2) continue;
+                        if (ox >= dj.cx0 && ox < dj.cx0 + dj.nx && oz >= dj.cz0 && oz < dj.cz0 + dj.nz) {
+                            c.init_override_set = n >= 3; c.init_override = msk;      /* третье поле — маска видимости INITIALIZE_LIGHT 5×5 (из JFR) */
+                            decorate_seq(&c, ox, oz);
+                        }
+                    }
+                    c.init_override_set = 0; fclose(fp);
+                }
+            }
+            else if (!strcmp(ord, "zx")) { for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) decorate_seq(&c, cx, cz); }
             else if (!strncmp(ord, "rand", 4)) {
                 /* случайный порядок обхода (эксперимент W12, rand<seed>): неустойчивые к порядку клетки — те, что различаются между разными порядками */
                 int n = dj.nx * dj.nz; int *perm = xmalloc(sizeof(int) * (size_t)n); for (int i = 0; i < n; i++) perm[i] = i;
                 u64 st = 0x9E3779B97F4A7C15ull * (u64)(atoi(ord + 4) + 1);
                 for (int i = n - 1; i > 0; i--) { st ^= st << 13; st ^= st >> 7; st ^= st << 17; int j = (int)(st % (u64)(i + 1)); int t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
-                for (int i = 0; i < n; i++) decorate_chunk(&c, dj.cx0 + perm[i] / dj.nz, dj.cz0 + perm[i] % dj.nz);
+                for (int i = 0; i < n; i++) decorate_seq(&c, dj.cx0 + perm[i] / dj.nz, dj.cz0 + perm[i] % dj.nz);
                 free(perm);
             }
             else {
@@ -443,24 +476,53 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 while (bf && *bf && nmv < 16) { int a, b, cc, d, n = 0; if (sscanf(bf, "%d,%d>%d,%d%n", &a, &b, &cc, &d, &n) < 4) break; mv[nmv][0] = a; mv[nmv][1] = b; mv[nmv][2] = cc; mv[nmv][3] = d; nmv++; bf += n; if (*bf == ';') bf++; }
                 for (int cx = dj.cx0; cx < dj.cx0 + dj.nx; cx++) for (int cz = dj.cz0; cz < dj.cz0 + dj.nz; cz++) {
                     int skip = 0;
-                    for (int i = 0; i < nmv; i++) { if (mv[i][0] == cx && mv[i][1] == cz) skip = 1; if (mv[i][2] == cx && mv[i][3] == cz) decorate_chunk(&c, mv[i][0], mv[i][1]); }
-                    if (!skip) decorate_chunk(&c, cx, cz);
+                    for (int i = 0; i < nmv; i++) { if (mv[i][0] == cx && mv[i][1] == cz) skip = 1; if (mv[i][2] == cx && mv[i][3] == cz) decorate_seq(&c, mv[i][0], mv[i][1]); }
+                    if (!skip) decorate_seq(&c, cx, cz);
                 }
             }
             g_stats.chunks += c.n_chunks; g_stats.placed_calls += c.n_calls; g_stats.unimpl_skipped += c.n_skipped;
         } else {
             /* волновой фронт: чанки с равным t = iz + 3·ix не пересекаются окнами 3×3 (|dx| ≥ 3), а все пересекающиеся «более ранние» чанки
              * порядка (x, затем z) имеют меньшее t — результат идентичен последовательному обходу при любом числе потоков */
+            /* Уровни: уровень чанка = расстояние Чебышёва до области (по умолчанию — запрошенный регион; MCGEN_FEATURES_AREA="x0,z0,x1,z1" задаёт другую, "none" — один уровень);
+             * уровни обрабатываются по возрастанию, внутри — порядок (x, затем z). Измерено на эталоне features (Overworld s12345 r=10 + 2 кольца): кольцо вокруг региона, декорируемое
+             * ПОСЛЕ региона, даёт 99,67 → 99,8 % на крайнем ряду чанков и 99,891 → 99,910 % в целом. */
+            /* Две волны: сначала чанки на расстоянии (Чебышёв) < K от «области тикета» (по умолчанию K = 3), затем остальные (внешнее кольцо r+3 игры). По умолчанию область — запрошенный
+             * регион: тогда кольцо декорации шириной 1 — первой волны (порядок как у эталонов G5i: пары «область + кольцо» в порядке x, z). Для сравнений с «полной» областью
+             * (gate G5: регион = область тикета + 2 кольца) задаётся MCGEN_FEATURES_AREA="x0,z0,x1,z1" (включительно) — тогда кольцо r+3 декорируется после остальных.
+             * MCGEN_FEATURES_LASTD=K — порог волн; MCGEN_FEATURES_AREA=none — одна волна. */
+            int ax0 = info.cx0, az0 = info.cz0, ax1 = info.cx0 + info.nx - 1, az1 = info.cz0 + info.nz - 1, two_waves = 1, lastd = 3;
+            { const char *ea = getenv("MCGEN_FEATURES_AREA");
+              if (ea && !strcmp(ea, "none")) two_waves = 0;
+              else if (ea && *ea) sscanf(ea, "%d,%d,%d,%d", &ax0, &az0, &ax1, &az1);
+              const char *el = getenv("MCGEN_FEATURES_LASTD"); if (el && *el) lastd = atoi(el); }
+            int nlev = two_waves ? 2 : 1;
             int tmax = (dj.nz - 1) + 3 * (dj.nx - 1);
-            for (int t = 0; t <= tmax && !rc; t++) {
+            {   /* номера шагов последовательного эквивалента (уровень, x, z) — заранее: модель задержки света детерминирована при любом числе потоков */
+                int s = 0;
+                for (int lev = 0; lev < nlev; lev++) for (int ix = 0; ix < dj.nx; ix++) for (int iz = 0; iz < dj.nz; iz++) {
+                    int cx = dj.cx0 + ix, cz = dj.cz0 + iz, L = 0;
+                    if (two_waves) { int dx = cx < ax0 ? ax0 - cx : (cx > ax1 ? cx - ax1 : 0), dz = cz < az0 ? az0 - cz : (cz > az1 ? cz - az1 : 0); L = (dx > dz ? dx : dz) >= lastd ? 1 : 0; }
+                    if (L == lev) grid[(cz - gz0) * gnx + (cx - gx0)]->seq = s++;
+                }
+            }
+            dj.lx = xmalloc(sizeof(int) * (size_t)(dj.nx + 1)); dj.lz = xmalloc(sizeof(int) * (size_t)(dj.nx + 1));
+            for (int lev = 0; lev < nlev && !rc; lev++) for (int t = 0; t <= tmax && !rc; t++) {
                 dj.t = t; dj.next = 0; dj.count = 0;
-                for (int ix = 0; ix < dj.nx; ix++) { int iz = t - 3 * ix; if (iz >= 0 && iz < dj.nz) dj.count++; }
+                for (int ix = 0; ix < dj.nx; ix++) {
+                    int iz = t - 3 * ix; if (iz < 0 || iz >= dj.nz) continue;
+                    int cx = dj.cx0 + ix, cz = dj.cz0 + iz, L = 0;
+                    if (two_waves) { int dx = cx < ax0 ? ax0 - cx : (cx > ax1 ? cx - ax1 : 0), dz = cz < az0 ? az0 - cz : (cz > az1 ? cz - az1 : 0); L = (dx > dz ? dx : dz) >= lastd ? 1 : 0; }
+                    if (L != lev) continue;
+                    dj.lx[dj.count] = cx; dj.lz[dj.count] = cz; dj.count++;
+                }
                 if (dj.count == 0) continue;
                 int nthr = nt < dj.count ? nt : dj.count; if (nthr < 1) nthr = 1;
                 if (nthr == 1) dec_worker(&dj);
                 else { McThread **th = xcalloc((size_t)nthr, sizeof(McThread *)); for (int i = 0; i < nthr; i++) th[i] = thread_start(dec_worker, &dj); for (int i = 0; i < nthr; i++) thread_join(th[i]); free(th); }
                 if ((t & 31) == 0 && cb && cb(ud, 0.9 + 0.08 * t / (tmax + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
             }
+            free(dj.lx); free(dj.lz);
             g_stats.chunks += dj.done; g_stats.placed_calls += dj.calls; g_stats.unimpl_skipped += dj.skipped;
         }
         mutex_free(dj.lock); (void)total;

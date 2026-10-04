@@ -1,0 +1,2 @@
+/* экспортируются только функции libmcgen_cuda (C-ABI моста); всё остальное (libstdc++, cudart) скрыто */
+{ global: mcgpu_*; local: *; };

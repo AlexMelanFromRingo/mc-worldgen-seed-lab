@@ -78,6 +78,9 @@ typedef struct FChunk {
     PPMarks *marks;              /* пометки пост-обработки (NULL у внешних колец) */
     u8 bio_mask[32];             /* биомы, присутствующие в чанке (256 бит) */
     i16 *wg_snap;                /* [2][256]: WORLD_SURFACE_WG, OCEAN_FLOOR_WG сразу после terrain (до декорации) — для построек (structure.c); NULL — не снято */
+    int seq;                     /* номер шага декорации (порядок выполнения FEATURES; INT_MAX — ещё не назначен): для модели видимости INITIALIZE_LIGHT (fc_sky_light) */
+    u64 sec_ne;                  /* биты непустых секций (hasOnlyAir == false) на момент конца декорации чанка; sec_ne_ok — снято */
+    int sec_ne_ok;
 } FChunk;
 
 void structures_wg_snapshot(const BsTab *bs, FChunk *ch, int min_y, int height);   /* structure.c: снять карты WG чанка (вызывает feature.c при включённой стадии STRUCTURES) */
@@ -95,6 +98,11 @@ struct FCtx {
     int no_features;                              /* стадия FEATURES не запрошена: только постройки (structures_decorate_step) */
     int sbb_valid, sbb[6];                        /* writableArea чанка (BoundingBox) — один объект на все шаги декорации чанка; постройки могут расширять его (structure.c) */
     long n_chunks, n_calls, n_skipped;            /* счётчики потока */
+    int seq_next, init_lag;                       /* счётчик номеров шагов (последовательные порядки); лаг видимости INITIALIZE_LIGHT в шагах (MCGEN_FEATURES_INITLAG, по умолчанию 3) */
+    int init_override_set; u32 init_override;     /* порядок «из файла» (JFR): готовая маска видимости 5×5 вокруг центра */
+    int (*ext_get)(void *ud, int x, int y, int z); void *ext_ud;      /* пост-обработка: чтение мира через FluidWorld (чанки вне окна fc_chunk → ext_get) */
+    int post;                                     /* 1 — контекст пост-обработки (LevelChunk.postProcessGeneration): свет настоящий (light_sky_final) */
+    u32 init_mask;                                /* окно 5×5 вокруг центра (бит (dz+2)*5+dx+2): чанк уже прошёл INITIALIZE_LIGHT, и движок света «видит» его секции */
     Rnd region_rnd; int region_rnd_ready;         /* WorldGenRegion.getRandom() (см. fc_region_random): создаётся лениво, сбрасывается в начале чанка */
 };
 /* WorldGenRegion.getRandom(): XoroshiroRandomSource из RandomState.getOrCreateRandomFactory("minecraft:worldgen_region_random").at(мин. блок центрального чанка);
@@ -111,7 +119,8 @@ static inline int fc_outside(const FCtx *c, int y) { return y < c->min_y || y >=
 static inline int fc_get(const FCtx *c, int x, int y, int z) {
     if (fc_outside(c, y)) return c->st_void_air;
     FChunk *ch = fc_chunk(c, x, z);
-    return ch ? ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)] : c->st_air;
+    if (!ch) return c->ext_get ? c->ext_get(c->ext_ud, x, y, z) : c->st_air;
+    return ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)];
 }
 static inline u32 fc_flags(const FCtx *c, int st) { return c->bs->flags[st]; }
 static inline int fc_is_air(const FCtx *c, int st) { return (c->bs->flags[st] & BSF_AIR) != 0; }
@@ -129,6 +138,10 @@ int fc_height(FCtx *c, int type, int x, int z);
 int fc_biome(const FCtx *c, int x, int y, int z);
 /* биом клетки (qx,qy,qz) чанков окна (y зажат), чанк вне окна — plains */
 int fc_biome_cell(const FCtx *c, int qx, int qy, int qz);
+/* Небесный свет клетки так, как его видит движок света игры во время FEATURES (LightLayer.SKY, «видимые» данные): 0 в «зарегистрированных» секциях, 15 в остальных (см. feature_region.c) */
+int fc_sky_light(const FCtx *c, int x, int y, int z);
+void fc_snapshot_sections(const FCtx *c, FChunk *ch);      /* sec_ne: биты непустых секций чанка (конец декорации) */
+void fc_init_mask(FCtx *c, int cx, int cz);                /* init_mask центрального чанка (модель задержки света или маска «из файла») */
 static inline int fc_is_empty_block(const FCtx *c, int x, int y, int z) { return fc_is_air(c, fc_get(c, x, y, z)); }
 static inline int fc_ensure_can_write(const FCtx *c, int x, int z) { return fc_chunk(c, x, z) != NULL; }
 /* пересчёт/праймирование карт чанка (после терраформинга) */

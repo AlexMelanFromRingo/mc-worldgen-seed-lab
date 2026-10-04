@@ -6,7 +6,7 @@ import os
 import sys
 
 ADDON = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'mcgen_addon')
-FILES = ['ui/props.py', 'ui/ops.py', 'ui/panels.py', 'ui/presets.py', 'ui/__init__.py', '__init__.py', 'core/pack.py', 'core/lib.py', 'core/jobs.py', 'core/mock.py',
+FILES = ['ui/props.py', 'ui/ops.py', 'ui/panels.py', 'render/edit_ops.py', 'ui/presets.py', 'ui/__init__.py', '__init__.py', 'core/pack.py', 'core/lib.py', 'core/jobs.py', 'core/mock.py',
          'core/backend.py', 'core/catalog.py']
 KW = {'name', 'description', 'text', 'heading'}
 ATTR = {'bl_label', 'bl_description', 'status_title'}

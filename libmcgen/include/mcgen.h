@@ -135,6 +135,11 @@ MCGEN_API int mcgen_structure_piece_bb(McWorld *w, int chunk_x, int chunk_z, int
  * Без libmcgen_cuda / без устройства NVIDIA / при любой ошибке всё считается на CPU; результат GPU совпадает с CPU побитно
  * (проверяется самопроверкой при первом использовании мира). По умолчанию режим Auto. */
 enum { MCGEN_COMPUTE_CPU = 0, MCGEN_COMPUTE_GPU = 1, MCGEN_COMPUTE_AUTO = 2 };
+/* что в режиме Auto разрешено считать на GPU (битовая маска; в режиме GPU — всё, что поддержано). По умолчанию Auto = только биомы:
+ * рельеф на GPU побитно верен, но ускорение области 64×64 < 3× (docs/blender/gpu.md), поэтому включается явно */
+enum { MCGEN_GPU_BIOMES = 1, MCGEN_GPU_TERRAIN = 2 };
+MCGEN_API int mcgen_gpu_set_features(int mask);
+MCGEN_API int mcgen_gpu_get_features(void);
 /* путь к libmcgen_cuda (NULL/"" — искать рядом с libmcgen, в MCGEN_CUDA_LIB и в системных путях) */
 MCGEN_API int mcgen_gpu_set_library_path(const char *path);
 /* число устройств CUDA (0 — библиотеки/устройства нет) */

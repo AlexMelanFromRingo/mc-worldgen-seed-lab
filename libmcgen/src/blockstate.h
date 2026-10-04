@@ -48,6 +48,8 @@ typedef struct BsTab {
     u8 *sturdy;                 /* биты: DOWN, UP, NORTH, SOUTH, WEST, EAST — isFaceSturdy(FULL) */
     int exported;               /* 1 — данные из block_flags.json, 0 — эвристика */
     u8 *hmcls;                  /* [состояние] биты (1<<HM_*) — «непрозрачность» для карты высот */
+    u8 *damp;                   /* [состояние] BlockState.getLightDampening() (0..15): block_flags.json или формула по флагам (solidRender → 15, иначе skylight-проницаемый → 0, иначе 1) */
+    u8 *lshape;                 /* [состояние] 1 — свет учитывает форму (canOcclude && useShapeForLightOcclusion); без block_flags.json — 0 */
     StrMap block_ids;           /* имя блока → индекс+1 */
     int st_air, st_cave_air, st_void_air;
 } BsTab;

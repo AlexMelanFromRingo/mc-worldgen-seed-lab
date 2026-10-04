@@ -16,3 +16,9 @@ def register():
 def unregister():
     from . import edit_ops
     edit_ops.unregister()
+
+
+def detach():
+    """Отвязывает инструменты редактирования от сцены (после открытия другого .blend, очистки мира)."""
+    from . import edit_ops
+    edit_ops.detach()

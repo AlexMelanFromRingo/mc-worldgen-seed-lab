@@ -268,9 +268,25 @@ static void view_set(void *ud, int x, int y, int z, int st) {
 static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgressFn cb, void *ud, char *err, size_t errlen) {
     View v; memset(&v, 0, sizeof v); v.w = w; v.r = r;
     FluidWorld fw = { w->g, &v, view_get, view_set, w->preset->fast_lava, 1, 0 };
-    if (w->struct_on) fw.shape_update = structure_shape_update;      /* пометки построек: обновление форм заборов, факелов, лестниц */
+    fw.min_y = w->min_y; fw.height = w->height; fw.has_sky = w->dim_kind != 1; fw.world = w;
+    fw.post_flags = ((r->stages & MC_STAGE_FEATURES) ? 1 : 0) | (w->struct_on ? 2 : 0);
+    if (fw.post_flags) fw.shape_update = structure_shape_update;          /* пометки: грибы без света (FEATURES), заборы/факелы/лестницы построек */
     int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz, cancel = 0;
-    for (int cz = cz0 - 1; cz <= cz0 + nz && !cancel; cz++) {
+    /* воспроизведение записанного порядка постобработки настоящего сервера (tools/gt/jfr_order.py --fluid-txt):
+     * MCGEN_FLUID_ORDER=<файл> — строки «cx cz» в порядке, в котором чанки стали «тикающими» (все 8 соседей FULL); только при pp_margin >= 0 */
+    int ordered = 0;
+    { const char *fo = getenv("MCGEN_FLUID_ORDER"); FILE *fp = (fo && *fo && pp_margin >= 0) ? fopen(fo, "r") : NULL;
+      if (fp) { int ox, oz; ordered = 1;
+          while (fscanf(fp, "%d %d", &ox, &oz) == 2) {
+              if (!(ox >= cx0 && ox < cx0 + nx && oz >= cz0 && oz < cz0 + nz)) continue;
+              int d = ox - cx0; if (cx0 + nx - 1 - ox < d) d = cx0 + nx - 1 - ox;
+              if (oz - cz0 < d) d = oz - cz0;
+              if (cz0 + nz - 1 - oz < d) d = cz0 + nz - 1 - oz;
+              if (d >= pp_margin) fluidpp_chunk(&fw, &r->marks[chunk_index(r, ox, oz)], ox, oz, w->min_y);
+              if (r->stages & MC_STAGE_FEATURES) features_post_chunk(&fw, w, ox, oz);
+          }
+          fclose(fp); } }
+    for (int cz = cz0 - 1; cz <= cz0 + nz && !cancel && !ordered; cz++) {
         if (cb) {
             char what[64]; snprintf(what, sizeof what, "fluids %d/%d", cz - cz0 + 1, nz + 2);
             if (cb(ud, 0.9 + 0.08 * (cz - cz0 + 1) / (nz + 2), what)) { cancel = 1; break; }

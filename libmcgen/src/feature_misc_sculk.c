@@ -180,8 +180,10 @@ static int mf_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
 }
 
 /* ====================================================================== sculk_patch */
+static int sculk_new(const FCtx *c) { static int ov = -2; if (ov == -2) { const char *e = getenv("MCGEN_SCULK_NEW"); ov = e ? atoi(e) : -1; } return ov >= 0 ? ov : c->g->newf; }
 typedef struct Cursor { int x, y, z, charge, update_delay, decay_delay, has_fac; u8 fac; } Cursor;
-typedef struct PatchCfg { int charge_count, per_charge, attempts, growth_rounds, spread_rounds; MfEnv e; const u8 *replace_wg, *inhibitors; int sculk_state, sensor, shrieker, shrieker_can, vein_state; } PatchCfg;
+typedef struct PatchCfg { int charge_count, per_charge, attempts, growth_rounds, spread_rounds; MfEnv e; const u8 *replace_wg, *inhibitors; int sculk_state, sensor, shrieker, shrieker_can, vein_state;
+    int old_post; float catalyst_chance; IntProv *extra_rare; int catalyst; } PatchCfg;
 static void *patch_parse(FParse *p, const Js *cfg) {
     PatchCfg *s = fp_alloc(p, sizeof *s);
     s->charge_count = js_int(js_get(cfg, "charge_count"), 1); s->per_charge = js_int(js_get(cfg, "amount_per_charge"), 1);
@@ -191,6 +193,12 @@ static void *patch_parse(FParse *p, const Js *cfg) {
     s->sculk_state = bs_default(p->bs, s->e.sculk_blk); s->sensor = bs_default(p->bs, bs_block_index(p->bs, "minecraft:sculk_sensor"));
     s->shrieker = bs_default(p->bs, bs_block_index(p->bs, "minecraft:sculk_shrieker")); s->shrieker_can = bs_with(p->bs, s->shrieker, "can_summon", "true");
     s->vein_state = s->e.def;
+    /* 26.1/26.2: катализатор и редкие шрикеры — часть самой фичи (после раундов); в 26.3 вынесены в sequence/simple_block */
+    if (js_get(cfg, "catalyst_chance")) {
+        s->old_post = 1; s->catalyst_chance = js_numf(js_get(cfg, "catalyst_chance"), 0.0f);
+        s->extra_rare = js_get(cfg, "extra_rare_growths") ? fp_intprov(p, js_get(cfg, "extra_rare_growths")) : NULL;
+        s->catalyst = bs_default(p->bs, bs_block_index(p->bs, "minecraft:sculk_catalyst"));
+    }
     return s;
 }
 static inline int is_sculk_behaviour(const PatchCfg *s, const FCtx *c, int st) { int b = c->g->state_block[st]; return b == s->e.sculk_blk || b == s->e.vein_blk; }
@@ -327,7 +335,7 @@ static int valid_move(FCtx *c, const PatchCfg *s, const Cursor *cu, int ox, int 
     for (int i = 0; i < 18; i++) {
         int nx = cu->x + g_nc[idx[i]][0], ny = cu->y + g_nc[idx[i]][1], nz = cu->z + g_nc[idx[i]][2];
         int dsq = (ox - nx) * (ox - nx) + (oz - nz) * (oz - nz);
-        if (!c->g->newf || dsq <= 144) {                   /* canMoveToPos — только 26.3+ */
+        if (!sculk_new(c) || dsq <= 144) {                   /* canMoveToPos — только 26.3+ */
             int tr = fc_get(c, nx, ny, nz);
             if (is_sculk_behaviour(s, c, tr) && movement_unobstructed(c, cu->x, cu->y, cu->z, nx, ny, nz)) {
                 sx = nx; sy = ny; sz = nz;
@@ -352,9 +360,9 @@ static void cursor_update(FCtx *c, const PatchCfg *s, Cursor *cu, int ox, int oy
         if (beh == 2) vein_on_discharged(c, s, cur, cu->x, cu->y, cu->z);
         cu->x = to[0]; cu->y = to[1]; cu->z = to[2];
         /* 26.1/26.2: после перехода курсор гаснет, если ушёл от центра на ≥ 15 по x/z (closerThan(Vec3i(ox, y, oz), 15.0)) */
-        if (!c->g->newf && (cu->x - ox) * (cu->x - ox) + (cu->z - oz) * (cu->z - oz) >= 225) { cu->charge = 0; return; }
+        if (!sculk_new(c) && (cu->x - ox) * (cu->x - ox) + (cu->z - oz) * (cu->z - oz) >= 225) { cu->charge = 0; return; }
         cur = fc_get(c, to[0], to[1], to[2]);
-    } else if (c->g->newf) {                              /* 26.3+: в генерации мира курсор без допустимого хода гаснет */
+    } else if (sculk_new(c)) {                              /* 26.3+: в генерации мира курсор без допустимого хода гаснет */
         if (beh == 2) vein_on_discharged(c, s, cur, cu->x, cu->y, cu->z);
         cu->charge = 0; return;
     }
@@ -391,6 +399,15 @@ static int patch_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
             memcpy(cur, keep, sizeof(Cursor) * (size_t)nk); n = nk;
         }
         n = 0;
+    }
+    if (s->old_post) {
+        int below = fc_get(c, ox, oy - 1, oz);
+        if (frnd_float(r) <= s->catalyst_chance && (c->bs->flags[below] & BSF_FULL_COLL)) fc_set(c, ox, oy, oz, s->catalyst, 3);
+        int extra = s->extra_rare ? intprov_sample(s->extra_rare, r) : 0;
+        for (int i = 0; i < extra; i++) {
+            int cx = ox + frnd_int_bound(r, 5) - 2, cz = oz + frnd_int_bound(r, 5) - 2;
+            if (fc_is_air(c, fc_get(c, cx, oy, cz)) && ((c->bs->sturdy[fc_get(c, cx, oy - 1, cz)] >> DIR_UP) & 1)) fc_set(c, cx, oy, cz, s->shrieker_can, 3);
+        }
     }
     return 1;
 }

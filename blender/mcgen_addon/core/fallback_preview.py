@@ -191,6 +191,7 @@ class PreviewSink(SceneSink):
     def begin(self, ctx):
         import bpy
         self._ctx = ctx
+        ctx.prev_sink = None           # см. W4Sink.begin: иначе каждый приёмник держит все прежние (утечка памяти)
         info = ctx.region.info
         view = ctx.view
         t0 = time.perf_counter()

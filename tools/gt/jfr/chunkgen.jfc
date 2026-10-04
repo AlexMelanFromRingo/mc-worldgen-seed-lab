@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- JFR-конфигурация: только события генерации чанков игры (шаги STRUCTURE_STARTS … FULL: позиция, статус, поток, начало/длительность). -->
+<configuration version="2.0" label="mcgen-chunkgen" description="minecraft.ChunkGeneration" provider="mcgen">
+  <event name="minecraft.ChunkGeneration">
+    <setting name="enabled">true</setting>
+    <setting name="threshold">0 ms</setting>
+  </event>
+</configuration>

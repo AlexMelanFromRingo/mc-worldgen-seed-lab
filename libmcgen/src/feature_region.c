@@ -1,6 +1,7 @@
 /* feature_region.c — «WorldGenRegion» для стадии FEATURES: запись блоков с обновлением карт высот и пометками пост-обработки,
  * карты высот (Heightmap) по правилам версии, биом блока (BiomeManager.getBiome по клеткам чанков окна). */
 #include "feature.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -92,6 +93,9 @@ int fc_set(FCtx *c, int x, int y, int z, int st, int flags) {
     if (!ch) return 0;                                  /* ensureCanWrite: далеко от центра */
     if (fc_outside(c, y)) return 1;                      /* ProtoChunk: вне высот — void_air, запись не выполняется */
     u16 *b = &ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)];
+    { static int tx, ty, tz, tr = -1;           /* отладка: MCGEN_TRACE_POS="x,y,z" — кто и что пишет в эту ячейку (вместе с MCGEN_TRACE_ATT даёт порядок) */
+      if (tr < 0) { const char *e = getenv("MCGEN_TRACE_POS"); tr = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
+      if (tr && x == tx && y == ty && z == tz) fprintf(stderr, "SET chunk(%d,%d) (%d,%d,%d): %s -> %s flags=%d\n", c->ccx, c->ccz, x, y, z, mcgen_block_state_name(c->g, *b), mcgen_block_state_name(c->g, st), flags); }
     *b = (u16)st;
     hm_update(c, ch, x & 15, y, z & 15, st);
     if ((flags & 16) == 0) {
@@ -139,4 +143,50 @@ int fc_biome(const FCtx *c, int x, int y, int z) {
         if (md > d) { mi = i; md = d; }
     }
     return fc_biome_cell(c, (mi & 4) == 0 ? px : px + 1, (mi & 2) == 0 ? py : py + 1, (mi & 1) == 0 ? pz : pz + 1);
+}
+
+/* ====================================================================== небесный свет на стадии FEATURES
+ * Игра читает свет из ThreadedLevelLightEngine «как есть», без ожидания: getRawBrightness(pos, 0) → SkyLightSectionStorage.getLightValue (видимая копия данных, updating = false).
+ *  - Секция света «хранит» данные (SectionType LIGHT_ONLY/LIGHT_AND_DATA), если непустая секция блоков (hasOnlyAir == false) есть у неё самой или у любого из 26 соседей, а чанк-владелец
+ *    прошёл INITIALIZE_LIGHT (ThreadedLevelLightEngine.initializeLight → updateSectionStatus). Для только что созданной секции слой данных — нули (createDataLayer: lightOnInSection == false).
+ *  - Верх колонки topSections = (самая высокая «хранящая» секция) + 1; клетка выше или в колонке без данных → 15, ниже (в том числе «дыры») → значение слоя ≥ нижнего слоя вышележащей секции = 0.
+ *  - Свет начинает распространяться только на шаге LIGHT чанка, а он требует INITIALIZE_LIGHT всех 8 соседей, т.е. и центра региона, который как раз декорируется: внутри окна 3×3
+ *    настоящего (ненулевого) света ещё нет (кроме узкой полосы от внешних уже освещённых чанков — не моделируется).
+ * Какие чанки «видны» (INITIALIZE_LIGHT уже выполнен и применён световым потоком) — недетерминированно: свет обрабатывается отдельным потоком по тикам. Измерено по JFR: чанк, декорированный на 1 шаг раньше,
+ * виден в 12 % случаев, на 2 — 45 %, на 3 — 70 %, на 9 и больше — всегда. Модель по умолчанию — лаг в шагах (MCGEN_FEATURES_INITLAG, по умолчанию 3); воспроизведение JFR задаёт маску точно. */
+void fc_snapshot_sections(const FCtx *c, FChunk *ch) {
+    int ns = c->height >> 4; if (ns > 64) ns = 64;
+    u64 m = 0;
+    for (int s = 0; s < ns; s++) {
+        const u16 *b = ch->blocks + (size_t)s * 4096;
+        for (int i = 0; i < 4096; i++) if (!fc_is_air(c, b[i])) { m |= 1ull << s; break; }
+    }
+    ch->sec_ne = m; ch->sec_ne_ok = 1;
+}
+
+void fc_init_mask(FCtx *c, int cx, int cz) {
+    if (c->init_override_set) { c->init_mask = c->init_override; return; }
+    FChunk *me = c->grid[(cz - c->gz0) * c->gnx + (cx - c->gx0)];
+    u32 m = 0;
+    for (int dz = -2; dz <= 2; dz++) for (int dx = -2; dx <= 2; dx++) {
+        int gx = cx + dx - c->gx0, gz = cz + dz - c->gz0;
+        if (gx < 0 || gx >= c->gnx || gz < 0 || gz >= c->gnz || (dx == 0 && dz == 0)) continue;
+        const FChunk *x = c->grid[gz * c->gnx + gx];
+        if (x->sec_ne_ok && x->seq != INT_MAX && me->seq != INT_MAX && (long)x->seq <= (long)me->seq - c->init_lag) m |= 1u << ((dz + 2) * 5 + dx + 2);
+    }
+    c->init_mask = m;
+}
+
+int fc_sky_light(const FCtx *c, int x, int y, int z) {
+    if (fc_outside(c, y)) return 15;
+    int px = x >> 4, pz = z >> 4, sy = (y - c->min_y) >> 4, top = -1;
+    for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) {
+        int nx = px + dx, nz = pz + dz, ddx = nx - c->ccx, ddz = nz - c->ccz;
+        if (ddx < -2 || ddx > 2 || ddz < -2 || ddz > 2 || !((c->init_mask >> ((ddz + 2) * 5 + ddx + 2)) & 1)) continue;
+        int gx = nx - c->gx0, gz = nz - c->gz0;
+        if (gx < 0 || gx >= c->gnx || gz < 0 || gz >= c->gnz) continue;
+        u64 ne = c->grid[gz * c->gnx + gx]->sec_ne;
+        if (ne) { int t = 63 - __builtin_clzll(ne); if (t > top) top = t; }
+    }
+    return top >= 0 && sy <= top + 1 ? 0 : 15;
 }

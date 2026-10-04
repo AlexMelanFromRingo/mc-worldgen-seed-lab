@@ -5,6 +5,7 @@
 """
 import os
 import sys
+import tempfile
 import types
 
 BLENDER_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # .../blender
@@ -30,7 +31,7 @@ VERSION = os.environ.get('MCGEN_VERSION', '26.3')
 ASSETS_DIR = os.environ.get('MCGEN_ASSETS', os.path.join(RUN, 'assets-' + VERSION))
 PACK_DIR = os.environ.get('MCGEN_PACK', os.path.join(RUN, 'pack-' + VERSION))
 SERVER_DIR = os.environ.get('MCGEN_SERVER', os.path.join(RUN, 'server-' + VERSION))
-SCRATCH = os.environ.get('MCGEN_SCRATCH', os.path.join('/tmp', 'mcgen-w4'))
+SCRATCH = os.environ.get('MCGEN_SCRATCH', os.path.join(tempfile.gettempdir(), 'mcgen-w4'))
 
 
 def have_resources():

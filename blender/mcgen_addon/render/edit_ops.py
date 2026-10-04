@@ -7,15 +7,17 @@
 Выбор ставимого блока: `edit_ops.STATE.block = 'minecraft:oak_stairs'` (или оператор с параметром `block`).
 Чистые функции инструментов (`tool_place`, `tool_break`, `tool_pick`) не зависят от модальности и тестируются headless.
 """
+import json
 import time
 
 import bpy
+from bpy.app.translations import pgettext_rpt
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 
 from ..mesh.edit import PlaceContext
 from . import picking
 
-__all__ = ['STATE', 'attach', 'tool_place', 'tool_break', 'tool_pick', 'tool_undo', 'tool_redo', 'CLASSES', 'register', 'unregister']
+__all__ = ['STATE', 'TEXT_NAME', 'attach', 'detach', 'store_edits', 'discard_edits', 'tool_place', 'tool_break', 'tool_pick', 'tool_undo', 'tool_redo', 'CLASSES', 'register', 'unregister']
 
 
 class _State:
@@ -27,21 +29,82 @@ class _State:
         self.last = {}                 # сводка последней операции (время, число блоков)
         self.hover = None              # PickResult под курсором (для подсветки)
         self.handle = None
+        self.key = None                # ключ мира (версия, измерение, пресет, сиды): правки накладываются только на тот же мир
+        self.restored = None           # {'blocks': n, 'conflicts': m} — сколько сохранённых правок наложено после последней сборки
 
 
 STATE = _State()
+TEXT_NAME = 'MC World edits'         # текстовый блок .blend со слоем правок (JSON): воксели в .blend не сохраняются, правки — да
 
 
-def attach(scene_builder):
-    """Привязывает инструменты к сцене (SceneBuilder после build)."""
+def attach(scene_builder, key=None):
+    """Привязывает инструменты к сцене (SceneBuilder после build). key — ключ мира (список: версия, измерение, пресет, сиды); если в .blend есть сохранённый
+    слой правок ТОГО ЖЕ мира, он накладывается на только что построенные блоки (меши затронутых чанков перестраиваются)."""
     STATE.sb = scene_builder
     STATE.hover = None
-    return scene_builder.get_edit_session()
+    STATE.last = {}
+    STATE.key = list(key) if key is not None else None
+    STATE.restored = None
+    ed = scene_builder.get_edit_session()
+    _restore_edits(ed)
+    return ed
+
+
+def detach():
+    """Отвязывает инструменты от сцены (очистка мира, пересборка): правки без сцены невозможны. Сохранённый слой правок остаётся в .blend."""
+    STATE.sb = None
+    STATE.hover = None
+    STATE.last = {}
+    STATE.restored = None
+
+
+def store_edits():
+    """Записывает слой правок текущей сцены в текстовый блок .blend (вызывается после каждой правки/отмены). Ошибки не пробрасываются."""
+    if STATE.sb is None:
+        return
+    try:
+        data = {'v': 1, 'key': STATE.key, 'edits': STATE.sb.get_edit_session().to_dict()}
+        txt = bpy.data.texts.get(TEXT_NAME) or bpy.data.texts.new(TEXT_NAME)
+        txt.use_fake_user = True
+        txt.clear()
+        txt.write(json.dumps(data, separators=(',', ':')))
+    except Exception:      # noqa: BLE001 — запись правок не должна ломать сам инструмент
+        pass
+
+
+def discard_edits():
+    """Удаляет сохранённый слой правок из .blend (мир вернётся к сгенерированному после следующей генерации)."""
+    txt = bpy.data.texts.get(TEXT_NAME)
+    if txt is not None:
+        bpy.data.texts.remove(txt)
+    STATE.restored = None
+
+
+def _restore_edits(ed):
+    txt = bpy.data.texts.get(TEXT_NAME)
+    if txt is None:
+        return None
+    try:
+        data = json.loads(txt.as_string())
+        if data.get('v') != 1 or data.get('key') != STATE.key or not data.get('edits', {}).get('chunks'):
+            return None
+        applied, conflicts, affected = ed.load_dict(data['edits'])
+    except Exception:      # noqa: BLE001 — повреждённый текст не мешает показу мира
+        return None
+    if affected:
+        STATE.sb.update_chunks(affected)
+    STATE.restored = {'blocks': applied, 'conflicts': conflicts}
+    return STATE.restored
+
+
+def _norm_block(name):
+    name = (name or '').strip()
+    return name if not name or ':' in name else 'minecraft:' + name
 
 
 def _session():
     if STATE.sb is None:
-        raise RuntimeError('инструменты редактирования не привязаны к сцене (edit_ops.attach)')
+        raise RuntimeError('edit tools are not attached to a scene (edit_ops.attach)')
     return STATE.sb.get_edit_session()
 
 
@@ -56,6 +119,7 @@ def _finish(label, t0, n_blocks, affected):
     t1 = time.time()
     sb.update_chunks(affected)
     STATE.last = {'op': label, 'blocks': n_blocks, 'chunks': len(affected), 'edit_ms': t_edit * 1000.0, 'mesh_ms': (time.time() - t1) * 1000.0}
+    store_edits()
     return STATE.last
 
 
@@ -63,10 +127,10 @@ def tool_place(pick, view_dir_mc, block=None, exact_state=None):
     """Ставит блок рядом с гранью `pick` (PickResult). view_dir_mc — направление взгляда (оси Minecraft). Возвращает сводку операции."""
     ed = _session()
     t0 = time.time()
-    block = block or STATE.block
+    block = _norm_block(block) or STATE.block
     es = exact_state if exact_state is not None else (STATE.exact_state if STATE.orient == 'EXACT' else None)
     ctx = PlaceContext.from_view(pick.face, pick.hit, pick.place, view_dir_mc)
-    ed.begin('Поставить блок')
+    ed.begin('Place block')
     placed = ed.place(pick.place[0], pick.place[1], pick.place[2], block, ctx, es)
     n = ed.commit()
     return _finish('place', t0, n, ed.take_affected()) if placed else None
@@ -75,7 +139,7 @@ def tool_place(pick, view_dir_mc, block=None, exact_state=None):
 def tool_break(pick):
     ed = _session()
     t0 = time.time()
-    ed.begin('Сломать блок')
+    ed.begin('Break block')
     ok = ed.break_block(*pick.block)
     n = ed.commit()
     return _finish('break', t0, n, ed.take_affected()) if ok else None
@@ -175,7 +239,7 @@ class _ToolBase(bpy.types.Operator):
     color = (1.0, 1.0, 1.0, 1.0)
     help_text = ''
 
-    block: StringProperty(name='Блок', default='', description='Имя блока для установки (пусто — текущий из пипетки)')
+    block: StringProperty(name='Block', default='', description='Block to place (empty = the current one from the eyedropper)')
 
     @classmethod
     def poll(cls, context):
@@ -194,10 +258,10 @@ class _ToolBase(bpy.types.Operator):
 
     def invoke(self, context, event):
         if STATE.sb is None:
-            self.report({'ERROR'}, 'Нет сцены: сначала постройте мир')
+            self.report({'ERROR'}, pgettext_rpt('No scene: generate the world first'))
             return {'CANCELLED'}
-        if self.block:
-            STATE.block = self.block
+        if self.block.strip():
+            STATE.block = _norm_block(self.block)
             STATE.exact_state = None
         self._pick = None
         _ensure_handle()
@@ -207,7 +271,8 @@ class _ToolBase(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def _status(self, context, extra=''):
-        txt = '%s: ЛКМ — применить, ПКМ/Esc — выход, Ctrl+Z / Ctrl+Shift+Z — отмена/повтор. Блок: %s %s' % (self.bl_label, STATE.block, extra)
+        txt = pgettext_rpt('{tool}: LMB apply, RMB/Esc leave, Ctrl+Z / Ctrl+Shift+Z undo / redo. Block: {block} {extra}').format(
+            tool=pgettext_rpt(self.bl_label), block=STATE.block, extra=extra)
         context.workspace.status_text_set(txt)
 
     def _end(self, context):
@@ -245,16 +310,16 @@ class _ToolBase(bpy.types.Operator):
     @staticmethod
     def _fmt(r):
         if not r:
-            return 'нет изменений'
+            return pgettext_rpt('no changes')
         if 'edit_ms' in r:
-            return '%s: %d бл., %d чанк., меш %.1f мс' % (r['op'], r['blocks'], r['chunks'], r['mesh_ms'])
+            return pgettext_rpt('{op}: {n} blocks, {c} chunks, mesh {ms:.1f} ms').format(op=r['op'], n=r['blocks'], c=r['chunks'], ms=r['mesh_ms'])
         return str(r.get('state', r))
 
 
 class MCGEN_OT_edit_place(_ToolBase):
     bl_idname = 'mcgen.edit_place'
-    bl_label = 'Поставить блок'
-    bl_description = 'Поставить блок рядом с гранью под курсором (ориентация по виду/месту клика, автосвязи)'
+    bl_label = 'Place Block'
+    bl_description = 'Place a block next to the face under the cursor (orientation from the view and the click point, automatic connections)'
     mode = 'PLACE'
     color = (0.2, 1.0, 0.3, 1.0)
 
@@ -266,8 +331,8 @@ class MCGEN_OT_edit_place(_ToolBase):
 
 class MCGEN_OT_edit_break(_ToolBase):
     bl_idname = 'mcgen.edit_break'
-    bl_label = 'Сломать блок'
-    bl_description = 'Сломать блок под курсором (двери, кровати и высокие растения — обе половины)'
+    bl_label = 'Break Block'
+    bl_description = 'Break the block under the cursor (doors, beds and tall plants: both halves)'
     mode = 'BREAK'
     color = (1.0, 0.2, 0.2, 1.0)
 
@@ -277,18 +342,25 @@ class MCGEN_OT_edit_break(_ToolBase):
 
 class MCGEN_OT_edit_pick(_ToolBase):
     bl_idname = 'mcgen.edit_pick'
-    bl_label = 'Пипетка'
-    bl_description = 'Взять блок под курсором как ставимый (с его состоянием)'
+    bl_label = 'Pick Block'
+    bl_description = 'Take the block under the cursor as the block to place (with its state)'
     mode = 'PICK'
     color = (0.3, 0.6, 1.0, 1.0)
 
     def apply(self, context, event, pk):
-        return tool_pick(pk)
+        r = tool_pick(pk)
+        if r:
+            try:
+                context.scene.mcgen.edit_block = STATE.block       # поле «Block» панели Edit Blocks показывает взятый блок
+            except AttributeError:
+                pass
+        return r
 
 
 class MCGEN_OT_edit_undo(bpy.types.Operator):
     bl_idname = 'mcgen.edit_undo'
-    bl_label = 'Отменить правку блока'
+    bl_label = 'Undo Block Edit'
+    bl_description = 'Undo the last block edit (Ctrl+Z inside a tool does the same)'
     bl_options = {'REGISTER'}
 
     @classmethod
@@ -298,14 +370,15 @@ class MCGEN_OT_edit_undo(bpy.types.Operator):
     def execute(self, context):
         r = tool_undo()
         if not r:
-            self.report({'INFO'}, 'Нечего отменять')
+            self.report({'INFO'}, pgettext_rpt('Nothing to undo'))
             return {'CANCELLED'}
         return {'FINISHED'}
 
 
 class MCGEN_OT_edit_redo(bpy.types.Operator):
     bl_idname = 'mcgen.edit_redo'
-    bl_label = 'Повторить правку блока'
+    bl_label = 'Redo Block Edit'
+    bl_description = 'Redo the undone block edit (Ctrl+Shift+Z inside a tool)'
     bl_options = {'REGISTER'}
 
     @classmethod
@@ -315,7 +388,7 @@ class MCGEN_OT_edit_redo(bpy.types.Operator):
     def execute(self, context):
         r = tool_redo()
         if not r:
-            self.report({'INFO'}, 'Нечего повторять')
+            self.report({'INFO'}, pgettext_rpt('Nothing to redo'))
             return {'CANCELLED'}
         return {'FINISHED'}
 

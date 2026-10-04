@@ -3,7 +3,7 @@
 ресурсы пользователя (реальные jar'ы + синтетические), палитры, таблица тонких настроек.
 
     python3 blender/tests/addon/test_core.py [-v] [TestCase.test_name …]
-Переменные: MCGEN_SCRATCH (рабочий каталог, по умолчанию /tmp/mcgen-tests), MCGEN_TEST_REAL_JARS=0 — пропустить тесты на реальных jar.
+Переменные: MCGEN_SCRATCH (рабочий каталог, по умолчанию <временный каталог>/mcgen-tests), MCGEN_TEST_REAL_JARS=0 — пропустить тесты на реальных jar.
 """
 import hashlib
 import http.server

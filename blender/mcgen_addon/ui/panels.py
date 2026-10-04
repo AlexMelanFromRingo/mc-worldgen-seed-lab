@@ -9,7 +9,7 @@ from bpy.app.translations import pgettext_iface as iface_
 from bpy.types import Panel
 from bl_ui.utils import PresetPanel
 
-from ..core import backend, catalog, jobs, pack, paths, seeds, sysinfo
+from ..core import backend, catalog, gpu, jobs, pack, paths, seeds, sysinfo
 from ..core import params as P
 from . import i18n, ops, props
 
@@ -57,6 +57,10 @@ def draw_main(layout, context):
         box.alert = True
         for line in st.error.split('\n')[:4]:
             box.label(text=line[:90], icon='ERROR')
+    elif sess.region is None and not running and s.stats.has_data:
+        box = layout.box()
+        box.label(text=iface_('The voxel data is not loaded (it is not stored in the .blend file)'), icon='INFO')
+        box.operator('mcgen.load_voxels', icon='FILE_REFRESH')
     elif sess.region is None and not running:
         layout.label(text=iface_('Set the area and press Generate'), icon='INFO')
     if backend.name() == 'mock':
@@ -182,6 +186,8 @@ def draw_view(layout, context):
     sub = col.column()
     sub.active = s.lod_mode != 'OFF'
     sub.prop(s, 'lod_near')
+    col = layout.column()
+    col.prop(s, 'compute')
     layout.prop(s, 'auto_update')
     layout.prop(s, 'collection_name')
 
@@ -265,10 +271,42 @@ def draw_resources(layout, context, prefs=None, in_prefs=False):
     layout.label(text=iface_('Generator: {d}').format(d=iface_(tpl).format(**kw))[:110], icon='SYSTEM')
 
 
+def draw_gpu(layout, context):
+    """Блок «Compute»: режим, устройство, самопроверка, причины отказа, замеры."""
+    st = gpu.status()
+    box = layout.box()
+    row = box.row()
+    row.label(text=iface_('Compute: {m}').format(m=st.get('mode') or iface_('CPU')), icon='MEMORY' if st.get('ready') else 'SYSTEM')
+    row.operator('mcgen.gpu_selftest', text='', icon='CHECKMARK')
+    row.operator('mcgen.gpu_benchmark', text='', icon='TIME')
+    if st.get('ready'):
+        box.label(text=st.get('device', '')[:90], icon='OUTLINER_DATA_LIGHTPROBE')
+        res = gpu.last_selftest()
+        if res:
+            ok, txt = list(res.values())[-1]
+            box.label(text=(iface_('Self-test passed (GPU = CPU)') if ok else iface_('Self-test FAILED: the CPU is used')), icon='CHECKMARK' if ok else 'ERROR')
+        if st.get('last_fallback') not in (None, '-', ''):
+            box.label(text=iface_('Fallback to CPU: {r}').format(r=st['last_fallback'])[:110], icon='INFO')
+    else:
+        reason = st.get('reason') or st.get('state', '')
+        box.label(text=iface_('GPU is not used: {r}').format(r=reason)[:110], icon='INFO')
+    b = gpu.last_benchmark()
+    if b:
+        col = box.column(align=True)
+        if b.get('biome_gpu'):
+            col.label(text=iface_('Biome map {n}x{n}: CPU {c:.2f} s, GPU {g:.3f} s ({x:.0f}x)').format(n=b['biome_n'], c=b['biome_cpu'], g=b['biome_gpu'], x=b.get('biome_speedup', 0)))
+        if b.get('terrain_gpu'):
+            col.label(text=iface_('Terrain {n}x{n} chunks: CPU {c:.2f} s, GPU {g:.2f} s ({x:.1f}x)').format(n=b['terrain_n'], c=b['terrain_cpu'], g=b['terrain_gpu'], x=b.get('terrain_speedup', 0)))
+        if b.get('biome_identical') is False or b.get('terrain_identical') is False:
+            col.alert = True
+            col.label(text=iface_('GPU and CPU results differ!'), icon='ERROR')
+
+
 def draw_stats(layout, context):
     s = _s(context)
     st = s.stats
     layout.use_property_split = False
+    draw_gpu(layout, context)
     if not st.has_data:
         layout.label(text=iface_('No statistics yet'), icon='INFO')
         return
@@ -276,7 +314,7 @@ def draw_stats(layout, context):
     col.label(text=iface_('Generator: {n}').format(n=st.backend))
     col.label(text=iface_('Generation: {t:.2f} s').format(t=st.t_generate))
     for e in st.stage_times:
-        col.label(text=f'    {iface_(e.name)}: {e.seconds:.2f} s')
+        col.label(text='    ' + iface_('{name}: {t:.2f} s').format(name=iface_(e.name), t=e.seconds))
     col.label(text=iface_('Scene build: {t:.2f} s ({n})').format(t=st.t_build, n=st.sink))
     col.label(text=iface_('Total: {t:.2f} s').format(t=st.t_total))
     col = layout.column(align=True)
@@ -300,6 +338,40 @@ def draw_stats(layout, context):
             b = e.bb
             box.label(text=f'{e.name.split(":", 1)[-1]}  x {b[0]}..{b[3]}  y {b[1]}..{b[4]}  z {b[2]}..{b[5]}')
         box.operator('mcgen.structure_markers', icon='EMPTY_AXIS')
+
+
+def draw_edit(layout, context):
+    """Строительство и разрушение: кнопки модальных инструментов (работают в 3D-виде, поэтому подпанель есть только в боковой панели N)."""
+    from ..render import edit_ops
+    s = _s(context)
+    layout.use_property_split = False
+    ready = edit_ops.STATE.sb is not None
+    col = layout.column(align=True)
+    col.enabled = ready
+    col.prop(s, 'edit_block', text='')
+    col.operator('mcgen.edit_place', icon='ADD').block = s.edit_block
+    col.operator('mcgen.edit_break', icon='REMOVE')
+    col.operator('mcgen.edit_pick', icon='EYEDROPPER')
+    row = col.row(align=True)
+    row.operator('mcgen.edit_undo', icon='LOOP_BACK')
+    row.operator('mcgen.edit_redo', icon='LOOP_FORWARDS')
+    if not ready:
+        layout.label(text=iface_('Generate the world first'), icon='INFO')
+        return
+    box = layout.box()
+    col = box.column(align=True)
+    col.label(text=iface_('LMB: apply'))
+    col.label(text=iface_('RMB / Esc: leave the tool'))
+    col.label(text=iface_('Ctrl+Z: undo'))
+    col.label(text=iface_('Ctrl+Shift+Z: redo'))
+    last = edit_ops.STATE.last
+    if last and 'edit_ms' in last:
+        col.label(text=iface_('{op}: {n} blocks, mesh {ms:.1f} ms').format(op=last['op'], n=last['blocks'], ms=last['mesh_ms']))
+    rs = edit_ops.STATE.restored
+    if rs:
+        col.label(text=iface_('Restored edits: {n} blocks').format(n=rs['blocks']))
+    if edit_ops.TEXT_NAME in bpy.data.texts:
+        layout.operator('mcgen.edit_reset', icon='TRASH')
 
 
 # ---- фабрика панелей ------------------------------------------------------------------------------------------------------------------
@@ -328,10 +400,14 @@ SUBPANELS = [
     ('layers', 'Layers', draw_layers, False, None),
     ('tweaks', 'World Tweaks', draw_tweaks_body, True, 'use_tweaks'),
     ('view', 'View', draw_view, True, None),
+    ('edit', 'Edit Blocks', draw_edit, True, None),
     ('biomes', 'Biome Preview', draw_biome_preview, True, None),
     ('resources', 'Resources', draw_resources, True, None),
     ('stats', 'Stats', draw_stats, True, None),
 ]
+
+
+VIEW3D_ONLY = {'edit'}        # подпанели, нужные только в 3D-виде (инструменты редактирования — модальные операторы 3D-вида)
 
 
 def _poll(cls, context):
@@ -363,6 +439,8 @@ def make_panels(prefix, space, region, extra, preset_panel):
         'draw': _wrap_draw(draw_main), 'draw_header_preset': main_header_preset, 'poll': classmethod(_poll), **extra})
     out.append(main)
     for i, (key, label, fn, closed, hdr) in enumerate(SUBPANELS):
+        if key in VIEW3D_ONLY and space != 'VIEW_3D':
+            continue
         attrs = {'bl_idname': f'{prefix}_{key}', 'bl_label': label, 'bl_space_type': space, 'bl_region_type': region, 'bl_parent_id': main_id,
                  'bl_order': i, 'poll': classmethod(_poll), 'draw': _wrap_draw(fn), **extra}
         if closed:

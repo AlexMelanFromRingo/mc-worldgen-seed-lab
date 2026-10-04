@@ -1,0 +1,180 @@
+{
+ "_comment": "Показательные кадры docs/blender/img/render-*.jpg. Места подобраны find_spots.py (сид, область в чанках cx0/cz0/nx/nz); камера задаётся МИРОВЫМИ координатами Minecraft: target [x, y, z] ('g+N' — на N блоков над землёй в этой колонке), azimuth — куда смотрит камера по компасу (0 — север, 90 — восток), elevation — угол вниз, dist, lens; sun.az — откуда светит солнце; y_min/y_max — срез по высоте.",
+ "forest": {
+  "version": "26.3",
+  "dim": "minecraft:overworld",
+  "seed": 5,
+  "cx0": 96,
+  "cz0": 4,
+  "nx": 16,
+  "nz": 12,
+  "cam": {
+   "target": [
+    1620,
+    "g+2",
+    175
+   ],
+   "azimuth": 310,
+   "elevation": 22,
+   "dist": 62,
+   "lens": 35
+  },
+  "sun": {
+   "az": 100,
+   "el": 38
+  },
+  "y_min": 48
+ },
+ "snow": {
+  "version": "26.3",
+  "dim": "minecraft:overworld",
+  "seed": 17,
+  "cx0": -4,
+  "cz0": -96,
+  "nx": 24,
+  "nz": 18,
+  "env": "snow",
+  "cam": {
+   "target": [
+    150,
+    150,
+    -1384
+   ],
+   "azimuth": 20,
+   "elevation": 30,
+   "dist": 300,
+   "lens": 35
+  },
+  "sun": {
+   "az": 140,
+   "el": 38
+  },
+  "y_min": 96
+ },
+ "desert": {
+  "version": "26.3",
+  "dim": "minecraft:overworld",
+  "seed": 80,
+  "cx0": 36,
+  "cz0": 16,
+  "nx": 16,
+  "nz": 12,
+  "cam": {
+   "target": [
+    714,
+    68,
+    362
+   ],
+   "azimuth": 215,
+   "elevation": 20,
+   "dist": 70,
+   "lens": 35
+  },
+  "sun": {
+   "az": 120,
+   "el": 40
+  },
+  "y_min": 50
+ },
+ "end": {
+  "version": "26.3",
+  "dim": "minecraft:the_end",
+  "seed": 12345,
+  "cx0": -7,
+  "cz0": -7,
+  "nx": 14,
+  "nz": 14,
+  "env": "end",
+  "cam": {
+   "target": [
+    0,
+    60,
+    0
+   ],
+   "azimuth": 200,
+   "elevation": 20,
+   "dist": 260,
+   "lens": 35
+  },
+  "sun": {
+   "az": 30,
+   "el": 35
+  }
+ },
+ "village": {
+  "version": "26.3",
+  "dim": "minecraft:overworld",
+  "seed": 29,
+  "cx0": 38,
+  "cz0": -67,
+  "nx": 16,
+  "nz": 12,
+  "y_min": 45,
+  "cam": {
+   "target": [
+    736,
+    "g+2",
+    -973
+   ],
+   "azimuth": 335,
+   "elevation": 34,
+   "dist": 118,
+   "lens": 35
+  },
+  "sun": {
+   "az": 125,
+   "el": 42
+  }
+ },
+ "island": {
+  "version": "26.3",
+  "dim": "minecraft:overworld",
+  "seed": 33,
+  "cx0": -114,
+  "cz0": 27,
+  "nx": 16,
+  "nz": 12,
+  "cam": {
+   "target": [
+    -1688,
+    "g+1",
+    536
+   ],
+   "azimuth": 25,
+   "elevation": 30,
+   "dist": 230,
+   "lens": 35
+  },
+  "sun": {
+   "az": 130,
+   "el": 45
+  },
+  "y_min": 36
+ },
+ "nether": {
+  "version": "26.3",
+  "dim": "minecraft:the_nether",
+  "seed": 11,
+  "cx0": 54,
+  "cz0": 51,
+  "nx": 16,
+  "nz": 12,
+  "env": "nether",
+  "y_max": 86,
+  "cam": {
+   "target": [
+    1005,
+    58,
+    919
+   ],
+   "azimuth": 20,
+   "elevation": 42,
+   "dist": 190,
+   "lens": 35
+  },
+  "sun": {
+   "az": 200,
+   "el": 55
+  }
+ }
+}

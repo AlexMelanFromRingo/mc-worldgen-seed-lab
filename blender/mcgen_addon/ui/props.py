@@ -104,6 +104,21 @@ def _prev_unit_impl(self):
 _auto_pending = {'t': False}
 
 
+def _compute_items(self, context):
+    from ..core import gpu
+    lab = gpu.device_label()
+    return _keep('compute', [
+        ('AUTO', 'Auto', 'Use the GPU where it pays off and has passed the GPU = CPU self-check (biome maps); otherwise the CPU'),
+        ('CPU', 'CPU', 'Always compute on the CPU'),
+        ('GPU', f'GPU ({lab})' if lab else 'GPU (not available)', 'Compute everything the GPU can (biome maps and terrain); the result is bit-identical to the CPU'),
+    ])
+
+
+def _on_compute(self, context):
+    from ..core import gpu
+    gpu.set_mode(self.compute)
+
+
 def _auto_update(self, context):
     """Включённое «Auto update»: после паузы в 0.6 с запускает Update Layers (дебаунс таймером)."""
     scene = getattr(self, 'id_data', None)
@@ -294,6 +309,8 @@ class McGenSettings(PropertyGroup):
     pixel_style: EnumProperty(name='Texture style', description='Texture filtering of block textures', items=[('PIXEL', 'Pixel', 'Sharp pixels (closest filtering)'),
                                                                                                           ('SMOOTH', 'Smooth', 'Smooth (linear filtering)')],
                               default='PIXEL', update=_auto_update)
+    compute: EnumProperty(name='Compute', description='Where the generator computes: Auto, the CPU, or the NVIDIA GPU (optional CUDA library; the result is identical)',
+                          items=_compute_items, update=_on_compute)
     auto_update: BoolProperty(name='Auto update', description='Re-run Update Layers shortly after a setting changes', default=False)
     collection_name: StringProperty(name='Collection', description='Collection that receives the generated objects', default='MC World')
 
@@ -306,6 +323,10 @@ class McGenSettings(PropertyGroup):
                                                                                   ('HASH', 'Hash', 'Deterministic color from the biome name'),
                                                                                   ('JSON', 'Biome JSON', 'Colors from the datapack biome files (water / grass)')], default='MAP')
     bm_plane: BoolProperty(name='Add plane', description='Also add a textured plane with the biome map to the scene', default=True)
+
+    # Edit Blocks (строительство и разрушение)
+    edit_block: StringProperty(name='Block', description='Block to place: name such as stone, oak_stairs or minecraft:glass (the eyedropper tool fills it with the block under the cursor)',
+                               default='minecraft:stone')
 
     stats: PointerProperty(type=McGenStats)
 

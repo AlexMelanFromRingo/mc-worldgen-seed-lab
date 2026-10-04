@@ -26,6 +26,7 @@ import net.minecraft.world.level.material.FluidState;
  *          биты 16..17 postProcess: 1 — «себя», 2 — «над собой»  (getPostProcessPos), 20..23 — lightEmission (0..15)
  *   fluid: тип*256 + amount*16 + falling*8 + source*4   (тип: 0 пусто, 1 water, 2 flowing_water, 3 lava, 4 flowing_lava)
  *   sturdy: биты 0..5 — isFaceSturdy(FULL) по направлениям DOWN, UP, NORTH, SOUTH, WEST, EAST
+ *   damp: getLightDampening() (0..15) — затухание света в блоке; lshape: 1 — свет учитывает форму блока (canOcclude && useShapeForLightOcclusion: плиты, ступени, …)
  * Порядок состояний — Block.BLOCK_STATE_REGISTRY (тот же id, что в reports/blocks.json).
  */
 public final class BlockFlags {
@@ -36,6 +37,8 @@ public final class BlockFlags {
       long[] flags = new long[n];
       int[] fluid = new int[n];
       int[] sturdy = new int[n];
+      int[] damp = new int[n];
+      int[] lshape = new int[n];
       BlockPos zero = BlockPos.ZERO;
       for (int id = 0; id < n; id++) {
          BlockState s = Block.BLOCK_STATE_REGISTRY.byId(id);
@@ -89,6 +92,8 @@ public final class BlockFlags {
             if (s.isFaceSturdy(EmptyBlockGetter.INSTANCE, zero, d)) sm |= 1 << d.ordinal();
          }
          sturdy[id] = sm;
+         damp[id] = s.getLightDampening();
+         lshape[id] = (s.canOcclude() && s.useShapeForLightOcclusion()) ? 1 : 0;
       }
       try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(args[0]), StandardCharsets.UTF_8), 1 << 16)) {
          w.write("{\"version\":\"" + SharedConstants.getCurrentVersion().name() + "\",\"nstates\":" + n + ",\n\"blocks\":[\n");
@@ -121,6 +126,16 @@ public final class BlockFlags {
          for (int i = 0; i < n; i++) {
             if (i > 0) w.write(i % 64 == 0 ? ",\n" : ",");
             w.write(Integer.toString(sturdy[i]));
+         }
+         w.write("],\n\"damp\":[");
+         for (int i = 0; i < n; i++) {
+            if (i > 0) w.write(i % 64 == 0 ? ",\n" : ",");
+            w.write(Integer.toString(damp[i]));
+         }
+         w.write("],\n\"lshape\":[");
+         for (int i = 0; i < n; i++) {
+            if (i > 0) w.write(i % 64 == 0 ? ",\n" : ",");
+            w.write(Integer.toString(lshape[i]));
          }
          w.write("]}\n");
       }

@@ -729,6 +729,7 @@ MCGPU_EXPORT void *mcgpu_terrain_new(const McgTerrainWorld *T, int max_chunks, c
     g->Bmax = B;
     if (!run_plan(g, B, true)) return bad("сухой прогон пакета");
     g->slab_floats = g->used + 64;
+    if (g->prof) fprintf(stderr, "[mcgpu] рельеф: узлов %d, шумов %d, октав %d, сплайнов-операций %d; на чанк %.1f МБ арены, пакет B=%d, арена %.0f МБ; кэши для CPU: %zu (ёмкость %zu float на чанк)\n", g->vol->nnodes, g->vol->nnoise, g->vol->noct, (int)g->splops.size(), g->per_chunk_floats * 4 / 1048576.0, B, g->slab_floats * 4 / 1048576.0, g->cells.size(), g->cell_floats);
     if (cudaMalloc((void **)&g->slab, g->slab_floats * sizeof(float)) != cudaSuccess) { cudaGetLastError(); return bad("нет памяти под арену"); }
     if (cudaMalloc((void **)&g->d_cx0, sizeof(int) * (size_t)B) != cudaSuccess || cudaMalloc((void **)&g->d_cz0, sizeof(int) * (size_t)B) != cudaSuccess) return bad("нет памяти");
     if (cudaMalloc((void **)&g->d_flags, sizeof(unsigned) * (size_t)g->flags_cap_ops * (size_t)B) != cudaSuccess) return bad("нет памяти под флаги сплайнов");

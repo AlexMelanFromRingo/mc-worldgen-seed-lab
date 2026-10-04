@@ -239,15 +239,24 @@ static void deco_place_on_ground(TreeCtx *x, const TreeDeco *d) {
         }
         int bx0 = minx - d->radius, bx1 = maxx + d->radius, by0 = min_y - d->height, by1 = min_y + d->height, bz0 = minz - d->radius, bz1 = maxz + d->radius;
         int vine = bs_block_index(c->bs, "minecraft:vine");
+        if (getenv("MCGEN_TRACE_TREE")) { int tx2, tz2; if (sscanf(getenv("MCGEN_TRACE_TREE"), "%d,%d", &tx2, &tz2) == 2 && l.a[0].x == tx2 && l.a[0].z == tz2) { fprintf(stderr, "POGINFO n=%d min_y=%d box x[%d,%d] y[%d,%d] z[%d,%d] radius=%d height=%d tries=%d\n", l.n, min_y, bx0, bx1, by0, by1, bz0, bz1, d->radius, d->height, d->tries); for (int q = 0; q < l.n && q < 4; q++) fprintf(stderr, "POGINFO  l[%d]=(%d,%d,%d)\n", q, l.a[q].x, l.a[q].y, l.a[q].z); } }
+        int trace = 0; { static int tx, tz, tr = -1, all = 0; if (tr < 0) { const char *e = getenv("MCGEN_TRACE_TREE"); all = (e && !strcmp(e, "all")); tr = (e && (all || sscanf(e, "%d,%d", &tx, &tz) == 2)); }
+                         trace = tr && (all || (l.a[0].x == tx && l.a[0].z == tz)); }
+        static _Thread_local int dctr; if (trace) fprintf(stderr, "POGBEGIN chunk(%d,%d) tree(%d,%d,%d) deco#%d\n", c->ccx, c->ccz, l.a[0].x, l.a[0].y, l.a[0].z, dctr++);
         for (int i = 0; i < d->tries; i++) {
             int px = frnd_between(r, bx0, bx1);
             int py = frnd_between(r, by0, by1);
             int pz = frnd_between(r, bz0, bz1);
             int above = fc_get(c, px, py + 1, pz);
-            if (!(fc_is_air(c, above) || blk_of(c, above) == vine)) continue;
-            if (!(c->bs->flags[fc_get(c, px, py, pz)] & BSF_SOLID_RENDER)) continue;
-            if (!(fc_height(c, HM_MOTION_BLOCKING_NO_LEAVES, px, pz) <= py + 1)) continue;
-            ctx_set(x, px, py + 1, pz, bsprov_state(c, d->prov, px, py + 1, pz));
+            int why = 0;
+            if (!(fc_is_air(c, above) || blk_of(c, above) == vine)) why = 1;
+            else if (!(c->bs->flags[fc_get(c, px, py, pz)] & BSF_SOLID_RENDER)) why = 2;
+            else if (!(fc_height(c, HM_MOTION_BLOCKING_NO_LEAVES, px, pz) <= py + 1)) why = 3;
+            if (trace) fprintf(stderr, "POG try %d (%d,%d,%d) %s why=%d hm=%d\n", i, px, py, pz, mcgen_block_state_name(c->g, fc_get(c, px, py, pz)), why, fc_height(c, HM_MOTION_BLOCKING_NO_LEAVES, px, pz));
+            { static int hx, hy, hz, hr = -1; if (hr < 0) { const char *e = getenv("MCGEN_HACK_SKIP"); hr = (e && sscanf(e, "%d,%d,%d", &hx, &hy, &hz) == 3); }
+              if (hr && px == hx && py + 1 == hy && pz == hz && !why) why = 9; }                  /* отладка: эксперимент «игра здесь не ставит» */
+            if (why) continue;
+            { int stt = bsprov_state(c, d->prov, px, py + 1, pz); if (trace) fprintf(stderr, "POGPLACE chunk(%d,%d) try %d (%d,%d,%d) %s\n", c->ccx, c->ccz, i, px, py + 1, pz, mcgen_block_state_name(c->g, stt)); ctx_set(x, px, py + 1, pz, stt); }
         }
     }
     free(l.a);
@@ -426,6 +435,7 @@ static int upd_shape(FCtx *c, const UpdCls *u, int st, int x, int y, int z, int 
     }
     return st;
 }
+int structure_update_shape_fc(FCtx *fc, int st, int x, int y, int z, int dir, int nst);      /* structure_post.c */
 void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, int sy, int sz, const u8 *shape) {
     static _Thread_local struct { const McGen *g; UpdCls u; } cache;
     if (cache.g != c->g) {
@@ -441,8 +451,10 @@ void tree_update_shape_at_edge(FCtx *c, int minx, int miny, int minz, int sx, in
         int nx = px + DIR_DX[dir_], ny = py + DIR_DY[dir_], nz = pz + DIR_DZ[dir_]; \
         int st = fc_get(c, px, py, pz), nst = fc_get(c, nx, ny, nz); \
         int ns = upd_shape(c, u, st, px, py, pz, dir_); \
+        if (ns == st) { int r_ = structure_update_shape_fc(c, st, px, py, pz, dir_, nst); if (r_ >= 0) ns = r_; } \
         if (ns != st) { fc_set(c, px, py, pz, ns, 2); st = ns; } \
         int nn = upd_shape(c, u, nst, nx, ny, nz, opp(dir_)); \
+        if (nn == nst) { int r_ = structure_update_shape_fc(c, nst, nx, ny, nz, opp(dir_), st); if (r_ >= 0) nn = r_; } \
         if (nn != nst) fc_set(c, nx, ny, nz, nn, 2); \
     } while (0)
     /* быстрый выход: в мире нет блоков интересных классов рядом — upd_shape ничего не меняет; обход граней оставлен точным */

@@ -841,6 +841,123 @@ class T05_W4Adapter(unittest.TestCase):
         self.assertNotIn('build', calls)
 
 
+class T05b_EditTools(unittest.TestCase):
+    """Строительство и разрушение подключены к аддону: операторы зарегистрированы, панель Edit Blocks есть в боковой панели N, после Generate
+    настоящим построителем сцены инструменты привязаны, а маркеры построек и блоки лежат в одной системе координат (область не в нуле)."""
+
+    def test_operators_and_panel_registered(self):
+        for n in ('edit_place', 'edit_break', 'edit_pick', 'edit_undo', 'edit_redo'):
+            self.assertTrue(hasattr(bpy.ops.mcgen, n), n)
+        self.assertTrue(hasattr(bpy.types, 'MCGEN_PT_n_edit'))
+        self.assertFalse(hasattr(bpy.types, 'MCGEN_PT_edit'))        # только 3D-вид: инструменты — модальные операторы 3D-вида
+        lay = RecordingLayout()
+        getattr(bpy.types, 'MCGEN_PT_n_edit').draw(FakePanel(lay), bpy.context)
+        for op in ('mcgen.edit_place', 'mcgen.edit_break', 'mcgen.edit_pick', 'mcgen.edit_undo', 'mcgen.edit_redo'):
+            self.assertIn(op, lay.log['ops'])
+        self.assertIn('edit_block', {n for _i, n in lay.log['props']})
+        self.assertTrue(lay.log['icons'] <= RecordingLayout.ICONS)
+
+    @unittest.skipUnless(REAL, 'нужна настоящая библиотека и настоящий построитель сцены')
+    def test_edit_and_markers_with_real_builder(self):
+        res = pack.resolve('26.3')
+        if not (res['assets_ok'] and res['pack_ok']):
+            self.skipTest('нет подготовленных ресурсов 26.3 в кэше')
+        import mathutils
+        edit_ops = importlib.import_module(EXT + '.render.edit_ops')
+        picking = importlib.import_module(EXT + '.render.picking')
+        reset_scene()
+        props.get_prefs().sink = 'AUTO'
+        s = S()
+        s.unit = 'CHUNKS'
+        s.origin_x, s.origin_z = -37, 21                      # область НЕ в нуле: именно здесь ломались маркеры при построителе W4
+        s.size_x = s.size_z = 6
+        s.seed = '12345'
+        s.use_terrain = s.use_surface = s.use_caves = s.use_features = s.use_structures = True
+        run_job('generate')
+        self.assertEqual(s.stats.sink, 'render.scene')
+        self.assertIsNotNone(edit_ops.STATE.sb)                                      # инструменты привязаны после сборки
+        sb = edit_ops.STATE.sb
+        # строим: луч сверху вниз через центр области -> блок поверхности -> «Поставить» рядом с гранью -> «Сломать» -> undo/redo
+        wx, wz = (-37 + 3) * 16 + 8, (21 + 3) * 16 + 8
+        origin = mathutils.Vector((wx + 0.5, -(wz + 0.5), 400.0))
+        pk = picking.pick_ray(sb, origin, mathutils.Vector((0, 0, -1)))
+        self.assertIsNotNone(pk)
+        self.assertEqual((pk.block[0], pk.block[2]), (wx, wz))
+        r = edit_ops.tool_place(pk, (0.0, -1.0, 0.0), 'minecraft:glass')
+        self.assertTrue(r and r['blocks'] == 1, r)
+        pk2 = picking.pick_ray(sb, origin, mathutils.Vector((0, 0, -1)))
+        self.assertEqual(pk2.block, pk.place)                                        # поставленный блок виден лучу
+        self.assertEqual(sb.get_edit_session().block(sb.get_edit_session().get(*pk.place)), 'glass')
+        r = edit_ops.tool_break(pk2)
+        self.assertTrue(r and r['blocks'] == 1, r)
+        pk3 = picking.pick_ray(sb, origin, mathutils.Vector((0, 0, -1)))
+        self.assertEqual(pk3.block, pk.block)
+        self.assertTrue(edit_ops.tool_undo())                                        # вернули стекло
+        self.assertEqual(picking.pick_ray(sb, origin, mathutils.Vector((0, 0, -1))).block, pk.place)
+        # маркеры построек лежат там же, где блоки: центр bounding box постройки в системе мешей (абсолютной)
+        if s.stats.structures_total:
+            self.assertEqual(bpy.ops.mcgen.structure_markers('EXEC_DEFAULT'), {'FINISHED'})
+            e = s.stats.structure_starts[0]
+            x0, y0, z0, x1, y1, z1 = e.bb
+            m = next(o for o in bpy.data.objects if o.get('mcgen_structure') == e.name and abs(o.location.z - (y0 + y1 + 1) / 2.0) < 1e-3
+                     and abs(o.location.x - (x0 + x1 + 1) / 2.0) < 1e-3)
+            self.assertAlmostEqual(m.location.y, -((z0 + z1 + 1) / 2.0), places=3)
+            objs = [o for o in bpy.data.objects if o.name.startswith('mc_') and o.type == 'MESH']
+            self.assertTrue(any(abs(o.location.x - (e.chunk_x * 16)) < 1e-6 and abs(o.location.y + e.chunk_z * 16) < 1e-6 for o in objs))
+        # .blend хранит меши и слой правок (текстовый блок), но не воксели: «Load Voxels» восстанавливает воксели и накладывает правки снова
+        mc_objs = lambda: sorted(o.name for o in bpy.data.objects if o.name.startswith('mc_') and o.type == 'MESH')   # noqa: E731
+        names_before = mc_objs()
+        self.assertTrue(names_before)
+        self.assertIn(edit_ops.TEXT_NAME, bpy.data.texts)
+        path = os.path.join(tempfile.mkdtemp(prefix='mcgen-edit-'), 'edit.blend')
+        bpy.ops.wm.save_as_mainfile(filepath=path)
+        bpy.ops.wm.open_mainfile(filepath=path)
+        self.assertIsNone(edit_ops.STATE.sb)                                          # после открытия файла воксельных данных нет
+        self.assertIn(edit_ops.TEXT_NAME, bpy.data.texts)
+        self.assertEqual(mc_objs(), names_before)                                     # меши сохранены
+        props.get_prefs().sink = 'AUTO'
+        self.assertEqual(bpy.ops.mcgen.load_voxels('EXEC_DEFAULT'), {'FINISHED'})
+        sb = edit_ops.STATE.sb
+        self.assertIsNotNone(sb)
+        self.assertEqual(mc_objs(), names_before)                                     # без дубликатов объектов
+        self.assertGreaterEqual(edit_ops.STATE.restored['blocks'], 1)
+        ed = sb.get_edit_session()
+        self.assertEqual(ed.block(ed.get(*pk.place)), 'glass')                        # правка вернулась
+        self.assertEqual(picking.pick_ray(sb, origin, mathutils.Vector((0, 0, -1))).block, pk.place)
+        # другой мир (другой сид) правок не получает
+        S().seed = '777'
+        run_job('generate')
+        self.assertIsNone(edit_ops.STATE.restored)
+        ed = edit_ops.STATE.sb.get_edit_session()
+        self.assertNotEqual(ed.block(ed.get(*pk.place)), 'glass')
+        S().seed = '12345'
+        run_job('generate')
+        self.assertGreaterEqual(edit_ops.STATE.restored['blocks'], 1)                 # вернулись к исходному миру — правки снова на месте
+        self.assertEqual(bpy.ops.mcgen.edit_reset('EXEC_DEFAULT'), {'FINISHED'})      # «Discard Edits»: правки удалены, мир пересобран как сгенерирован
+        self.assertNotIn(edit_ops.TEXT_NAME, bpy.data.texts)
+        ed = edit_ops.STATE.sb.get_edit_session()
+        self.assertNotEqual(ed.block(ed.get(*pk.place)), 'glass')
+        bpy.ops.mcgen.clear()
+        self.assertIsNone(edit_ops.STATE.sb)                                          # после очистки инструменты отвязаны
+
+
+class T05c_SinkLifetime(unittest.TestCase):
+    """Утечка памяти (найдена при финальной проверке): приёмник сцены хранил контекст, а тот — прежний приёмник, так что каждая пересборка держала в памяти
+    все предыдущие (≈ размер сцены на каждый Generate / Update Layers)."""
+
+    def test_previous_sinks_are_not_retained(self):
+        import gc
+        fb = importlib.import_module(EXT + '.core.fallback_preview')
+        reset_scene()
+        S().size_x = S().size_z = 2
+        for i in range(4):
+            S().seed = str(100 + i)
+            run_job('generate')
+        gc.collect()
+        alive = sum(1 for o in gc.get_objects() if isinstance(o, fb.PreviewSink))
+        self.assertLessEqual(alive, 2, 'живых приёмников сцены: %d (цепочка прошлых сборок не освобождается)' % alive)
+
+
 class T06_Presets(unittest.TestCase):
     def setUp(self):
         reset_scene()
@@ -1025,7 +1142,7 @@ def main():
             out = a[a.index('--json') + 1]
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    for cls in (T01_Registration, T02_Properties, T03_Panels, T04_Operators, T05_W4Adapter, T06_Presets, T07_Translations, T07b_BlendFile, T08_Unregister):
+    for cls in (T01_Registration, T02_Properties, T03_Panels, T04_Operators, T05_W4Adapter, T05b_EditTools, T05c_SinkLifetime, T06_Presets, T07_Translations, T07b_BlendFile, T08_Unregister):
         suite.addTests(loader.loadTestsFromTestCase(cls))
     t0 = time.time()
     res = unittest.TextTestRunner(verbosity=2).run(suite)

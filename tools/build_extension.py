@@ -78,6 +78,9 @@ def stage(platform, dest, allow_missing_libs):
         f.write(text)
     libfile = os.path.join(dest, 'lib', platform, LIBNAME[platform.split('-')[0]])
     have = os.path.isfile(libfile)
+    gpuname = {'windows': 'mcgen_cuda.dll', 'linux': 'libmcgen_cuda.so'}.get(platform.split('-')[0])     # необязательное ускорение на видеокарте (libmcgen/gpu/build.sh)
+    if gpuname:
+        print(f'[{platform}] необязательная GPU-библиотека {gpuname}: ' + ('есть' if os.path.isfile(os.path.join(dest, 'lib', platform, gpuname)) else 'нет (аддон считает на CPU)'))
     if not have and not allow_missing_libs:
         raise SystemExit(f'нет библиотеки для {platform}: {os.path.relpath(libfile, dest)} — соберите libmcgen/build.py или добавьте --allow-missing-libs')
     return n, have
@@ -251,7 +254,7 @@ def main():
             sys.exit(f'в zip попали файлы Mojang: {r["mojang_files"][:5]}')
         if not r['validate']['ok']:
             print('\n'.join(r['validate']['log']))
-    scratch = os.environ.get('MCGEN_SCRATCH') or os.path.join(os.environ.get('TMPDIR', '/tmp'), 'mcgen-tests')
+    scratch = os.environ.get('MCGEN_SCRATCH') or os.path.join(tempfile.gettempdir(), 'mcgen-tests')
     os.makedirs(scratch, exist_ok=True)
     if a.test:
         host = 'linux-x64'

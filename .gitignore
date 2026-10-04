@@ -43,3 +43,5 @@ target/
 /docs/blender/img/dbg_*.png
 /docs/blender/img/showcase_*.png
 /libmcgen/build*/
+/tools/gt/agent/out/
+/tools/gt/agent/*.jar

@@ -53,6 +53,19 @@ def make_view_settings(mod, ctx, threads=0):
         return obj
 
 
+def remove_stale_objects():
+    """Удаляет объекты построителя сцены (признак — свойство `mc_group`), оставшиеся от прежнего построителя: например, из открытого .blend, где сохранены меши,
+    но самого построителя (и вокселей) нет. Иначе новая сборка создала бы дубликаты `mc_x_z.001`. Возвращает число удалённых объектов."""
+    import bpy
+    stale = [o for o in bpy.data.objects if 'mc_group' in o.keys()]
+    for o in stale:
+        mesh = o.data if o.type == 'MESH' else None
+        bpy.data.objects.remove(o, do_unlink=True)
+        if mesh is not None and mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+    return len(stale)
+
+
 class W4Sink(SceneSink):
     name = 'render.scene'
 
@@ -74,8 +87,10 @@ class W4Sink(SceneSink):
         reg = ctx.region
         prev = getattr(ctx, 'prev_sink', None)
         self._sb = prev._sb if (prev is not None and isinstance(prev, W4Sink) and prev._sb is not None and ctx.changed is not None) else None
+        ctx.prev_sink = None           # цепочка «приёмник -> контекст -> прежний приёмник …» держала бы в памяти ВСЕ прошлые сборки (утечка ≈ размер сцены на каждую пересборку)
         reuse = self._sb is not None
         if self._sb is None:
+            remove_stale_objects()
             self._sb = self._mod.SceneBuilder(make_view_settings(self._mod, ctx))
         sb = self._sb
         blocks = {c: self._cropped(reg, c, ctx.view) for c in reg.chunks()}
@@ -151,7 +166,17 @@ class W4Sink(SceneSink):
         if self._done:
             self._frac = 1.0
             self._collect_stats()
+            self._attach_edit()
         return self._done
+
+    def _attach_edit(self):
+        """Привязывает инструменты строительства/разрушения (mcgen.edit_*) к собранной сцене."""
+        try:
+            p = self._ctx.params
+            key = [p.version, p.dimension, p.preset] + [int(x) for x in p.seeds]       # правки накладываются только на тот же мир
+            importlib.import_module(__package__.rsplit('.', 1)[0] + '.render.edit_ops').attach(self._sb, key)
+        except Exception:      # noqa: BLE001 — редактирование необязательно для показа мира (нет bpy-операторов в тестах ядра и т. п.)
+            pass
 
     def _collect_stats(self):
         sb = self._sb
@@ -173,6 +198,10 @@ class W4Sink(SceneSink):
         return dict(self._stats)
 
     def clear(self, scene, collection_name):
+        try:
+            importlib.import_module(__package__.rsplit('.', 1)[0] + '.render.edit_ops').detach()
+        except Exception:      # noqa: BLE001
+            pass
         if self._sb is not None:
             self._sb.clear(full=True) if 'full' in self._sb.clear.__code__.co_varnames else self._sb.clear()
 

@@ -208,6 +208,9 @@ def main():
         strict = not (a.mask_flow or lib)
         cx0, cz0, n = c['cx'] - rr, c['cz'] - rr, 2 * rr + 1
         dump = f'{dumpdir}/{name}.mcr'
+        # область тикета forceload эталона = центр ± радиус (регион дампа шире на margin колец): libmcgen декорирует чанки дальше 2 колец от неё ПОСЛЕ остальных
+        # (так ведёт себя игра: полные чанки — до r+2 в порядке x, z, внешнее кольцо r+3 — позже; измерено: Overworld s12345 99,891 → 99,910 %), см. docs/blender/features-misc.md §3.6
+        os.environ['MCGEN_FEATURES_AREA'] = f"{c['cx'] - c['radius']},{c['cz'] - c['radius']},{c['cx'] + c['radius']},{c['cz'] + c['radius']}"
         t = time.monotonic()
         try:
             if lib:

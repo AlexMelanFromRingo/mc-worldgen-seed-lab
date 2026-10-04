@@ -8,7 +8,11 @@
 #include <vector>
 #include "mcgen_gpu_abi.h"
 
-#define MCGPU_EXPORT extern "C" __attribute__((visibility("default")))
+#if defined(_WIN32)
+#  define MCGPU_EXPORT extern "C" __declspec(dllexport)
+#else
+#  define MCGPU_EXPORT extern "C" __attribute__((visibility("default")))
+#endif
 
 /* последняя ошибка потока (текст для моста/аддона) */
 void mcgpu_set_error(const char *fmt, ...);

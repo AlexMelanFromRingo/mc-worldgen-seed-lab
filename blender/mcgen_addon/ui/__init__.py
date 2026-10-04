@@ -2,6 +2,7 @@
 import bpy
 from bpy.app.handlers import persistent
 
+from .. import render
 from . import ops, panels, presets, props, translations
 
 
@@ -11,12 +12,14 @@ def _on_load_post(_dummy):
     from ..core import jobs
     ops.stop_all()
     jobs.drop_sessions()
+    render.detach()
 
 
 def register():
     translations.register()
     props.register()
     ops.register()
+    render.register()                # инструменты строительства/разрушения (mcgen.edit_*)
     presets.register()
     panels.register()
     if _on_load_post not in bpy.app.handlers.load_post:
@@ -28,6 +31,7 @@ def unregister():
         bpy.app.handlers.load_post.remove(_on_load_post)
     panels.unregister()
     presets.unregister()
+    render.unregister()
     ops.unregister()
     props.unregister()
     translations.unregister()

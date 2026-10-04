@@ -1,6 +1,6 @@
 """Ворота G7/G8 на настоящих чанках libmcgen: сцена из дампа MCR1 (mcgen-cli --out region.mcr), замеры сборки и обновления чанка.
 
-    blender -b --factory-startup --python blender/tests/bench_mcr.py -- --mcr /tmp/r32.mcr [--per-object 1] [--merge] [--lod] [--threads 12]
+    blender -b --factory-startup --python blender/tests/bench_mcr.py -- --mcr run/r32.mcr [--per-object 1] [--merge] [--lod] [--threads 12]
 """
 import argparse
 import json

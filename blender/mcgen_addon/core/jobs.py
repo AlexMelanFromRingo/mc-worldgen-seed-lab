@@ -276,7 +276,7 @@ class GenerateJob:
         st.update(backend=backend.name(), sink=self.sink.name if self.sink else '', t_generate=self.t_gen, t_build=self.t_build,
                   t_total=time.perf_counter() - self._t0, chunks=reg.info.nx * reg.info.nz, memory=reg.memory_bytes(),
                   stage_times=dict(r.get('stage_times', {})), mode=self.mode, reasons=list(self.plan.get('reasons', [])),
-                  rss=r.get('rss', 0), peak_rss=r.get('peak_rss', 0))
+                  rss=sysinfo.process_memory()[0], peak_rss=sysinfo.process_memory()[1])      # ПОСЛЕ построения сцены (до этого замер был после генерации и занижал пик вдвое-втрое)
         starts = r.get('structures')
         if starts is None and self.mode == 'update' and self.sess.stats:
             st['structures_total'] = self.sess.stats.get('structures_total', 0)

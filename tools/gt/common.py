@@ -90,7 +90,7 @@ class Server:
             raise FileNotFoundError(jar)
         os.makedirs(self.run_dir, exist_ok=True)
         open(f'{self.run_dir}/eula.txt', 'w').write('eula=true\n')  # EULA принят пользователем (решение пользователя, см. задание W6)
-        cmd = ['java', f'-Xmx{self.xmx}', '-XX:+UseParallelGC', f'-DbundlerRepoDir={srv_home(self.version)}', *self.extra_jvm, '-jar', jar, 'nogui']
+        cmd = ['java', f'-Xmx{self.xmx}', '-XX:+UseParallelGC', f'-DbundlerRepoDir={srv_home(self.version)}', *self.extra_jvm, *os.environ.get('MCGEN_GT_JVM_EXTRA', '').split(), '-jar', jar, 'nogui']
         self.p = subprocess.Popen(cmd, cwd=self.run_dir, stdin=subprocess.PIPE, stdout=open(self.log_path, 'w'),
                                   stderr=subprocess.STDOUT, text=True, bufsize=1)
         t0 = time.monotonic()

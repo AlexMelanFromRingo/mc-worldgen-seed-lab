@@ -31,3 +31,9 @@ mcgen-cli --pack run/pack-26.3 --version 26.3 --dim minecraft:overworld --preset
 Дополнительно: `--pp-margin K` — растекание жидкостей только в чанках не ближе K к краю региона (сверка с областью,
 загруженной сервером); подкоманды `info`, `df`, `biome`, `qbiome`, `climate`, `chunkbiomes`, `biometie`, `fillraw`, `bench`
 (описание — в начале `cli/mcgen-cli.c`). Устройство, тесты и измеренные результаты — `docs/blender/terrain.md`.
+
+## Ускорение на видеокарте (необязательно)
+`gpu/` — библиотека `libmcgen_cuda` (CUDA, только NVIDIA; `gpu/build.sh`, под Windows `gpu/build.bat`): сетка биомов (`mcgen_biome_grid`, все версии/измерения/пресеты) и,
+по явному выбору, плотность/жилы рельефа 26.3+ — бит-в-бит как CPU. `src/gpu_bridge.c` подгружает её динамически (dlopen/LoadLibrary): без библиотеки, без
+устройства и при любой ошибке всё считается на CPU. Управление — `mcgen_gpu_*` в `include/mcgen.h` (режимы Auto/CPU/GPU, самопроверка GPU = CPU); переменные окружения
+`MCGEN_COMPUTE=cpu|gpu|auto`, `MCGEN_CUDA_LIB=<путь>`, `MCGEN_GPU_DEBUG=1`. Тесты ворот G9 — `tests/g9_*` (`make g9`). Описание, цифры и ограничения — `docs/blender/gpu.md`.

@@ -3,6 +3,8 @@
  * не-жидкие блоки. Вызывается из fluidpp_chunk через FluidWorld.shape_update (region.c ставит указатель при включённой стадии STRUCTURES). */
 #include "structure.h"
 #include "fluidpp.h"
+#include "feature.h"
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,7 +20,7 @@ static int is_leaves_or_exception(const BsTab *bs, int st) {
 static int sturdy_face(const BsTab *bs, int st, int dir) { return (bs->sturdy[st] >> dir) & 1; }
 
 /* доступ к миру для обновления форм */
-typedef struct SGet { void *ud; int (*get)(void *ud, int x, int y, int z); int dark; } SGet;   /* dark: свет ещё не посчитан (генерация: getRawBrightness = 0) */
+typedef struct SGet { void *ud; int (*get)(void *ud, int x, int y, int z); int dark; FCtx *fc; } SGet;   /* dark: свет ещё не посчитан (генерация: getRawBrightness = 0) */
 static int fw_get(void *ud, int x, int y, int z) { FluidWorld *fw = ud; return fw->get(fw->ud, x, y, z); }
 static int stairs_shape_of(const BsTab *bs, const SGet *wg, int st, int x, int y, int z);
 
@@ -76,10 +78,26 @@ static int wall_update(const BsTab *bs, const SGet *wg, int st, int x, int y, in
     return r;
 }
 /* BlockState.updateShape для поддержанных классов (заборы, решётки, лестницы, «снежные» блоки, факелы, ladder); −1 — класс не обрабатывается */
+static int update_shape_interest(const BsTab *bs, int st) {         /* блоки классов, обрабатываемых update_shape (остальные — сразу −1): кэш по блокам */
+    static _Thread_local const BsTab *kb; static _Thread_local u8 *tab;
+    if (kb != bs || !tab) {
+        free(tab); tab = xcalloc((size_t)bs->nblocks, 1); kb = bs;
+        static const char *CL[] = { "CropBlock", "SnowyBlock", "SpreadingSnowyBlock", "StairBlock", "FenceBlock", "IronBarsBlock", "WallTorchBlock", "LadderBlock", "TorchBlock",
+                                    "WallBlock", "DoorBlock", "ChestBlock", "WallBannerBlock", "DoublePlantBlock", "VegetationBlock", "MultifaceBlock", NULL };
+        for (int b = 0; b < bs->nblocks; b++) {
+            if (bs->blk[b].count <= 0) continue;
+            for (int i = 0; CL[i]; i++) if (bs_is_a(bs, bs->blk[b].first, CL[i])) { tab[b] = 1; break; }
+        }
+    }
+    return tab[bs->g->state_block[st]];
+}
 static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, int z, int dir, int nst) {
     const McGen *g = bs->g;
+    if (!update_shape_interest(bs, st)) return -1;
     /* CropBlock (VegetationBlock.updateShape → canSurvive): при генерации свет не посчитан, getRawBrightness < 8 → воздух */
     if (wg->dark && bs_is_a(bs, st, "CropBlock")) return g->st_air;
+    /* VegetationBlock.updateShape (и DoublePlantBlock: super): !canSurvive → воздух; почва могла измениться после размещения (диски, деревья), поэтому помеченные растения проверяются заново */
+    if (wg->fc && bs_is_a(bs, st, "VegetationBlock") && !block_can_survive(wg->fc, st, x, y, z)) return g->st_air;
     if (bs_is_a(bs, st, "SnowyBlock") || bs_is_a(bs, st, "SpreadingSnowyBlock")) {
         if (dir != DIR_UP) return st;
         static _Thread_local const BsTab *kb; static _Thread_local const u8 *snow;
@@ -173,6 +191,16 @@ static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, i
         }
         return st;
     }
+    if (bs_is_a(bs, st, "MultifaceBlock")) {            /* MultifaceBlock.updateShape (светящийся лишайник, скульк-жилы): грань без опоры снимается, без граней — воздух */
+        static const char *FN[6] = { "down", "up", "north", "south", "west", "east" };
+        const char *fv = NULL;
+        if (!bs_get_prop(bs, st, FN[dir], &fv) || !fv || strcmp(fv, "true")) return st;
+        if ((bs->sturdy[nst] >> dir_opp(dir)) & 1 || (bs->flags[nst] & BSF_FULL_COLL)) return st;      /* canAttachTo: прочная/полная грань напротив */
+        int r = bs_with(bs, st, FN[dir], "false");
+        if (r < 0) return st;
+        for (int i = 0; i < 6; i++) { const char *v = NULL; if (bs_get_prop(bs, r, FN[i], &v) && v && !strcmp(v, "true")) return r; }
+        return g->st_air;
+    }
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         const char *half = ""; bs_get_prop(bs, st, "half", &half);
         int lower = !strcmp(half, "lower");
@@ -263,7 +291,18 @@ void structure_shape_update(void *fwp, int x, int y, int z) {
     const BsTab *bs = bs_get(fw->g);
     int st = fw->get(fw->ud, x, y, z);
     if (bs->flags[st] & BSF_LIQUID) { liquid_block_tick(fw, bs, st, x, y, z); return; }   /* LiquidBlock: blockState.tick вместо обновления формы */
-    SGet wg = { fw, fw_get, 0 };
+    SGet wg = { fw, fw_get, 0, NULL };
+    /* контекст FCtx пост-обработки: canSurvive растений (feature_bpred.c / feature_veg.c) читает мир через FluidWorld; свет — настоящий (c.post) */
+    static _Thread_local FCtx fcx; static _Thread_local const void *fcw;
+    if ((fw->post_flags & 1) && fw->world) {
+        if (fcw != fw->world) {
+            McWorld *mw = fw->world; memset(&fcx, 0, sizeof fcx);
+            fcx.w = mw; fcx.g = fw->g; fcx.bs = bs; fcx.min_y = mw->min_y; fcx.height = mw->height; fcx.sea_level = mw->sea_level;
+            fcx.st_air = fw->g->st_air; fcx.st_cave_air = fw->g->st_cave_air; fcx.st_void_air = bs->st_void_air; fcx.st_water = fw->g->st_water; fcx.st_lava = fw->g->st_lava;
+            fcx.ccx = INT_MIN / 2; fcx.ccz = INT_MIN / 2; fcx.post = 1; fcw = fw->world;
+        }
+        fcx.ext_get = fw->get; fcx.ext_ud = fw->ud; wg.fc = &fcx;
+    }
     int cur = update_from_neighbours(bs, &wg, st, x, y, z);
     if (cur != st) fw->set(fw->ud, x, y, z, cur);
 }
@@ -272,7 +311,7 @@ void structure_shape_update(void *fwp, int x, int y, int z) {
 typedef struct { FCtx *fc; } FcAcc;
 static int fc_acc_get(void *ud, int x, int y, int z) { return fc_get(((FcAcc *)ud)->fc, x, y, z); }
 static void edge_face(FCtx *fc, const BsTab *bs, int flags, int dir, int x, int y, int z) {
-    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1 };
+    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1, fc };
     int nx = x + DIR_DX[dir], ny = y + DIR_DY[dir], nz = z + DIR_DZ[dir];
     int st = fc_get(fc, x, y, z), nst = fc_get(fc, nx, ny, nz);
     int r = update_shape(bs, &wg, st, x, y, z, dir, nst);
@@ -322,11 +361,17 @@ void structure_update_after_template(FCtx *fc, const int *placed, int n, int fla
     }
     #undef IDX
     free(full);
-    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1 };
+    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 1, fc };
     for (int i = 0; i < n; i++) {
         int x = placed[3 * i], y = placed[3 * i + 1], z = placed[3 * i + 2];
         int st = fc_get(fc, x, y, z);
         int ns = update_from_neighbours(bs, &wg, st, x, y, z);
         if (ns != st) fc_set(fc, x, y, z, ns, (flags & ~1) | 16);
     }
+}
+
+/* BlockState.updateShape в контексте FEATURES (updateShapeAtEdge деревьев): новое состояние либо −1, если класс не обрабатывается. Свет читается как на стадии FEATURES (fc_sky_light) */
+int structure_update_shape_fc(FCtx *fc, int st, int x, int y, int z, int dir, int nst) {
+    FcAcc a = { fc }; SGet wg = { &a, fc_acc_get, 0, fc };
+    return update_shape(fc->bs, &wg, st, x, y, z, dir, nst);
 }

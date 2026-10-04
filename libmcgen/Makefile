@@ -51,7 +51,13 @@ test: all tests
 	python3 tests/tweaks_effect.py --version 26.3 --n 4
 	python3 tests/g5_order.py --versions 26.3     # FeatureSorter против выгрузки игры (стадия FEATURES)
 
+# необязательное ускорение на видеокарте (поток W7, docs/blender/gpu.md): CUDA Toolkit нужен только для сборки
+gpu:
+	./gpu/build.sh
+g9: all tests gpu
+	./tests/g9_all.sh $(B)
+
 clean:
 	rm -rf $(B)
 
-.PHONY: all clean test tests
+.PHONY: all clean test tests gpu g9

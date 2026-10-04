@@ -243,6 +243,27 @@ int block_can_survive(FCtx *c, int st, int x, int y, int z) {
     const BsBlock *bb = &bs->blk[c->g->state_block[st]];
     if (!bb->cls) return 1;
     { int vr; if (veg_survive(c, st, x, y, z, &vr)) return vr; }       /* классы растений группы W10 (feature_veg.c) */
+    /* дриплифы (SmallDripleafBlock / BigDripleafBlock / BigDripleafStemBlock.canSurvive): без этих правил растения «выживали где угодно» и
+     * ставились на глубинный сланец; в игре опора — теги supports_small_dripleaf / supports_big_dripleaf (+ вода-источник над опорой у малого) */
+    if (!strcmp(bb->cls, "SmallDripleafBlock") || !strcmp(bb->cls, "BigDripleafBlock") || !strcmp(bb->cls, "BigDripleafStemBlock")) {
+        static _Thread_local const McGen *dg; static _Thread_local const u8 *t_small, *t_big, *t_veg;
+        if (dg != c->g) { dg = c->g; t_small = gen_block_tag(c->g, "minecraft:supports_small_dripleaf"); t_big = gen_block_tag(c->g, "minecraft:supports_big_dripleaf");
+                          t_veg = gen_block_tag(c->g, "minecraft:supports_vegetation"); }
+        int blk = c->g->state_block[st], below = fc_get(c, x, y - 1, z), bblk = c->g->state_block[below];
+        if (!strcmp(bb->cls, "SmallDripleafBlock")) {
+            const char *half = NULL; bs_get_prop(bs, st, "half", &half);
+            if (half && !strcmp(half, "upper")) {                       /* DoublePlantBlock: снизу — нижняя половина того же блока */
+                const char *bh = NULL; return bblk == blk && bs_get_prop(bs, below, "half", &bh) && !strcmp(bh, "lower");
+            }
+            int here = fc_get(c, x, y, z), fl = bs->fluid[here];
+            /* mayPlaceOn(below, pos=below): is(SUPPORTS_SMALL_DRIPLEAF) || fluid(pos.above()).isSourceOfType(WATER) && BushBlock.mayPlaceOn(SUPPORTS_VEGETATION) */
+            return t_small[bblk] != 0 || (BS_FL_TYPE(fl) == FL_WATER && BS_FL_SOURCE(fl) && t_veg && t_veg[bblk] != 0);
+        }
+        if (!strcmp(bb->cls, "BigDripleafBlock"))
+            return bblk == blk || !strcmp(bs->blk[bblk].name, "minecraft:big_dripleaf_stem") || t_big[bblk] != 0;
+        { int above = fc_get(c, x, y + 1, z), ablk = c->g->state_block[above];                      /* BigDripleafStemBlock */
+          return (bblk == blk || t_big[bblk] != 0) && (ablk == blk || !strcmp(bs->blk[ablk].name, "minecraft:big_dripleaf")); }
+    }
     const char *tag = NULL;
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         const char *half = NULL; bs_get_prop(bs, st, "half", &half);

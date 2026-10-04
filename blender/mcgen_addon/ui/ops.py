@@ -8,7 +8,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 
-from ..core import backend, biomes, catalog, fallback_preview, jobs, pack, paths, seeds, sysinfo
+from ..core import backend, biomes, catalog, fallback_preview, gpu as gpu_mod, jobs, pack, paths, seeds, sysinfo, w4_adapter
 from ..core import params as P
 from ..core.tasks import Task
 from . import i18n, props
@@ -45,6 +45,7 @@ def ensure_seeds(s):
 def collect_params(scene, prefs=None):
     s = scene.mcgen
     ensure_seeds(s)
+    gpu_mod.set_mode(s.compute)           # режим вычислений сцены действует на ядро перед каждым запуском
     if s.seed_mode == 'UNIFIED':
         sd = seeds.domains(s.seed, 'UNIFIED', None)
     else:
@@ -272,6 +273,41 @@ class MCGEN_OT_update_layers(_GenerateBase):
     mode = 'update'
 
 
+class MCGEN_OT_load_voxels(_GenerateBase):
+    bl_idname = 'mcgen.load_voxels'
+    bl_label = 'Load Voxels'
+    bl_description = ('A .blend file keeps the settings and the meshes but not the voxel data: rebuild it from the saved settings (the world is deterministic). '
+                      'Saved block edits are applied again and the build tools work again')
+    status_title = 'MC World load voxels'
+    mode = 'update'
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and hasattr(context.scene, 'mcgen') and context.scene.mcgen.stats.has_data
+
+
+class MCGEN_OT_edit_reset(Operator):
+    bl_idname = 'mcgen.edit_reset'
+    bl_label = 'Discard Edits'
+    bl_description = 'Delete all saved block edits of this file; the world is rebuilt as generated'
+
+    @classmethod
+    def poll(cls, context):
+        from ..render import edit_ops
+        return edit_ops.TEXT_NAME in bpy.data.texts
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_confirm(self, event)
+
+    def execute(self, context):
+        from ..render import edit_ops
+        edit_ops.discard_edits()
+        sess = jobs.session(context.scene.name)
+        if sess.region is not None:
+            return bpy.ops.mcgen.generate('EXEC_DEFAULT')
+        return {'FINISHED'}
+
+
 class MCGEN_OT_cancel(Operator):
     bl_idname = 'mcgen.cancel'
     bl_label = 'Cancel'
@@ -296,10 +332,13 @@ class MCGEN_OT_clear(Operator):
                 sess.sink.clear(context.scene, s.collection_name)           # построитель W4 удаляет свои объекты/меши/материалы
             except Exception as e:      # noqa: BLE001
                 self.report({'WARNING'}, i18n.exc_text(e))
+        w4_adapter.remove_stale_objects()          # меши, оставшиеся от прежнего построителя (открытый .blend без вокселей)
         for o in [o for o in bpy.data.objects if o.get('mcgen_structure')]:
             bpy.data.objects.remove(o, do_unlink=True)
         sess.sink = None
         sess.release()
+        if sess.job is not None and sess.job.finished:
+            sess.job = None                        # задача держит контекст сборки (регион, построитель): без этого память освободилась бы только при следующей генерации
         s.stats.has_data = False
         self.report({'INFO'}, rpt('Removed {n} objects', n=n))
         tag_redraw(context)
@@ -342,7 +381,7 @@ class MCGEN_OT_biome_map(McGenPumpOperator):
         rgba = biomes.colorize(grid, pal)
         img = make_biome_image(rgba, f'MCGen Biomes {self._params.dimension.split(":")[-1]}')
         if s.bm_plane:
-            make_biome_plane(context, img, grid.shape[1] * step, grid.shape[0] * step, x0, z0, s.collection_name)
+            make_biome_plane(context, img, grid.shape[1] * step, grid.shape[0] * step, x0, z0, s.collection_name, z=s.bm_y)
         self.report({'INFO'}, rpt('Biome map {w}x{h} px ({step} blocks/px) in {t:.2f} s [{backend}]', w=grid.shape[1], h=grid.shape[0], step=step, t=secs, backend=backend.name()))
         return {'FINISHED'}
 
@@ -362,8 +401,18 @@ def make_biome_image(rgba, name):
     return img
 
 
-def make_biome_plane(context, img, size_x, size_z, x0, z0, collection_name):
-    """Плоскость под картой биомов (север сверху: Blender Y = север). Материал без освещения (Emission), интерполяция Closest."""
+def scene_origin(context):
+    """Начало координат сцены в блоках мира (ox, oz): построитель сцены (render.scene) кладёт чанки в абсолютные координаты (Blender = (x, −z, y)),
+    запасной предпросмотр — от угла области. Объекты, которые аддон добавляет к блокам (маркеры построек, плоскость карты биомов), берут то же начало."""
+    sess = jobs.session(context.scene.name)
+    if isinstance(sess.sink, fallback_preview.PreviewSink) and sess.region is not None:
+        return sess.region.info.cx0 * 16, sess.region.info.cz0 * 16
+    return 0, 0
+
+
+def make_biome_plane(context, img, size_x, size_z, x0, z0, collection_name, z=64):
+    """Плоскость под картой биомов (север сверху: Blender Y = север) на высоте z (высота выборки биомов) над областью (x0, z0 — угол карты, блоки мира).
+    Материал без освещения (Emission), интерполяция Closest."""
     name = 'MC Biome Map'
     for o in [o for o in bpy.data.objects if o.get('mcgen_biome_plane')]:
         m = o.data
@@ -389,7 +438,8 @@ def make_biome_plane(context, img, size_x, size_z, x0, z0, collection_name):
     mesh.materials.append(mat)
     obj = bpy.data.objects.new(name, mesh)
     obj['mcgen_biome_plane'] = True
-    obj.location = (0, 0, 0)
+    ox, oz = scene_origin(context)
+    obj.location = (x0 - ox, -(z0 - oz), z)
     coll = bpy.data.collections.get(collection_name)
     if coll is None:
         coll = bpy.data.collections.new(collection_name)
@@ -409,6 +459,68 @@ def _download_allowed(op):
         op.report({'ERROR'}, rpt('Online access is off: enable Preferences > System > Network > Allow Online Access (or start Blender with --online-mode)'))
         return False
     return True
+
+
+class _GpuTaskBase(McGenPumpOperator):
+    """Задачи GPU (самопроверка, замеры): нужен готовый pack версии сцены и устройство CUDA."""
+
+    def _pack_dir(self, context):
+        prefs = props.get_prefs(context)
+        params = collect_params(context.scene, prefs)
+        po, ao = resource_overrides(prefs)
+        res, problem = jobs.check_resources(params.version, po, ao)
+        if problem:
+            self.report({'ERROR'}, rpt(problem[0], **problem[1]))
+            return None, None
+        if not res['pack_ok']:
+            self.report({'ERROR'}, rpt('Resources not prepared: see the Resources panel'))
+            return None, None
+        if not gpu_mod.available():
+            self.report({'WARNING'}, rpt('No NVIDIA GPU with the CUDA library was found; everything runs on the CPU'))
+            return None, None
+        return res['pack'], params.version
+
+
+class MCGEN_OT_gpu_selftest(_GpuTaskBase):
+    bl_idname = 'mcgen.gpu_selftest'
+    bl_label = 'GPU Self-test'
+    bl_description = 'Compare the GPU with the CPU bit by bit on test worlds of the current version'
+    status_title = 'MC World GPU self-test'
+
+    def start(self, context):
+        pack_dir, version = self._pack_dir(context)
+        if pack_dir is None:
+            return None
+        return Task('gpu_selftest', gpu_mod.selftest_worker, pack_dir, version).start()
+
+    def finish(self, context, task):
+        if task.state != 'done':
+            self.report({'ERROR'}, i18n.exc_text(task.error) if task.error else rpt('Cancelled'))
+            return {'CANCELLED'}
+        ok, text = task.result
+        self.report({'INFO'} if ok else {'ERROR'}, rpt('GPU self-test: {text}', text=text.split(chr(10))[-1]))
+        return {'FINISHED'}
+
+
+class MCGEN_OT_gpu_benchmark(_GpuTaskBase):
+    bl_idname = 'mcgen.gpu_benchmark'
+    bl_label = 'GPU Benchmark'
+    bl_description = 'Measure the CPU against the GPU: a 2048x2048 biome map and the terrain of 64x64 chunks'
+    status_title = 'MC World GPU benchmark'
+
+    def start(self, context):
+        pack_dir, version = self._pack_dir(context)
+        if pack_dir is None:
+            return None
+        return Task('gpu_benchmark', gpu_mod.benchmark_worker, pack_dir, version).start()
+
+    def finish(self, context, task):
+        if task.state != 'done':
+            self.report({'ERROR'}, i18n.exc_text(task.error) if task.error else rpt('Cancelled'))
+            return {'CANCELLED'}
+        r = task.result
+        self.report({'INFO'}, rpt('GPU benchmark: biome map {b:.0f}x faster, terrain {t:.1f}x', b=r.get('biome_speedup', 0.0), t=r.get('terrain_speedup', 0.0)))
+        return {'FINISHED'}
 
 
 class MCGEN_OT_prepare_resources(McGenPumpOperator):
@@ -596,7 +708,7 @@ class MCGEN_OT_structure_markers(Operator):
             context.scene.collection.children.link(coll)
         sess = jobs.session(context.scene.name)
         info = sess.region.info if sess.region is not None else None
-        ox, oz = ((info.cx0 * 16, info.cz0 * 16) if info else (st.structure_starts[0].chunk_x * 16, st.structure_starts[0].chunk_z * 16))
+        ox, oz = scene_origin(context)           # та же система, что у блоков (см. scene_origin)
         for o in [o for o in bpy.data.objects if o.get('mcgen_structure')]:
             bpy.data.objects.remove(o, do_unlink=True)
         for e in st.structure_starts:
@@ -604,7 +716,7 @@ class MCGEN_OT_structure_markers(Operator):
             o = bpy.data.objects.new(f'{e.name.split(":", 1)[-1]} {e.chunk_x},{e.chunk_z}', None)
             o.empty_display_type = 'CUBE'
             o.empty_display_size = 1.0
-            # куб Empty при размере 1 — от -1 до 1 (ребро 2): масштаб = размер bounding box / 2; Blender = (x, -z, y), начало — угол области
+            # куб Empty при размере 1 — от -1 до 1 (ребро 2): масштаб = размер bounding box / 2; Blender = (x, -z, y), начало — scene_origin()
             o.scale = ((x1 - x0 + 1) / 2.0, (z1 - z0 + 1) / 2.0, (y1 - y0 + 1) / 2.0)
             o.location = ((x0 + x1 + 1) / 2.0 - ox, -((z0 + z1 + 1) / 2.0 - oz), (y0 + y1 + 1) / 2.0)
             o['mcgen_structure'] = e.name
@@ -625,9 +737,9 @@ class MCGEN_OT_reset_tweaks(Operator):
         return {'FINISHED'}
 
 
-classes = (MCGEN_OT_generate, MCGEN_OT_update_layers, MCGEN_OT_cancel, MCGEN_OT_clear, MCGEN_OT_biome_map, MCGEN_OT_prepare_resources,
+classes = (MCGEN_OT_generate, MCGEN_OT_update_layers, MCGEN_OT_load_voxels, MCGEN_OT_edit_reset, MCGEN_OT_cancel, MCGEN_OT_clear, MCGEN_OT_biome_map, MCGEN_OT_prepare_resources,
            MCGEN_OT_detect_jars, MCGEN_OT_check_java, MCGEN_OT_refresh_versions, MCGEN_OT_download_jars, MCGEN_OT_open_cache,
-           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_structure_markers, MCGEN_OT_reset_tweaks)
+           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_structure_markers, MCGEN_OT_reset_tweaks, MCGEN_OT_gpu_selftest, MCGEN_OT_gpu_benchmark)
 
 
 def register():

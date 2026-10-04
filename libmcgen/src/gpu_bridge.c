@@ -50,6 +50,7 @@ typedef struct {
 static struct {
     atomic_flag lock;
     int mode;                      /* MCGEN_COMPUTE_* (по умолчанию AUTO) */
+    int auto_features;             /* MCGEN_GPU_*: что разрешено на GPU в режиме Auto */
     int device;
     int load_state;                /* 0 — не пробовали, 1 — загружена, −1 — нет */
     char load_err[1000];
@@ -63,7 +64,7 @@ static struct {
     int worlds_ok, worlds_failed;
     char selftest[400];            /* результат mcgen_gpu_selftest (пусто — не запускали) */
     int selftest_state;            /* 0 — нет, 1 — прошла, −1 — провалена */
-} G = { ATOMIC_FLAG_INIT, MCGEN_COMPUTE_AUTO };
+} G = { ATOMIC_FLAG_INIT, MCGEN_COMPUTE_AUTO, MCGEN_GPU_BIOMES };
 
 static atomic_int g_env_done = 0;
 /* режим вычислений: переменная окружения MCGEN_COMPUTE=cpu|gpu|auto (для CLI и тестов) задаёт значение по умолчанию, пока не вызван mcgen_gpu_set_compute */
@@ -72,6 +73,8 @@ static int gmode(void) {
         atomic_store(&g_env_done, 1);
         const char *e = getenv("MCGEN_COMPUTE");
         if (e) G.mode = !strcmp(e, "cpu") ? MCGEN_COMPUTE_CPU : !strcmp(e, "gpu") ? MCGEN_COMPUTE_GPU : MCGEN_COMPUTE_AUTO;
+        const char *t = getenv("MCGEN_GPU_AUTO_TERRAIN");
+        if (t && *t == '1') G.auto_features |= MCGEN_GPU_TERRAIN;
     }
     return G.mode;
 }
@@ -128,7 +131,7 @@ static int gpu_load_locked(void) {
     if (module_dir(dir, sizeof dir)) snprintf(cand[nc++], 700, "%s/%s", dir, LIBNAME);
     snprintf(cand[nc++], 700, "%s", LIBNAME);
     void *lib = NULL;
-    for (int i = 0; i < nc && !lib; i++) { lib = lib_open(cand[i]); if (lib) snprintf(G.path_used, sizeof G.path_used, "%s", cand[i]); }
+    for (int i = 0; i < nc && !lib; i++) { lib = lib_open(cand[i]); if (lib) snprintf(G.path_used, sizeof G.path_used, "%.690s", cand[i]); }
     if (!lib) { snprintf(G.load_err, sizeof G.load_err, "библиотека %s не найдена (CUDA-ускорение не установлено или нет драйвера NVIDIA)", LIBNAME); return 0; }
 #define SYM(f, n) do { *(void **)&G.api.f = lib_sym(lib, n); if (!G.api.f) { snprintf(G.load_err, sizeof G.load_err, "в %s нет функции %s", G.path_used, n); return 0; } } while (0)
     SYM(abi, "mcgpu_abi"); SYM(device_count, "mcgpu_device_count"); SYM(device_info, "mcgpu_device_info"); SYM(select, "mcgpu_select");
@@ -155,7 +158,7 @@ static int gpu_device_locked(void) {
     G.device = dev; G.dev_selected = 1;
     return 1;
 }
-static void set_fallback(const char *fmt, const char *a) { snprintf(G.last_fallback, sizeof G.last_fallback, fmt, a ? a : ""); }
+static void set_fallback(const char *fmt, const char *a) { char t[300]; snprintf(t, sizeof t, "%.250s", a ? a : ""); snprintf(G.last_fallback, sizeof G.last_fallback, fmt, t); }
 
 /* ---------------------------------------------------------------- публичные функции управления */
 int mcgen_gpu_set_library_path(const char *path) {
@@ -191,6 +194,15 @@ int mcgen_gpu_set_compute(int mode, int device) {
     return MCGEN_OK;
 }
 int mcgen_gpu_get_compute(void) { return gmode(); }
+int mcgen_gpu_set_features(int mask) { gmode(); G.auto_features = mask & (MCGEN_GPU_BIOMES | MCGEN_GPU_TERRAIN); return MCGEN_OK; }
+int mcgen_gpu_get_features(void) { gmode(); return G.auto_features; }
+/* Auto: GPU допустим для части feature, и только если самопроверка не провалена; GPU: всегда (если доступно) */
+static int gpu_allowed(int feature) {
+    int m = gmode();
+    if (m == MCGEN_COMPUTE_CPU) return 0;
+    if (m == MCGEN_COMPUTE_GPU) return 1;
+    return (G.auto_features & feature) && G.selftest_state >= 0;
+}
 
 /* статус: строка из строк «ключ: значение»; возврат 1 — GPU готово к работе */
 int mcgen_gpu_status(char *buf, size_t buflen) {
@@ -205,8 +217,8 @@ int mcgen_gpu_status(char *buf, size_t buflen) {
         snprintf(line, sizeof line, "mode: CPU\nstate: GPU отключено пользователем");
     } else if (ok) {
         avail = 1;
-        snprintf(line, sizeof line, "mode: %s\nstate: GPU готово\ndevice: %s (sm_%d%d, %zu МБ)\nlibrary: %s\nworlds_ok: %d\nworlds_failed: %d\nlast_fallback: %s\nselftest: %s",
-                 mode, G.dev_name, G.dev_cc_major, G.dev_cc_minor, G.dev_mem_mb, G.path_used, G.worlds_ok, G.worlds_failed,
+        snprintf(line, sizeof line, "mode: %s\nstate: GPU готово\nfeatures: %s\ndevice: %s (sm_%d%d, %zu МБ)\nlibrary: %s\nworlds_ok: %d\nworlds_failed: %d\nlast_fallback: %s\nselftest: %s",
+                 mode, gm == MCGEN_COMPUTE_GPU ? "biomes+terrain" : (G.auto_features & MCGEN_GPU_TERRAIN) ? "biomes+terrain" : "biomes", G.dev_name, G.dev_cc_major, G.dev_cc_minor, G.dev_mem_mb, G.path_used, G.worlds_ok, G.worlds_failed,
                  G.last_fallback[0] ? G.last_fallback : "-", G.selftest[0] ? G.selftest : "не запускалась");
     } else {
         snprintf(line, sizeof line, "mode: %s\nstate: GPU недоступно (расчёт на CPU)\nreason: %s", mode, G.load_err[0] ? G.load_err : "неизвестно");
@@ -385,7 +397,7 @@ enum { AUTO_MIN_SAMPLES = 16384 };
 
 int gpu_try_biome_grid(const McWorld *w, int x0, int z0, int nx, int nz, int step, int y, uint8_t *out, int force) {
     int mode = gmode();
-    if (mode == MCGEN_COMPUTE_CPU && !force) return -1;
+    if (!force && !gpu_allowed(MCGEN_GPU_BIOMES)) return -1;
     if (!force && mode == MCGEN_COMPUTE_AUTO && (long)nx * (long)nz < AUTO_MIN_SAMPLES) return -1;
     glock(); int ok = gpu_device_locked(); if (!ok) set_fallback("%s", G.load_err); gunlock();
     if (!ok) return -1;
@@ -418,7 +430,10 @@ int mcgen_gpu_biome_points(const McWorld *w, int n, const int *xyz, uint8_t *out
     int unres = 0;
     if (G.api.biome_points(gw->h, n, xyz, out, &unres)) return MCGEN_E_INTERNAL;
     if (n_cpu) *n_cpu = unres;
-    if (unres) for (int i = 0; i < n; i++) if (out[i] == 255) { int b = mcgen_biome_at(w, xyz[3 * i], xyz[3 * i + 1], xyz[3 * i + 2]); out[i] = (uint8_t)(b < 0 ? 0 : b); }
+    if (unres) for (int i = 0; i < n; i++) if (out[i] == 255) {
+        if (getenv("MCGEN_GPU_DEBUG")) fprintf(stderr, "[gpu] точка (%d,%d,%d) не решена на GPU (NaN в климате или длинная цепочка ничьих) — считает CPU\n", xyz[3 * i], xyz[3 * i + 1], xyz[3 * i + 2]);
+        int b = mcgen_biome_at(w, xyz[3 * i], xyz[3 * i + 1], xyz[3 * i + 2]); out[i] = (uint8_t)(b < 0 ? 0 : b);
+    }
     return MCGEN_OK;
 }
 /* причина отказа GPU для мира (для тестов/аддона); пустая строка — мир годен */
@@ -538,17 +553,18 @@ static GpuTerrainWorld *terrain_world(McWorld *w, GpuWorld *gw) {
     if (gw->tstate > 0) return gw->tw;
     if (gw->tstate < 0) return NULL;
     char why[300] = {0};
-    if (terrain_prepare(w, gw, why, sizeof why) == 0) { gw->tstate = 1; return gw->tw; }
+    double tp0 = now_sec();
+    if (terrain_prepare(w, gw, why, sizeof why) == 0) { gw->tstate = 1; if (getenv("MCGEN_GPU_DEBUG")) fprintf(stderr, "[gpu] описание рельефа мира создано за %.3f с (B=%d)\n", now_sec() - tp0, gw->tw->Bmax); return gw->tw; }
     gw->tstate = -1; snprintf(gw->twhy, sizeof gw->twhy, "%s", why);
     snprintf(G.last_fallback, sizeof G.last_fallback, "рельеф: %s", why);
     return NULL;
 }
-int gpu_terrain_dims(McWorld *w, int *nmin, int *nh, int *max_chunks) {
+int gpu_terrain_dims(McWorld *w, int *nmin, int *nh, int *max_chunks, int *veins_on) {
     glock();
     int ok = gpu_device_locked();
     GpuTerrainWorld *tw = NULL;
     if (ok) { GpuWorld *gw = gpu_world_shell(w); tw = terrain_world(w, gw); }
-    if (tw) { if (nmin) *nmin = tw->nmin; if (nh) *nh = tw->nh; if (max_chunks) *max_chunks = tw->Bmax; }
+    if (tw) { if (nmin) *nmin = tw->nmin; if (nh) *nh = tw->nh; if (max_chunks) *max_chunks = tw->Bmax; if (veins_on) *veins_on = tw->veins_on; }
     gunlock();
     return tw ? 0 : -1;
 }
@@ -598,6 +614,7 @@ struct TSvc {
     McWorld *w; GpuTerrainWorld *tw;
     int total, nreg;                    /* всего чанков плана; из них — внутри региона */
     int *pcx, *pcz;                     /* план: индекс → чанк */
+    atomic_char *served;                /* чанк плана уже выдан (повторный запрос того же чанка — на CPU: пакет мог быть переиспользован) */
     int *hkey_x, *hkey_z, *hidx; int hcap;
     int B, nslots; TSlot *slot;
     McThread *thr; atomic_int stop; atomic_int failed;
@@ -634,11 +651,12 @@ static void svc_producer(void *arg) {
         for (int i = 0; i < cnt; i++) if (bd[i]) { beard_free(bd[i]); bd[i] = NULL; }
         if (rc) { atomic_store(&s->failed, 1); snprintf(G.last_fallback, sizeof G.last_fallback, "рельеф: ошибка GPU: %s", G.api.last_error()); }
         atomic_store(&sl->state, rc ? 3 : 2);
+        if (rc) break;      /* отказ GPU: дальше считает CPU */
     }
     free(cx); free(cz); free(bd);
 }
 int gpu_terrain_begin(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int with_ring) {
-    if (!(stages & MC_STAGE_TERRAIN) || gmode() == MCGEN_COMPUTE_CPU) return 0;
+    if (!(stages & MC_STAGE_TERRAIN) || !gpu_allowed(MCGEN_GPU_TERRAIN)) return 0;
     if (w->g->newf == 0) return 0;
     glock();
     int ok = gpu_device_locked();
@@ -655,6 +673,7 @@ int gpu_terrain_begin(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t sta
     int ring = with_ring ? 2 * (nx + 2) + 2 * nz : 0;
     s->total = (int)nreg + ring;
     s->pcx = xmalloc(sizeof(int) * (size_t)s->total); s->pcz = xmalloc(sizeof(int) * (size_t)s->total);
+    s->served = xcalloc((size_t)s->total, sizeof(atomic_char));
     int k = 0;
     for (int iz = 0; iz < nz; iz++) for (int ix = 0; ix < nx; ix++) { s->pcx[k] = cx0 + ix; s->pcz[k] = cz0 + iz; k++; }
     if (with_ring) for (int cz = cz0 - 1; cz <= cz0 + nz; cz++) for (int cx = cx0 - 1; cx <= cx0 + nx; cx++) {
@@ -680,7 +699,7 @@ int gpu_terrain_begin(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t sta
         s->slot[i].which = xcalloc((size_t)s->B * (size_t)(tw->ncell ? tw->ncell : 1), 1);
         if (!s->slot[i].dens || (tw->veins_on && !s->slot[i].veins) || (tw->cell_floats && !s->slot[i].cells)) {
             for (int j = 0; j <= i; j++) { G.api.host_free(s->slot[j].dens); G.api.host_free(s->slot[j].veins); G.api.host_free(s->slot[j].cells); free(s->slot[j].which); }
-            free(s->slot); free(s->pcx); free(s->pcz); free(s->hkey_x); free(s->hkey_z); free(s->hidx); free(s);
+            free(s->slot); free(s->pcx); free(s->pcz); free(s->served); free(s->hkey_x); free(s->hkey_z); free(s->hidx); free(s);
             glock(); set_fallback("%s", "не удалось выделить закреплённую память"); gunlock();
             return 0;
         }
@@ -698,7 +717,7 @@ void gpu_terrain_end(McWorld *w) {
     thread_join(s->thr);
     if (getenv("MCGEN_GPU_DEBUG")) fprintf(stderr, "[gpu] регион: %d чанков в плане, %.2f с всего; GPU занято %.2f с, ожидание слота %.2f с; ожидание рабочих потоков данных GPU %.2f с (%d запросов)\n", s->total, now_sec() - s->t_begin, s->prod_busy, s->prod_wait, atomic_load(&s->wait_us) * 1e-6, atomic_load(&s->nacq));
     for (int i = 0; i < s->nslots; i++) { G.api.host_free(s->slot[i].dens); G.api.host_free(s->slot[i].veins); G.api.host_free(s->slot[i].cells); free(s->slot[i].which); }
-    free(s->slot); free(s->pcx); free(s->pcz); free(s->hkey_x); free(s->hkey_z); free(s->hidx); free(s);
+    free(s->slot); free(s->pcx); free(s->pcz); free(s->served); free(s->hkey_x); free(s->hkey_z); free(s->hidx); free(s);
     glock(); gw->svc = NULL; gunlock();
 }
 int gpu_terrain_acquire(McWorld *w, int cx, int cz, GpuChunk *out) {
@@ -707,6 +726,7 @@ int gpu_terrain_acquire(McWorld *w, int cx, int cz, GpuChunk *out) {
     if (!s || atomic_load(&s->failed)) return 0;
     int i = svc_find(s, cx, cz);
     if (i < 0) return 0;
+    if (atomic_exchange(&s->served[i], 1)) return 0;        /* уже выдавался: считать на CPU */
     int b = i / s->B;
     TSlot *sl = &s->slot[b % s->nslots];
     long long tw0 = (long long)(now_sec() * 1e6); int waited = 0;
