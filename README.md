@@ -220,6 +220,22 @@ docs/      документация (по-русски)
 
 Minecraft — торговая марка Mojang Studios / Microsoft. Проект не связан с Mojang и не одобрен ими.
 
+## 💖 Поддержать проект
+
+> [!TIP]
+>
+> Проект бесплатный и под лицензией MIT. Если он оказался полезен, можно поддержать разработку криптовалютой ❤️
+>
+> **BTC** (SegWit): `bc1qd0t6uhrgq8ck74n3g2fweq4kfw35as66gne72y`  
+> **LTC**: `ltc1q2ku8rax5wgcuhh8m03k8gyng8ggj9svkjn6fq4`  
+> **BCH**: `qqkgr48fjxf0rf9cpd9zdjdpkuu29nhfj5y4hcdhfm`  
+> **TON**: `UQCKG4T2Csv5dGK24w1e8ndd96VuBanYey5tvzGeJkFW_09x`  
+> **ETH** (Ethereum / EVM, ERC‑20): `0x3729c742E6eF4552ad32c08f61804308CB1Cffd8`  
+> **ETC**: `0xB3a6Fa84556d562F1E7ceD5C8452985d1aDAf572`  
+> **RVN**: `RX7zXpdzH8GoBpHzzuVes3DN7znbwaWi4z`  
+>
+> Перед отправкой проверьте сеть: средства, отправленные не в той сети, вернуть нельзя.
+
 ## 📄 Лицензия
 
 [MIT](LICENSE) — на код и документацию репозитория. Данные и код игры принадлежат Mojang Studios.
