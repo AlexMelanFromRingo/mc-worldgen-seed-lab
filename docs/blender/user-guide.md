@@ -38,10 +38,10 @@
 
 | Платформа | Файл |
 |---|---|
-| Windows x64 | `mcgen-0.1.1-windows-x64.zip` |
-| Linux x64 | `mcgen-0.1.1-linux-x64.zip` |
-| macOS (Apple Silicon) | `mcgen-0.1.1-macos-arm64.zip` |
-| macOS (Intel) | `mcgen-0.1.1-macos-x64.zip` |
+| Windows x64 | `mcgen-0.1.2-windows-x64.zip` |
+| Linux x64 | `mcgen-0.1.2-linux-x64.zip` |
+| macOS (Apple Silicon) | `mcgen-0.1.2-macos-arm64.zip` |
+| macOS (Intel) | `mcgen-0.1.2-macos-x64.zip` |
 
 Файлы собирает `python3 tools/build_extension.py` (каталог `blender/dist/`; библиотеки под все четыре платформы строятся кросс-компилятором zig: `python3 libmcgen/build.py`). В zip лежат только наш код и библиотека `libmcgen` — **ни одного файла Mojang** в нём нет.
 
@@ -50,7 +50,7 @@
 3. Blender покажет запрашиваемые разрешения — **Files** (читать ваши jar игры и держать кэш распакованных данных) и **Network** (необязательно: скачивание jar у Mojang). Подтвердите.
 4. Расширение «MC Worldgen» включается сразу; проверить можно в **Preferences ▸ Add-ons**.
 
-Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.1-linux-x64.zip`.
+Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.2-linux-x64.zip`.
 
 Где искать интерфейс: **Properties editor ▸ вкладка Scene ▸ панель «MC World»** и та же панель в **боковой панели 3D-вида (клавиша `N`) ▸ вкладка «MC World»**. Вкладки в редакторе свойств Python добавлять не позволяет, поэтому «вкладка» — верхняя панель Scene с подпанелями, как у Render. Язык интерфейса — английский; при выборе русского языка Blender (**Preferences ▸ Interface ▸ Language**) аддон переводится целиком (включая подписи и описания всех ползунков).
 
@@ -71,7 +71,7 @@
 
 Три способа:
 
-* **Auto-detect** — аддон ищет `.minecraft/versions/<версия>/` (Linux, macOS, Windows, Flatpak), серверные jar в `.minecraft`, `Downloads`, `Desktop` и в своём кэше, и выбирает пару одной версии;
+* **Auto-detect** — аддон ищет клиентские jar в `.minecraft/versions/<версия>/` (Linux, macOS, Windows, Flatpak) и в библиотеках **Prism / PolyMC / MultiMC / Modrinth App**, серверные — в `.minecraft`, `Downloads`, `Desktop` и в своём кэше, и выбирает пару одной версии (подробности — [§2.1](#21-свои-jar-официальный-лаунчер-multimc--prism-modrinth));
 * вручную — выберите файлы в полях Server jar / Client jar;
 * **Download official jars from Mojang** — выберите версию, поставьте галку **«I accept the Minecraft EULA»** (по умолчанию она выключена; без неё аддон ничего не качает; см. [§12](#12-правовая-сторона)) и нажмите **Download**. Для этого в Blender должен быть разрешён доступ в сеть: **Preferences ▸ System ▸ Network ▸ Allow Online Access** (панель сама подскажет, если он выключен). Файлы проверяются по sha1 из манифеста Mojang.
 
@@ -80,6 +80,40 @@
 **Шаг 3 — Prepare Resources.** Кнопка распаковывает датапак и клиентские ресурсы в кэш аддона, запускает Java для `reports/blocks.json` и выводит «правила декораций» (`block_flags.json`; для этого используется **наш** маленький класс, код Mojang в нём не нужен, JDK тоже: хватает JRE 25). Идёт в фоне, есть прогресс и отмена; результат кэшируется по sha1 jar, повторная подготовка занимает меньше секунды. В панели появятся три галки «ready»: *Datapack and reports*, *Block flags*, *Textures and models*. Время и размер кэша — в [§9](#9-производительность-и-память).
 
 Кэш лежит в каталоге пользователя расширения Blender (`extension_path_user(..., 'cache')`); сменить место можно в поле **Cache folder**, открыть — кнопкой **Open Cache Folder**, удалить — **Clear Cache**. Если у вас уже есть готовые каталоги (`tools/make_pack.py`), укажите их в **Existing pack / assets folder**.
+
+### 2.1. Свои jar: официальный лаунчер, MultiMC / Prism, Modrinth
+
+Аддон работает с **любыми jar Mojang нужной версии** — откуда вы их взяли, не важно. Узнать «нужный» jar можно по `version.json` внутри (аддон читает его сам и показывает версию в панели); пара *server + client* должна быть **одной версии**.
+
+**Что откуда берётся**
+
+| Что нужно | Где лежит | Что аддон из него берёт |
+|---|---|---|
+| **Client jar** (`<версия>.jar`) | у любого лаунчера, в таблице ниже | текстуры, модели, blockstates; при отсутствии серверного jar — ещё и датапак |
+| **Server jar** (`server.jar`) | **лаунчеры его не хранят**: только на [minecraft.net/download/server](https://www.minecraft.net/download/server) или кнопкой **Download** (с галкой EULA) | датапак мира и `reports/blocks.json` (список всех состояний блоков — его создаёт генератор данных игры, запускаемый из этого jar) |
+
+Без серверного jar подготовить ресурсы всё равно можно, но тогда нужна готовая папка **Reports folder** (`blocks.json` и остальные файлы `reports`, полученные тем же генератором: `java -DbundlerMainClass=net.minecraft.data.Main -jar server.jar --reports --output out`). Проще всего один раз скачать серверный jar кнопкой Download.
+
+**Где лежит client jar**
+
+| Лаунчер | Windows | Linux | macOS |
+|---|---|---|---|
+| Официальный (Minecraft Launcher) | `%APPDATA%\.minecraft\versions\<версия>\<версия>.jar` | `~/.minecraft/versions/<версия>/<версия>.jar` | `~/Library/Application Support/minecraft/versions/<версия>/<версия>.jar` |
+| **Prism Launcher** / PolyMC | `%APPDATA%\PrismLauncher\libraries\com\mojang\minecraft\<версия>\minecraft-<версия>-client.jar` | `~/.local/share/PrismLauncher/libraries/com/mojang/minecraft/<версия>/minecraft-<версия>-client.jar` (Flatpak: `~/.var/app/org.prismlauncher.PrismLauncher/data/PrismLauncher/…`) | `~/Library/Application Support/PrismLauncher/libraries/com/mojang/minecraft/…` |
+| **MultiMC** (портативный: каталог, куда вы его распаковали) | `<папка MultiMC>\libraries\com\mojang\minecraft\<версия>\minecraft-<версия>-client.jar` | то же | то же |
+| **Modrinth App** | `%APPDATA%\ModrinthApp\meta\versions\<версия>\<версия>.jar` | `~/.local/share/ModrinthApp/meta/versions/<версия>/<версия>.jar` | `~/Library/Application Support/ModrinthApp/meta/versions/…` |
+
+Версия сначала должна быть **запущена или установлена** в лаунчере (создана хотя бы одна копия игры), иначе jar там ещё нет. Prism/MultiMC хранят его не в папке копии игры (`instances/<имя>/.minecraft`), а в общих `libraries/`. Если не уверены, где каталог данных лаунчера: в Prism / PolyMC — кнопка **Folders ▸ View Launcher Root Folder**, у портативного MultiMC — папка, куда вы его распаковали; в ней откройте `libraries/com/mojang/minecraft/`.
+
+**Как подключить**
+
+1. **Auto-detect** — найдёт всё перечисленное в стандартных местах и выберет пару одной версии. Если найден только client jar, аддон так и скажет («серверного jar нет») — добавьте server jar кнопкой Download или с minecraft.net.
+2. Не нашлось (портативный MultiMC, нестандартный диск, jar переименован) — в полях **Server jar** / **Client jar** нажмите значок папки и укажите файлы вручную. Имя файла значения не имеет: нужен только настоящий jar Mojang с `version.json` внутри (другие jar'ы, например модлоадеры или «обёрнутые» клиенты, аддон отклонит сообщением «does not look like a Mojang client/server jar»).
+3. **Prepare Resources**. Аддон **копирует** из jar нужные ресурсы в свой кэш; сами ваши jar не изменяются, а при повторной подготовке (по sha1 файла) не перечитываются.
+
+Моды в лаунчере не мешают: нужно лишь, чтобы там лежал чистый jar Mojang нужной версии. Jar'ы модлоадеров (Forge / Fabric / NeoForge) и «склеенные» сборки не подходят: аддон их отклонит сообщением «does not look like a Mojang client/server jar». Расположение файлов в Prism / MultiMC / Modrinth App проверено по устройству этих лаунчеров и на тестовых каталогах; если у вас другая раскладка, укажите jar вручную (шаг 2) — это работает всегда.
+
+**Windows: длина путей и Microsoft Store.** Windows по умолчанию не открывает файлы, путь к которым длиннее 259 символов, а датапак игры содержит имена до ~140 символов. Если папка кэша глубоко вложена (так бывает у Blender из Microsoft Store: `…\AppData\Local\Packages\BlenderFoundation.Blender_…\LocalCache\Roaming\Blender Foundation\Blender\5.2\extensions\.user\user_default\mcgen\cache`), аддон сам выбирает короткую папку `%LOCALAPPDATA%\mcgen`. Если вы указали свою **Cache folder**, держите путь короче ~70 символов (например, `C:\mcgen`); слишком длинный путь аддон отклонит заранее понятной ошибкой, а не посреди распаковки. Не-ASCII имена (кириллица в имени пользователя) библиотека открывает через «широкие» API Windows (UTF-8 → UTF-16); если с такими путями всё же что-то пойдёт не так, укажите Cache folder вида `C:\\mcgen`.
 
 ## 3. Быстрый старт
 
@@ -235,6 +269,21 @@ python3 tools/gt/record_schedule.py convert ~/rec/schedule.jfr --dim overworld -
 
 Время генерации по стадиям (рельеф, декорации, жидкости, карты высот, старты построек), время построения сцены и итого, число чанков, объектов и граней, память вокселей и **пик памяти процесса**. Ниже — **список построек**: сколько каких типов нашлось в области и первые из них с границами (мировые координаты `x … y … z …`). Кнопка **Structure Markers** ставит маркеры ([§6](#6-маркеры-построек)). Сверху — строка о том, где считалось (CPU/GPU).
 
+### 4.12. Видеокарта NVIDIA (необязательно)
+
+Видеокарта ускоряет **карту биомов** (в режиме Auto: на два порядка быстрее процессора) и, если выбрать **Compute ▸ GPU**, ещё и **рельеф** (измерено на RTX 4080 SUPER: 1,7–2,8× по времени, 3,4–3,9× по процессорному времени; подробности и честные числа — [gpu.md](gpu.md)). Результат **бит-в-бит такой же, как на процессоре**: перед использованием в Auto библиотека сверяет себя с процессором (кнопка **GPU Self-test**), и при любой неудаче всё считается на CPU.
+
+Готовой библиотеки для вашей карты в аддоне нет — она **собирается вашим же nvcc** из наших исходников (они лежат в аддоне, папка `gpu_src`):
+
+1. Поставьте **CUDA Toolkit** (nvcc), [developer.nvidia.com/cuda-downloads](https://developer.nvidia.com/cuda-downloads), и актуальный драйвер NVIDIA. Только **Windows:** nvcc требует компилятор Microsoft — поставьте бесплатные **Visual Studio Build Tools** ([visualstudio.microsoft.com/downloads](https://visualstudio.microsoft.com/downloads), «Инструменты сборки») с рабочей нагрузкой **«Разработка классических приложений на C++»**. Linux: нужен gcc/g++.
+2. Перезапустите Blender (чтобы он увидел `PATH` / `CUDA_PATH` после установки).
+3. Откройте панель **Stats**: в блоке *Compute*, пока GPU не готов, есть кнопка **Build GPU library**. Нажмите её: аддон найдёт nvcc и Visual Studio сам, определит вашу карту (`nvidia-smi`) и соберёт библиотеку под неё — от 2 до 10 минут, идёт в фоне, Esc отменяет.
+4. Нажмите **GPU Self-test** (должно быть «Self-test passed») и **GPU Benchmark**; в View ▸ **Compute** выберите *GPU*, если нужен ускоренный рельеф.
+
+Библиотека лежит в кэше аддона (`<кэш>\gpu\mcgen_cuda.dll`, на Linux `libmcgen_cuda.so`) и подключается сама при каждом запуске; журнал сборки — `<кэш>\gpu\build.log` (там же список архитектур). Пересобирать нужно только при смене видеокарты или обновлении аддона. Если загруженный Windows-файл нельзя заменить на лету, аддон положит новый рядом и подставит при следующем запуске Blender.
+
+**Если не собралось.** «nvcc not found» — добавьте каталог `bin` CUDA в `PATH` или задайте `CUDA_PATH` и перезапустите Blender. «Microsoft C++ compiler was not found» — нет Build Tools с нагрузкой «C++» (nvcc в Windows без `cl.exe` не работает). Слишком новая Visual Studio для вашей версии CUDA — аддон сам повторяет сборку с `-allow-unsupported-compiler`, но самый надёжный путь — свежий CUDA Toolkit. Карты RTX 50 (`sm_120`) требуют CUDA 12.8+; для более новых карт, чем знает ваш nvcc, остаётся вариант «PTX» (драйвер доскомпилирует его при первом запуске, это медленнее). Сборку на Windows автор проверить не мог (нет Windows-машины с MSVC): если что-то не так, пришлите `build.log`. Без Blender: `libmcgen\gpu\build.bat` в «x64 Native Tools Command Prompt» (результат — `mcgen_cuda.dll`, положите его в `<кэш>\gpu\`).
+
 ## 5. Карта биомов
 
 ![карта биомов поверх сцены (en)](img/ui-biomemap-en.jpg)
@@ -327,13 +376,17 @@ python3 tools/gt/record_schedule.py convert ~/rec/schedule.jfr --dim overworld -
 | «Resources not prepared» / Generate отказывается | не выполнена **Prepare Resources** для выбранной версии; галки «ready» в панели Resources должны быть все |
 | «Java 25+ not found» | установите JRE 25 (Temurin/Adoptium, Oracle, Microsoft…) или укажите её в поле **Java**; можно взять среду лаунчера Minecraft. Без Java: поле **Reports folder** с готовым `reports/blocks.json` |
 | «Block flags: missing» | не удалось выполнить наш класс правил декораций (нет Java) — генерация работает, но часть декораций использует эвристики |
+| «The cache folder path is too long for Windows» / `FileNotFoundError` при Prepare Resources (Windows) | путь кэша + имена датапака длиннее 259 символов (типично для Blender из Microsoft Store). Аддон версии 0.1.2+ выбирает короткий `%LOCALAPPDATA%\mcgen` сам; если вы задали **Cache folder** — укажите короткую, например `C:\mcgen`, и снова нажмите Prepare Resources (после **Clear Cache** файл jar в кэше исчезает: выберите jar заново или нажмите Download) |
+| «The jar file … does not exist» | файл jar из полей удалён или перенесён — чаще всего после **Clear Cache** (скачанный Download jar лежал в кэше); выберите jar заново или нажмите Download |
+| «… does not look like a Mojang server/client jar» | это не чистый jar Mojang (нет `version.json`), он повреждён или перепутаны server и client; см. [§2.1](#21-свои-jar-официальный-лаунчер-multimc--prism-modrinth) |
+| Auto-detect: «Found 0 server and 1 client jars» | лаунчеры не хранят серверный jar: нажмите Download (с галкой EULA) или скачайте `server.jar` на minecraft.net и укажите его в поле Server jar |
 | Download неактивна | не принята EULA (галка) или в Blender выключен доступ в сеть: Preferences ▸ System ▸ Network ▸ Allow Online Access |
 | «The voxel data … needs about N GB» | область слишком велика для вашей памяти; уменьшите Size X/Z или срежьте диапазон высот |
 | Генерация медленная | большая область или все слои: уменьшите область, выключите ненужные слои; для сцены — Greedy merge, LOD и Chunks per object; **Threads** = 0 использует все ядра; самые тяжёлые стадии — рельеф и растекание жидкостей ([§9](#9-производительность-и-память)) |
 | Инструменты Edit Blocks серые | нет построенной сцены в этой сессии: нажмите Generate (или Load Voxels после открытия файла) |
 | После открытия .blend нет вокселей | так и задумано, [§8](#8-сохранение-blend-и-загрузить-воксели): кнопка **Load Voxels** |
 | Маркеры построек не там | нажмите Structure Markers после генерации ещё раз (маркеры строятся по последнему результату) |
-| «GPU is not used» | видеокарта NVIDIA / библиотека CUDA не установлены — всё считается на процессоре, результат не меняется |
+| «GPU is not used» | нет видеокарты NVIDIA, драйвера или библиотеки CUDA — всё считается на процессоре, результат не меняется; библиотеку собирает кнопка **Build GPU library** в Stats ▸ Compute ([§4.12](#412-видеокарта-nvidia-необязательно)) |
 | Блок рисуется чёрным | таких блоков обычно нет; блоки-сущности (сундуки, головы, баннеры) рисуются упрощёнными заглушками, а темноватые модели (кусты светлячков) просто тёмные |
 
 ## 11. Известные ограничения

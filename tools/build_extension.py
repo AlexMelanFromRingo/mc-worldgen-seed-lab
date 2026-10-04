@@ -76,6 +76,16 @@ def stage(platform, dest, allow_missing_libs):
         raise SystemExit('в blender_manifest.toml нет строки platforms = [...]')
     with open(os.path.join(dest, 'blender_manifest.toml'), 'w', encoding='utf-8') as f:
         f.write(text)
+    if platform.split('-')[0] in ('windows', 'linux'):          # исходники CUDA: кнопка «Build GPU library» собирает библиотеку под видеокарту пользователя (core/gpu_build.py)
+        gsrc = os.path.join(dest, 'gpu_src')
+        os.makedirs(os.path.join(gsrc, 'libmcgen', 'gpu'), exist_ok=True)
+        os.makedirs(os.path.join(gsrc, 'engine'), exist_ok=True)
+        for fn in sorted(os.listdir(os.path.join(ROOT, 'libmcgen', 'gpu'))):
+            if fn.endswith(('.cu', '.cuh', '.h', '.map')):
+                shutil.copy2(os.path.join(ROOT, 'libmcgen', 'gpu', fn), os.path.join(gsrc, 'libmcgen', 'gpu', fn))
+        for fn in ('mc_rng.h', 'mc_common.h'):
+            shutil.copy2(os.path.join(ROOT, 'engine', fn), os.path.join(gsrc, 'engine', fn))
+        n += len(os.listdir(os.path.join(gsrc, 'libmcgen', 'gpu'))) + 2
     libfile = os.path.join(dest, 'lib', platform, LIBNAME[platform.split('-')[0]])
     have = os.path.isfile(libfile)
     gpuname = {'windows': 'mcgen_cuda.dll', 'linux': 'libmcgen_cuda.so'}.get(platform.split('-')[0])     # необязательное ускорение на видеокарте (libmcgen/gpu/build.sh)

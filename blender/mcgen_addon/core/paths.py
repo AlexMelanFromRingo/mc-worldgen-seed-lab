@@ -80,16 +80,34 @@ def _bpy_cache():
         return None
 
 
+# Windows: путь файла не длиннее 259 символов (MAX_PATH; Blender и Java/C без «длинных путей»). Самая длинная запись датапака — 139 символов, плюс каталог распаковки
+# packs/<версия>-<хэш>.part/ (≈ 37) и разделители: корень кэша должен быть не длиннее ≈ 80 символов. Каталог расширения Blender (…\Blender Foundation\Blender\5.2\extensions\.user\
+# user_default\mcgen\cache, у Microsoft Store ещё длиннее) этого лимита не укладывается — на Windows тогда берётся короткий %LOCALAPPDATA%\mcgen.
+WIN_MAX_PATH = 259
+WIN_PATH_BUDGET = 185
+
+
+def win_cache_fits(root):
+    """Укладывается ли корень кэша в лимит путей Windows с запасом под самые длинные файлы датапака."""
+    return len(root) + WIN_PATH_BUDGET <= WIN_MAX_PATH
+
+
+def _default_cache():
+    d = _bpy_cache()
+    if d and sys.platform.startswith('win') and not win_cache_fits(d):
+        d = None
+    if d:
+        return d
+    if sys.platform.startswith('win'):
+        return os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'mcgen')
+    if sys.platform == 'darwin':
+        return os.path.expanduser('~/Library/Caches/mcgen')
+    return os.path.join(os.environ.get('XDG_CACHE_HOME') or os.path.expanduser('~/.cache'), 'mcgen')
+
+
 def cache_dir(create=True):
     """Кэш аддона: packs/<версия>-<sha1>/ (датапак + reports), assets/<версия>-<sha1>/ (клиентские ресурсы), downloads/."""
-    d = _cache_override or os.environ.get('MCGEN_CACHE') or _bpy_cache()
-    if not d:
-        if sys.platform.startswith('win'):
-            d = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'mcgen')
-        elif sys.platform == 'darwin':
-            d = os.path.expanduser('~/Library/Caches/mcgen')
-        else:
-            d = os.path.join(os.environ.get('XDG_CACHE_HOME') or os.path.expanduser('~/.cache'), 'mcgen')
+    d = _cache_override or os.environ.get('MCGEN_CACHE') or _default_cache()
     if create:
         os.makedirs(d, exist_ok=True)
     return d

@@ -6,6 +6,7 @@
 #ifndef MCGEN_UTIL_H
 #define MCGEN_UTIL_H
 #include <stddef.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -51,6 +52,10 @@ void sm_free(StrMap *m, void (*free_val)(void *));
 /* ---- файлы ---- */
 char *read_file(const char *path, size_t *len);       /* NUL-терминировано; NULL при ошибке */
 int file_exists(const char *path);
+/* Пути — UTF-8 на всех платформах: в Windows (имя пользователя с кириллицей, длинные пути > 259 символов) — через широкие API (_wfopen, FindFirstFileW,
+ * префикс \\?\ у длинных абсолютных путей); ANSI-вариант fopen там читает только системную кодовую страницу и MAX_PATH. */
+FILE *mc_fopen(const char *path, const char *mode);
+int mc_is_dir(const char *path);
 /* список имён файлов каталога (рекурсивно, относительные пути с '/', отсортировано); возвращает число */
 int list_dir_recursive(const char *dir, const char *suffix, char ***out);
 void free_str_list(char **l, int n);

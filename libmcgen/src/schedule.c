@@ -10,7 +10,7 @@ void sched_free(McSchedule *s) {
 }
 
 McSchedule *sched_load(const char *path, char *err, size_t errlen) {
-    FILE *fp = fopen(path, "r");
+    FILE *fp = mc_fopen(path, "r");
     if (!fp) { if (err && errlen) snprintf(err, errlen, "не удалось открыть расписание %s", path); return NULL; }
     McSchedule *s = xcalloc(1, sizeof *s); s->dim_kind = -1;
     int capf = 0, capp = 0;

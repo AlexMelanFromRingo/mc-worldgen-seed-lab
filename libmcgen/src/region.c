@@ -288,7 +288,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
             if (r->stages & MC_STAGE_FEATURES) features_post_chunk(&fw, w, ox, oz);
         }
     } else
-    { const char *fo = getenv("MCGEN_FLUID_ORDER"); FILE *fp = (fo && *fo && pp_margin >= 0) ? fopen(fo, "r") : NULL;
+    { const char *fo = getenv("MCGEN_FLUID_ORDER"); FILE *fp = (fo && *fo && pp_margin >= 0) ? mc_fopen(fo, "r") : NULL;
       if (fp) { int ox, oz; ordered = 1;
           while (fscanf(fp, "%d %d", &ox, &oz) == 2) {
               if (!(ox >= cx0 && ox < cx0 + nx && oz >= cz0 && oz < cz0 + nz)) continue;
@@ -302,7 +302,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     for (int cz = cz0 - 1; cz <= cz0 + nz && !cancel && !ordered; cz++) {
         if (cb) {
             char what[64]; snprintf(what, sizeof what, "fluids %d/%d", cz - cz0 + 1, nz + 2);
-            if (cb(ud, 0.9 + 0.08 * (cz - cz0 + 1) / (nz + 2), what)) { cancel = 1; break; }
+            if (cb(ud, 0.96 + 0.02 * (cz - cz0 + 1) / (nz + 2), what)) { cancel = 1; break; }
         }
         for (int cx = cx0 - 1; cx <= cx0 + nx; cx++) {
             int inside = cx >= cx0 && cx < cx0 + nx && cz >= cz0 && cz < cz0 + nz;
@@ -444,7 +444,7 @@ static int wr_u16(FILE *f, uint16_t v) { u8 b[2] = { (u8)v, (u8)(v >> 8) }; retu
 static int wr_str(FILE *f, const char *s) { size_t n = strlen(s); return (n > 65535 || wr_u16(f, (uint16_t)n) || wr(f, s, n)) ? -1 : 0; }
 int mcgen_region_write_mcr(const McRegion *r, const McGen *g, const char *path, char *err, size_t errlen) {
     if (!r || !g || !path) { set_err(err, errlen, "write_mcr: аргументы"); return MCGEN_E_ARG; }
-    FILE *f = fopen(path, "wb");
+    FILE *f = mc_fopen(path, "wb");
     if (!f) { set_err(err, errlen, "не открыть %s", path); return MCGEN_E_IO; }
     int bad = 0;
     bad |= wr(f, "MCR1", 4); bad |= wr_i32(f, MCGEN_ABI_VERSION);

@@ -90,8 +90,38 @@ void sm_free(StrMap *m, void (*free_val)(void *)) {
 }
 
 /* ---- файлы ---- */
+#if defined(_WIN32)
+/* UTF-8 -> UTF-16 для API Windows; абсолютные пути длиннее 247 символов получают префикс \\?\ (тогда '/' обязан быть '\\'). Освобождать free(). */
+static wchar_t *w_path(const char *s, int dir_pattern) {
+    int n = MultiByteToWideChar(CP_UTF8, 0, s, -1, NULL, 0);
+    if (n <= 0) return NULL;
+    wchar_t *w = (wchar_t *)malloc(((size_t)n + 8 + (dir_pattern ? 2 : 0)) * sizeof(wchar_t));
+    if (!w) return NULL;
+    wchar_t *d = w;
+    int absolute = ((s[0] && s[1] == ':' && (s[2] == '\\' || s[2] == '/')) && n > 248);
+    if (absolute) { memcpy(d, L"\\\\?\\", 4 * sizeof(wchar_t)); d += 4; }
+    if (MultiByteToWideChar(CP_UTF8, 0, s, -1, d, n) <= 0) { free(w); return NULL; }
+    if (absolute) for (wchar_t *p = d; *p; p++) if (*p == L'/') *p = L'\\';
+    return w;
+}
+FILE *mc_fopen(const char *path, const char *mode) {
+    wchar_t *wp = w_path(path, 0), wm[8]; int i = 0;
+    for (; mode[i] && i < 7; i++) wm[i] = (wchar_t)(unsigned char)mode[i];
+    wm[i] = 0;
+    FILE *f = wp ? _wfopen(wp, wm) : fopen(path, mode);
+    free(wp); return f;
+}
+int mc_is_dir(const char *path) {
+    wchar_t *wp = w_path(path, 0); if (!wp) return 0;
+    DWORD a = GetFileAttributesW(wp); free(wp);
+    return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_DIRECTORY);
+}
+#else
+FILE *mc_fopen(const char *path, const char *mode) { return fopen(path, mode); }
+int mc_is_dir(const char *path) { struct stat st; return stat(path, &st) == 0 && S_ISDIR(st.st_mode); }
+#endif
 char *read_file(const char *path, size_t *len) {
-    FILE *f = fopen(path, "rb"); if (!f) return NULL;
+    FILE *f = mc_fopen(path, "rb"); if (!f) return NULL;
     if (fseek(f, 0, SEEK_END) != 0) { fclose(f); return NULL; }
     long n = ftell(f); if (n < 0) { fclose(f); return NULL; }
     fseek(f, 0, SEEK_SET);
@@ -99,21 +129,24 @@ char *read_file(const char *path, size_t *len) {
     if (fread(b, 1, (size_t)n, f) != (size_t)n) { fclose(f); free(b); return NULL; }
     b[n] = 0; fclose(f); if (len) *len = (size_t)n; return b;
 }
-int file_exists(const char *path) { FILE *f = fopen(path, "rb"); if (!f) return 0; fclose(f); return 1; }
+int file_exists(const char *path) { FILE *f = mc_fopen(path, "rb"); if (!f) return 0; fclose(f); return 1; }
 
 static int cmp_str(const void *a, const void *b) { return strcmp(*(char *const *)a, *(char *const *)b); }
 static void list_rec(const char *base, const char *rel, const char *suffix, PtrVec *out) {
     char *path = rel[0] ? xsprintf("%s/%s", base, rel) : xstrdup(base);
 #if defined(_WIN32)
     char *pat = xsprintf("%s\\*", path);
-    WIN32_FIND_DATAA fd; HANDLE h = FindFirstFileA(pat, &fd); free(pat);
+    wchar_t *wpat = w_path(pat, 1); free(pat);
+    WIN32_FIND_DATAW fd; HANDLE h = wpat ? FindFirstFileW(wpat, &fd) : INVALID_HANDLE_VALUE; free(wpat);
     if (h != INVALID_HANDLE_VALUE) {
         do {
-            const char *nm = fd.cFileName; if (!strcmp(nm, ".") || !strcmp(nm, "..")) continue;
+            char nm[3 * MAX_PATH + 4];
+            if (!WideCharToMultiByte(CP_UTF8, 0, fd.cFileName, -1, nm, (int)sizeof nm, NULL, NULL)) continue;
+            if (!strcmp(nm, ".") || !strcmp(nm, "..")) continue;
             char *r = rel[0] ? xsprintf("%s/%s", rel, nm) : xstrdup(nm);
             if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) { list_rec(base, r, suffix, out); free(r); }
             else { size_t ln = strlen(r), ls = strlen(suffix); if (ln >= ls && !strcmp(r + ln - ls, suffix)) pv_push(out, r); else free(r); }
-        } while (FindNextFileA(h, &fd));
+        } while (FindNextFileW(h, &fd));
         FindClose(h);
     }
 #else

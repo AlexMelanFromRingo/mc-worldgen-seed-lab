@@ -292,8 +292,13 @@ class McWorld:
         self.height = 384 if self.dim == 0 else 256
         self.sea_level = {0: 63, 1: 32, 2: 0}[self.dim] + int(tw['sea_level_offset'])
         self._s = [_salt(sd, i) for i, sd in enumerate(seeds)]       # хэш-сиды доменов
+        self.schedule = ''
         self._climate_scale = tw['climate_scale_xz'] * (4.0 if preset == 'large_biomes' else 1.0)
         self._amp = tw['terrain_amplitude'] * (1.8 if preset == 'amplified' else 1.0)
+
+    def set_schedule(self, path):
+        """Макет расписание сервера не использует — только запоминает путь (как библиотека принимает .mcsched)."""
+        self.schedule = path or ''
 
     def close(self):
         pass

@@ -8,7 +8,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 from bpy.types import Operator
 
-from ..core import backend, biomes, catalog, fallback_preview, gpu as gpu_mod, jobs, pack, paths, seeds, sysinfo, w4_adapter
+from ..core import backend, biomes, catalog, fallback_preview, gpu as gpu_mod, gpu_build, jobs, pack, paths, seeds, sysinfo, w4_adapter
 from ..core import params as P
 from ..core.tasks import Task
 from . import i18n, props
@@ -523,6 +523,34 @@ class MCGEN_OT_gpu_benchmark(_GpuTaskBase):
         return {'FINISHED'}
 
 
+class MCGEN_OT_build_gpu(McGenPumpOperator):
+    bl_idname = 'mcgen.build_gpu'
+    bl_label = 'Build GPU library'
+    bl_description = ('Compile the optional CUDA library for your graphics card with your own nvcc (CUDA Toolkit; on Windows also Visual Studio Build Tools). '
+                      'Takes a few minutes; the results stay bit-identical to the CPU')
+    status_title = 'MC World GPU build'
+
+    def start(self, context):
+        tc = gpu_build.toolchain()
+        if tc['problem']:
+            self.report({'ERROR'}, rpt(tc['problem'][0], **tc['problem'][1]))
+            return None
+        self.report({'INFO'}, rpt('Building the GPU library with nvcc {v} for {a} …', v=tc['nvcc_version'] or '?', a=', '.join('sm_' + x for x in tc['arches']) or 'sm_75 … sm_89'))
+        return Task('gpu_build', gpu_build.build_worker).start()
+
+    def finish(self, context, task):
+        if task.state != 'done':
+            self.report({'ERROR'}, i18n.exc_text(task.error) if task.error else rpt('Cancelled'))
+            return {'CANCELLED'}
+        gpu_mod.refresh()
+        info = task.result
+        if info.get('pending'):
+            self.report({'WARNING'}, rpt('The GPU library is built but the old one is still loaded: restart Blender to use the new one'))
+        else:
+            self.report({'INFO'}, rpt('GPU library built in {s:.0f} s ({path}). Press GPU Self-test to compare it with the CPU', s=info['seconds'], path=info['path']))
+        return {'FINISHED'}
+
+
 class MCGEN_OT_prepare_resources(McGenPumpOperator):
     bl_idname = 'mcgen.prepare_resources'
     bl_label = 'Prepare Resources'
@@ -566,7 +594,7 @@ class MCGEN_OT_prepare_resources(McGenPumpOperator):
 class MCGEN_OT_detect_jars(Operator):
     bl_idname = 'mcgen.detect_jars'
     bl_label = 'Auto-detect'
-    bl_description = 'Look for Minecraft jars in .minecraft/versions, Downloads and the cache and fill the paths'
+    bl_description = 'Look for Minecraft jars in .minecraft/versions, Prism/MultiMC/Modrinth libraries, Downloads and the cache and fill the paths'
 
     def execute(self, context):
         prefs = props.get_prefs(context)
@@ -585,6 +613,8 @@ class MCGEN_OT_detect_jars(Operator):
                 prefs.server_jar = servers[sorted(servers, key=pack.version_key)[-1]].path
         resource_state['java'] = None
         msg = rpt('Found {s} server and {c} client jars', s=len(servers), c=len(clients)) + (rpt('; selected {v}', v=pick) if pick else '')
+        if found and clients and not servers:
+            msg += '. ' + rpt('No server jar: launchers do not keep it. Press Download or take server.jar from minecraft.net')
         self.report({'INFO'} if found else {'WARNING'}, msg if found else rpt('No Minecraft jars found: use Download or pick the files manually'))
         return {'FINISHED'}
 
@@ -739,7 +769,7 @@ class MCGEN_OT_reset_tweaks(Operator):
 
 classes = (MCGEN_OT_generate, MCGEN_OT_update_layers, MCGEN_OT_load_voxels, MCGEN_OT_edit_reset, MCGEN_OT_cancel, MCGEN_OT_clear, MCGEN_OT_biome_map, MCGEN_OT_prepare_resources,
            MCGEN_OT_detect_jars, MCGEN_OT_check_java, MCGEN_OT_refresh_versions, MCGEN_OT_download_jars, MCGEN_OT_open_cache,
-           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_structure_markers, MCGEN_OT_reset_tweaks, MCGEN_OT_gpu_selftest, MCGEN_OT_gpu_benchmark)
+           MCGEN_OT_clear_cache, MCGEN_OT_random_seed, MCGEN_OT_structure_markers, MCGEN_OT_reset_tweaks, MCGEN_OT_gpu_selftest, MCGEN_OT_gpu_benchmark, MCGEN_OT_build_gpu)
 
 
 def register():

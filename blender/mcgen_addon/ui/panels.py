@@ -9,7 +9,7 @@ from bpy.app.translations import pgettext_iface as iface_
 from bpy.types import Panel
 from bl_ui.utils import PresetPanel
 
-from ..core import backend, catalog, gpu, jobs, pack, paths, seeds, sysinfo
+from ..core import backend, catalog, gpu, gpu_build, jobs, pack, paths, seeds, sysinfo
 from ..core import params as P
 from . import i18n, ops, props
 
@@ -292,6 +292,8 @@ def draw_gpu(layout, context):
     else:
         reason = st.get('reason') or st.get('state', '')
         box.label(text=iface_('GPU is not used: {r}').format(r=reason)[:110], icon='INFO')
+        if gpu_build.sources_dir() and gpu.supported():
+            box.operator('mcgen.build_gpu', icon='TOOL_SETTINGS')
     b = gpu.last_benchmark()
     if b:
         col = box.column(align=True)

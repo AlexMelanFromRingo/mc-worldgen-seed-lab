@@ -12,7 +12,7 @@ import time
 
 import numpy as np
 
-from . import backend
+from . import backend, gpu_build
 
 MODES = ('AUTO', 'CPU', 'GPU')
 _MODE_CODE = {'CPU': 0, 'GPU': 1, 'AUTO': 2}
@@ -56,8 +56,19 @@ def _library():
             for name, (res, args) in protos.items():
                 fn = getattr(d, name)
                 fn.restype, fn.argtypes = res, args
+            gpu_build.activate(d, getattr(L, 'path', ''))        # библиотека, собранная из аддона (кнопка «Build GPU library»), если своей рядом с libmcgen нет
             _bound = L
         return _bound
+
+
+def refresh():
+    """После сборки библиотеки: заново подключить её к libmcgen и сбросить кэш подписи устройства."""
+    L = _library()
+    with _lock:
+        _label_cache[0], _label_cache[1] = 0.0, ''
+    if L is None:
+        return None
+    return gpu_build.activate(L.dll, getattr(L, 'path', ''))
 
 
 def supported():

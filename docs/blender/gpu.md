@@ -167,8 +167,12 @@ CPU-путь не сломан: `make -C libmcgen test` проходит; G2 26.
 
 * **Linux:** `libmcgen/gpu/build.sh` (nvcc ≥ 12; по умолчанию `sm_89` + PTX `compute_75` для вперёд-совместимости → `libmcgen/build/gpu/libmcgen_cuda.so`; `CUDA_ARCH="75 80 86 89" libmcgen/gpu/build.sh` — несколько
   архитектур, ≈ 10 МБ; `--install` копирует в `blender/mcgen_addon/lib/linux-x64/`). cudart и libstdc++ слинкованы статически, экспорт — только `mcgpu_*` (`mcgpu.map`); нужен лишь драйвер NVIDIA. Цель `make -C libmcgen gpu`.
-* **Windows:** `libmcgen\gpu\build.bat` (или `build.ps1`) в «x64 Native Tools Command Prompt» с CUDA Toolkit: nvcc + MSVC (`/fp:strict /MT`), результат `mcgen_cuda.dll` кладётся рядом с `mcgen.dll` в `lib\windows-x64\`.
-  **Бинарник для Windows в этой среде собрать нельзя** (нет MSVC); исходники кроссплатформенны (`LoadLibrary` в мосте, `__declspec(dllexport)`), сборка и проверка G9 на Windows-машине — за пользователем.
+* **Windows:** кнопка **Build GPU library** в аддоне (Stats ▸ Compute) собирает `mcgen_cuda.dll` на машине пользователя его nvcc — `core/gpu_build.py`: ищет nvcc (`PATH`, `CUDA_PATH`, `Program Files\NVIDIA GPU Computing Toolkit\CUDA\v*`),
+  `vcvars64.bat` Visual Studio / Build Tools (через `vswhere`), определяет архитектуру по `nvidia-smi --query-gpu=compute_cap` (только то, что умеет этот nvcc; для более новых карт — PTX `compute_75`), собирает теми же флагами, что `build.sh`
+  (`--fmad=false`, без fast-math; хост — `/fp:strict /MT /EHsc`), кладёт результат в `<кэш аддона>\gpu\mcgen_cuda.dll` и подключает через `mcgen_gpu_set_library_path`; при «unsupported Visual Studio version» повторяет с `-allow-unsupported-compiler`.
+  Исходники для этого лежат в пакете аддона (`gpu_src/libmcgen/gpu` + `gpu_src/engine/{mc_rng,mc_common}.h`, кладёт `tools/build_extension.py`). Вручную: `libmcgen\gpu\build.bat` в «x64 Native Tools Command Prompt» (сам находит vcvars, если `cl` нет в PATH, и архитектуру по `nvidia-smi`).
+  **Бинарник для Windows в этой среде собрать нельзя** (нет MSVC; nvcc не кросс-компилирует под Windows), поэтому путь Windows **не проверялся на живой машине** — проверены Linux-ветка той же функции (настоящая сборка + загрузка + самопроверка), построение командной строки/`.bat` и разбор вывода `nvidia-smi`; при сбое на Windows диагностика — `<кэш>\gpu\build.log`.
+  Бит-точность гарантирует не компилятор, а самопроверка «GPU = CPU» в аддоне (в Auto GPU без неё не используется).
 * `tools/build_extension.py`: всё, что лежит в `blender/mcgen_addon/lib/<платформа>/`, попадает в zip платформы, т. е. `libmcgen_cuda` — необязательный файл рядом с `libmcgen`; для macOS/Intel его нет (CUDA недоступна).
 * Остальная сборка не затронута: `libmcgen/build.py` (zig) собирает `gpu_bridge.c` как обычный исходник (динамическая загрузка; на Windows — без `-ldl`).
 

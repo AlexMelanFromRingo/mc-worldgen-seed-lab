@@ -112,6 +112,43 @@ def minecraft_dirs():
     return [d for d in c if os.path.isdir(d)]
 
 
+def launcher_roots():
+    """Каталоги данных сторонних лаунчеров, где лежат клиентские jar'ы: MultiMC / Prism / PolyMC (libraries/com/mojang/minecraft/<v>/minecraft-<v>-client.jar),
+    Modrinth App (meta/versions/<v>/<v>.jar). Официальный лаунчер — minecraft_dirs() (versions/<v>/<v>.jar)."""
+    home = os.path.expanduser('~')
+    names = ('PrismLauncher', 'PolyMC', 'MultiMC', 'ModrinthApp', 'com.modrinth.theseus', 'ATLauncher', 'GDLauncher')
+    out = []
+    if sys.platform.startswith('win'):
+        for base in (os.environ.get('APPDATA', ''), os.environ.get('LOCALAPPDATA', '')):
+            out += [os.path.join(base, n) for n in names if base]
+    elif sys.platform == 'darwin':
+        out += [os.path.join(home, 'Library', 'Application Support', n) for n in names]
+    else:
+        share = os.environ.get('XDG_DATA_HOME') or os.path.join(home, '.local', 'share')
+        out += [os.path.join(share, n) for n in names] + [os.path.join(share, 'multimc')]
+        out += [os.path.join(home, '.var', 'app', 'org.prismlauncher.PrismLauncher', 'data', 'PrismLauncher'),
+                os.path.join(home, '.var', 'app', 'com.modrinth.ModrinthApp', 'data', 'ModrinthApp')]
+    return [d for d in out if os.path.isdir(d)]
+
+
+def _launcher_jars(root):
+    """Клиентские jar'ы в каталоге данных лаунчера (MultiMC-подобного или Modrinth App)."""
+    found = []
+    libs = os.path.join(root, 'libraries', 'com', 'mojang', 'minecraft')
+    if os.path.isdir(libs):
+        for v in sorted(os.listdir(libs)):
+            d = os.path.join(libs, v)
+            if os.path.isdir(d):
+                found += [os.path.join(d, f) for f in sorted(os.listdir(d)) if f.endswith('.jar')]
+    meta = os.path.join(root, 'meta', 'versions')
+    if os.path.isdir(meta):
+        for v in sorted(os.listdir(meta)):
+            p = os.path.join(meta, v, v + '.jar')
+            if os.path.isfile(p):
+                found.append(p)
+    return found
+
+
 def _extra_search_dirs():
     home = os.path.expanduser('~')
     out = [os.path.join(home, d) for d in ('Downloads', 'Desktop', 'minecraft', 'Minecraft')]
@@ -142,6 +179,12 @@ def scan_jars(extra_dirs=(), kinds=('server', 'client')):
                 p = os.path.join(vdir, v, v + '.jar')
                 if os.path.isfile(p):
                     add(p)
+    for root in launcher_roots() + [d for d in extra_dirs if d and os.path.isdir(d)]:
+        try:
+            for p in _launcher_jars(root):
+                add(p)
+        except OSError:
+            continue
     dirs = list(minecraft_dirs()) + _extra_search_dirs() + [d for d in extra_dirs if d and os.path.isdir(d)]
     for d in dirs:
         try:
@@ -353,14 +396,34 @@ def _inner_game_jar_name(z):
     return None
 
 
-def _extract_data(zf, out_dir, task=None):
-    n = 0
-    names = [x for x in zf.namelist() if (x.startswith('data/') or x == 'version.json') and not x.endswith('/')]
-    for i, name in enumerate(names):
-        dst = os.path.join(out_dir, *name.split('/'))
+def check_path_budget(root, names):
+    """Windows: самый длинный файл распаковки не должен превышать 259 символов — иначе понятная ошибка вместо FileNotFoundError посреди распаковки."""
+    if not sys.platform.startswith('win') or not names:
+        return
+    longest = max(len(os.path.abspath(root)) + 1 + len(n) for n in names)
+    if longest > paths.WIN_MAX_PATH:
+        raise PackError('The cache folder path is too long for Windows (a file would need {n} characters, the limit is 259). Set a shorter "Cache folder" in the add-on preferences '
+                        '(for example C:\\mcgen) or enable long paths in Windows.', n=longest)
+
+
+def _write_entry(zf, name, dst):
+    try:
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         with open(dst, 'wb') as f:
             f.write(zf.read(name))
+    except OSError as e:
+        if sys.platform.startswith('win') and (len(dst) > paths.WIN_MAX_PATH or getattr(e, 'winerror', 0) in (3, 206)):
+            raise PackError('The cache folder path is too long for Windows (a file would need {n} characters, the limit is 259). Set a shorter "Cache folder" in the add-on preferences '
+                            '(for example C:\\mcgen) or enable long paths in Windows.', n=len(dst))
+        raise PackError('Could not write "{path}": {err}', path=dst, err=e)
+
+
+def _extract_data(zf, out_dir, task=None):
+    n = 0
+    names = [x for x in zf.namelist() if (x.startswith('data/') or x == 'version.json') and not x.endswith('/')]
+    check_path_budget(out_dir, names)
+    for i, name in enumerate(names):
+        _write_entry(zf, name, os.path.join(out_dir, *name.split('/')))
         n += 1
         if task and i % 200 == 0:
             task.check()
@@ -385,11 +448,9 @@ def extract_assets(client_jar, out_dir, task=None):
     with zipfile.ZipFile(client_jar) as z:
         names = [x for x in z.namelist() if x.startswith(ASSET_PREFIXES) and not x.endswith('/')]
         total = len(names)
+        check_path_budget(out_dir, names)
         for i, name in enumerate(names):
-            dst = os.path.join(out_dir, *name.split('/'))
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            with open(dst, 'wb') as f:
-                f.write(z.read(name))
+            _write_entry(z, name, os.path.join(out_dir, *name.split('/')))
             n += 1
             if task and i % 300 == 0:
                 task.check()
@@ -562,6 +623,9 @@ def prepare(server_jar='', client_jar='', reports_folder='', java='', task=None,
             task.report(f, m)
 
     steps = []
+    for jp in (server_jar, client_jar):
+        if jp and not os.path.isfile(jp):
+            raise PackError('The jar file "{path}" does not exist (maybe the cache was cleared). Pick the file again or press Download.', path=jp)
     s_info = inspect_jar(server_jar) if server_jar else None
     c_info = inspect_jar(client_jar) if client_jar else None
     if server_jar and not s_info:
@@ -590,7 +654,11 @@ def prepare(server_jar='', client_jar='', reports_folder='', java='', task=None,
         tmp = pack_dir + '.part'
         shutil.rmtree(tmp, ignore_errors=True)
         os.makedirs(tmp)
-        n = extract_datapack(src.path, tmp, task)
+        try:
+            n = extract_datapack(src.path, tmp, task)
+        except BaseException:
+            shutil.rmtree(tmp, ignore_errors=True)    # недораспакованный .part не оставляем
+            raise
         for name in os.listdir(tmp):               # переносим data/ и version.json в pack_dir
             dst = os.path.join(pack_dir, name)
             if os.path.isdir(dst):

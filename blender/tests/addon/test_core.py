@@ -12,6 +12,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 import sys
 import threading
 import time
@@ -24,7 +25,7 @@ import _boot  # noqa: E402
 _boot.load_core()
 import numpy as np  # noqa: E402
 
-from mcgen_addon.core import backend, biomes, catalog, lib, mock, pack, params, paths, png, seeds, tasks  # noqa: E402
+from mcgen_addon.core import backend, biomes, catalog, gpu_build, lib, mock, pack, params, paths, png, seeds, tasks  # noqa: E402
 
 REPO = _boot.REPO
 SCRATCH = _boot.SCRATCH
@@ -638,6 +639,81 @@ class PackSyntheticTests(unittest.TestCase):
         kinds = sorted((j.kind, j.version) for j in found if j.version == '99.1')
         self.assertEqual(kinds, [('client', '99.1'), ('server', '99.1')])
 
+    def test_scan_jars_launchers(self):
+        """Prism/MultiMC (libraries/com/mojang/minecraft/<v>/minecraft-<v>-client.jar) и Modrinth App (meta/versions/<v>/<v>.jar)."""
+        share = os.path.join(self.root, 'share')
+        lib = os.path.join(share, 'PrismLauncher', 'libraries', 'com', 'mojang', 'minecraft', '99.1')
+        os.makedirs(lib)
+        shutil.copy(self.cli, os.path.join(lib, 'minecraft-99.1-client.jar'))
+        meta = os.path.join(share, 'ModrinthApp', 'meta', 'versions', '99.1')
+        os.makedirs(meta)
+        shutil.copy(self.cli, os.path.join(meta, '99.1.jar'))
+        old = {k: os.environ.get(k) for k in ('HOME', 'XDG_DATA_HOME')}
+        os.environ['HOME'] = os.path.join(self.root, 'nohome')
+        os.environ['XDG_DATA_HOME'] = share
+        try:
+            found = [j for j in pack.scan_jars(kinds=('client',)) if j.version == '99.1']
+            extra = os.path.join(self.root, 'mmc')                          # папка, указанная пользователем (portable MultiMC)
+            os.makedirs(os.path.join(extra, 'libraries', 'com', 'mojang', 'minecraft', '99.1'))
+            shutil.copy(self.cli, os.path.join(extra, 'libraries', 'com', 'mojang', 'minecraft', '99.1', 'minecraft-99.1-client.jar'))
+            found_extra = [j for j in pack.scan_jars((extra,), kinds=('client',)) if j.version == '99.1']
+        finally:
+            for k, v in old.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        if sys.platform.startswith('linux'):
+            self.assertEqual(len(found), 2, found)
+            self.assertEqual(len(found_extra), 3, found_extra)
+        else:
+            self.assertGreaterEqual(len(found_extra), 1)
+
+    def test_missing_jar_message(self):
+        gone = os.path.join(self.root, 'downloads', 'server-99.1.jar')
+        with self.assertRaises(pack.PackError) as cm:
+            pack.prepare(gone, '', fake_reports(os.path.join(self.root, 'r')))
+        self.assertIn('does not exist', str(cm.exception))
+        self.assertNotIn('does not look like', str(cm.exception))
+
+    def test_windows_path_budget(self):
+        self.assertTrue(paths.win_cache_fits('C:\\mcgen'))
+        long_root = ('C:\\Users\\User\\AppData\\Roaming\\Blender Foundation\\Blender\\5.2\\extensions\\.user\\user_default\\mcgen\\cache')
+        self.assertFalse(paths.win_cache_fits(long_root))
+        longest = 'data/minecraft/advancement/recipes/building_blocks/' + 'x' * 88 + '.json'        # самая длинная запись датапака ≈ 139 символов
+        old = sys.platform
+        try:
+            sys.platform = 'win32'
+            with self.assertRaises(pack.PackError) as cm:
+                pack.check_path_budget('C:\\' + 'a' * 100, [longest])
+            self.assertIn('too long', str(cm.exception))
+            pack.check_path_budget('C:\\mcgen\\packs\\26.3-33680f5f2a.part', [longest])               # короткий корень укладывается
+        finally:
+            sys.platform = old
+
+    def test_default_cache_is_short_on_windows(self):
+        long_root = 'C:\\' + 'a' * 120
+        old_plat, old_bpy, old_env = sys.platform, paths._bpy_cache, {k: os.environ.get(k) for k in ('LOCALAPPDATA', 'MCGEN_CACHE')}
+        paths.set_cache_override(None)
+        try:
+            sys.platform = 'win32'
+            paths._bpy_cache = lambda: long_root
+            os.environ.pop('MCGEN_CACHE', None)
+            os.environ['LOCALAPPDATA'] = 'C:\\Users\\u\\AppData\\Local'
+            self.assertEqual(paths.cache_dir(create=False), os.path.join('C:\\Users\\u\\AppData\\Local', 'mcgen'))
+            paths._bpy_cache = lambda: 'C:\\short'
+            self.assertEqual(paths.cache_dir(create=False), 'C:\\short')       # короткий путь Blender сохраняется
+            paths.set_cache_override(long_root)
+            self.assertEqual(paths.cache_dir(create=False), long_root)       # явный выбор пользователя уважается
+        finally:
+            sys.platform, paths._bpy_cache = old_plat, old_bpy
+            for k, v in old_env.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+            paths.set_cache_override(None)
+
     def test_java_major_parsing(self):
         fake = os.path.join(self.root, 'java')
         with open(fake, 'w') as f:
@@ -1095,15 +1171,17 @@ class RealLibraryTests(unittest.TestCase):
         w = self.gen.world('minecraft:overworld', 'normal', 12345)
         base_stages = lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN | lib.MC_STAGE_SURFACE | lib.MC_STAGE_CARVERS
         a = self.region(w, 0, 0, 6, 6, base_stages, 0)
-        seen, fr = {}, []
+        seen, fr, seen_seq = {}, [], []
 
         def cb(f, what):
             seen.setdefault((what or '').split(' ', 1)[0], []).append(what)
             fr.append(f)
+            seen_seq.append(what)
             return False
         b = self.region(w, 0, 0, 6, 6, lib.MC_STAGE_ALL, 0, cb)
         self.assertTrue({'terrain', 'done'} <= set(seen), sorted(seen))
-        self.assertTrue(all(x <= y + 1e-9 for x, y in zip(fr, fr[1:])), 'прогресс не монотонен')
+        drops = [(i, round(x, 4), round(y, 4), (seen_seq[i], seen_seq[i + 1])) for i, (x, y) in enumerate(zip(fr, fr[1:])) if x > y + 1e-9]
+        self.assertFalse(drops, f'прогресс не монотонен: {drops[:5]}')
         self.assertAlmostEqual(fr[-1], 1.0)
         import re
         for what in seen.get('terrain', []):
@@ -1312,6 +1390,96 @@ class TaskTests(unittest.TestCase):
         t.cancel()
         t.join(2)
         self.assertEqual(t.state, 'cancelled')
+
+
+class GpuBuildTests(unittest.TestCase):
+    """Сборка CUDA-библиотеки на машине пользователя (core/gpu_build.py): чистые функции без nvcc + настоящая сборка, если nvcc есть."""
+
+    def test_parse_compute_caps(self):
+        self.assertEqual(gpu_build.parse_compute_caps('8.9\n8.6\n8.9\n'), ['86', '89'])
+        self.assertEqual(gpu_build.parse_compute_caps('12.0\r\n'), ['120'])
+        self.assertEqual(gpu_build.parse_compute_caps('N/A\n\nNo devices were found'), [])
+
+    def test_nvcc_command_flags(self):
+        src = gpu_build.sources_dir()
+        win = gpu_build.nvcc_command('nvcc', src, 'out.dll', ['89'], '75', windows=True)
+        lin = gpu_build.nvcc_command('nvcc', src, 'out.so', ['86', '89'], '75', windows=False)
+        for cmd in (win, lin):
+            self.assertIn('--fmad=false', cmd)                    # бит-точность с CPU
+            self.assertIn('-ftz=false', cmd)
+            self.assertIn('arch=compute_75,code=compute_75', cmd)  # PTX для будущих карт
+            self.assertFalse(any('fast' in a and 'math' in a for a in cmd))
+            self.assertEqual(cmd[-3:], [os.path.join(src, f) for f in gpu_build.SRC_FILES])
+        self.assertIn('/fp:strict,/MT,/EHsc', win)
+        self.assertIn('arch=compute_89,code=sm_89', win)
+        self.assertNotIn('arch=compute_86,code=sm_86', win)
+        self.assertIn('arch=compute_86,code=sm_86', lin)
+        self.assertTrue(any(a.startswith('--version-script=') for a in lin))     # на Linux экспорт только mcgpu_*
+        self.assertEqual(win[win.index('-o') + 1], 'out.dll')
+        self.assertIn('-allow-unsupported-compiler', gpu_build.nvcc_command('nvcc', src, 'o', ['89'], extra=('-allow-unsupported-compiler',)))
+
+    def test_bat_quoting(self):
+        p = os.path.join(tempfile.mkdtemp(), 'b.bat')
+        gpu_build.write_build_bat(p, ['C:\\CUDA v12\\bin\\nvcc.exe', '-DX=100%', 'a&b.cu'], 'C:\\VS\\vcvars64.bat')
+        with open(p, 'rb') as f:
+            text = f.read().decode('utf-8', 'replace')
+        self.assertIn('call "C:\\VS\\vcvars64.bat"', text)
+        self.assertIn('"C:\\CUDA v12\\bin\\nvcc.exe"', text)      # пробелы — в кавычках
+        self.assertIn('-DX=100%%', text)                        # % в .bat удваивается
+        self.assertIn('"a&b.cu"', text)                         # & — в кавычках
+        self.assertIn('\r\n', text)
+
+    def test_toolchain_problems(self):
+        old = (gpu_build.find_nvcc, gpu_build.sources_dir)
+        try:
+            gpu_build.find_nvcc = lambda hint='': None
+            tc = gpu_build.toolchain()
+            self.assertIsNotNone(tc['problem'])
+            self.assertIn('nvcc', tc['problem'][0])
+            gpu_build.sources_dir = lambda: None
+            self.assertIn('sources', gpu_build.toolchain()['problem'][0])
+            with self.assertRaises(pack.PackError):
+                gpu_build.build(tasks.Task('x', lambda t: None))
+        finally:
+            gpu_build.find_nvcc, gpu_build.sources_dir = old
+
+    def test_sources_are_complete(self):
+        d = gpu_build.sources_dir()
+        self.assertTrue(d, 'нет libmcgen/gpu')
+        for f in gpu_build.SRC_FILES + ('mcgpu.map', 'mcgpu_internal.h', 'mcgen_gpu_abi.h'):
+            self.assertTrue(os.path.isfile(os.path.join(d, f)), f)
+        self.assertTrue(os.path.isfile(os.path.join(d, '..', '..', 'engine', 'mc_rng.h')))
+        self.assertEqual(len(gpu_build.sources_hash(d)), 12)
+
+    def test_activate_without_build(self):
+        paths.set_cache_override(os.path.join(tempfile.mkdtemp(), 'cache'))
+        try:
+            self.assertIsNone(gpu_build.built_library())
+            self.assertIsNone(gpu_build.activate(object(), ''))
+        finally:
+            paths.set_cache_override(None)
+
+    @unittest.skipUnless(os.environ.get('MCGEN_TEST_GPU_BUILD') == '1' and gpu_build.find_nvcc(), 'MCGEN_TEST_GPU_BUILD=1 и nvcc: настоящая сборка занимает несколько минут')
+    def test_real_build_and_load(self):
+        paths.set_cache_override(os.path.join(tempfile.mkdtemp(), 'cache'))
+        try:
+            t = tasks.Task('gpu_build', gpu_build.build_worker).start()
+            t.run_blocking()
+            self.assertEqual(t.state, 'done', t.error_text)
+            info = t.result
+            self.assertTrue(os.path.isfile(info['path']))
+            self.assertEqual(gpu_build.built_library(), info['path'])
+            self.assertEqual(gpu_build.stamp()['sources'], gpu_build.sources_hash(gpu_build.sources_dir()))
+            # настоящая CUDA-библиотека: загружается, ABI тот же, что ждёт мост libmcgen; подключается через mcgen_gpu_set_library_path
+            import ctypes
+            so = ctypes.CDLL(info['path'])
+            self.assertGreaterEqual(so.mcgpu_abi(), 1)
+            self.assertGreaterEqual(so.mcgpu_device_count(), 0)
+            L = lib.load()
+            fake_libmcgen = os.path.join(tempfile.mkdtemp(), os.path.basename(L.path))      # рядом нет своей libmcgen_cuda: подключается собранная
+            self.assertEqual(gpu_build.activate(L.dll, fake_libmcgen), info['path'])
+        finally:
+            paths.set_cache_override(None)
 
 
 class CatalogTests(unittest.TestCase):

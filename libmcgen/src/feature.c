@@ -9,7 +9,6 @@ void structures_decorate_step(FCtx *fc, FRnd *rnd, i64 dec_seed, int step, int c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <sys/stat.h>
 
 /* ====================================================================== реестр типов фич */
 #define MAX_TYPES 160
@@ -64,7 +63,7 @@ int fp_fail(FParse *p, const char *fmt, ...) {
 }
 const Js *fp_cfg(const Js *f) { Js *c = js_get(f, "config"); return js_is_obj(c) ? c : f; }
 
-static int dir_exists(const char *path) { struct stat st; return stat(path, &st) == 0 && S_ISDIR(st.st_mode); }
+static int dir_exists(const char *path) { return mc_is_dir(path); }
 
 const Js *fp_load_json(FParse *p, const char *kind, const char *id) {
     FWorld *fw = p->fw;
@@ -209,7 +208,7 @@ FWorld *features_world_get(McWorld *w) {
     fw->ok = 1;
     const char *dump = getenv("MCGEN_FEATURES_DUMP_ORDER");     /* тест FeatureSorter: JSON {"steps":[[id,…],…]} */
     if (dump && *dump) {
-        FILE *f = fopen(dump, "w");
+        FILE *f = mc_fopen(dump, "w");
         if (f) {
             fprintf(f, "{\"steps\":[");
             for (int st = 0; st < fw->nsteps; st++) {
@@ -459,7 +458,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
             else if (!strcmp(ord, "file")) {
                 /* воспроизведение записанного порядка шагов FEATURES настоящего сервера (tools/gt/jfr_order.py --txt):
                  * MCGEN_FEATURES_ORDER=<файл> — строки «cx cz» в порядке выполнения; чанки вне окна пропускаются */
-                const char *fo = getenv("MCGEN_FEATURES_ORDER"); FILE *fp = fo ? fopen(fo, "r") : NULL;
+                const char *fo = getenv("MCGEN_FEATURES_ORDER"); FILE *fp = fo ? mc_fopen(fo, "r") : NULL;
                 if (fp) {
                     char line[128];
                     while (fgets(line, sizeof line, fp)) {
@@ -527,7 +526,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 depth[i] = d + 1; if (depth[i] > maxd) maxd = depth[i];
                 grid[(lz[i] - gz0) * gnx + (lx[i] - gx0)]->seq = i;
             }
-            { const char *eo = getenv("MCGEN_FEATURES_ORDER_OUT"); FILE *fo = eo && *eo ? fopen(eo, "w") : NULL;
+            { const char *eo = getenv("MCGEN_FEATURES_ORDER_OUT"); FILE *fo = eo && *eo ? mc_fopen(eo, "w") : NULL;
               if (fo) { for (int i = 0; i < m; i++) fprintf(fo, "%d %d\n", lx[i], lz[i]); fclose(fo); } }
             int *ox = xmalloc(sizeof(int) * (size_t)m), *oz = xmalloc(sizeof(int) * (size_t)m), *cnt = xcalloc((size_t)maxd + 2, sizeof(int)), *start = xcalloc((size_t)maxd + 2, sizeof(int));
             for (int i = 0; i < m; i++) cnt[depth[i]]++;
@@ -542,7 +541,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 int nthr = nt < dj.count ? nt : dj.count; if (nthr < 1) nthr = 1;
                 if (nthr == 1) dec_worker(&dj);
                 else { McThread **th = xcalloc((size_t)nthr, sizeof(McThread *)); for (int i = 0; i < nthr; i++) th[i] = thread_start(dec_worker, &dj); for (int i = 0; i < nthr; i++) thread_join(th[i]); free(th); }
-                if ((d & 15) == 0 && cb && cb(ud, 0.9 + 0.08 * d / (maxd + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
+                if ((d & 15) == 0 && cb && cb(ud, 0.9 + 0.06 * d / (maxd + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
             }
             free(ox); free(oz); free(cnt); free(start); free(lx); free(lz); free(pos); free(depth);
             dj.lx = dj.lz = NULL;
@@ -586,7 +585,7 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 int nthr = nt < dj.count ? nt : dj.count; if (nthr < 1) nthr = 1;
                 if (nthr == 1) dec_worker(&dj);
                 else { McThread **th = xcalloc((size_t)nthr, sizeof(McThread *)); for (int i = 0; i < nthr; i++) th[i] = thread_start(dec_worker, &dj); for (int i = 0; i < nthr; i++) thread_join(th[i]); free(th); }
-                if ((t & 31) == 0 && cb && cb(ud, 0.9 + 0.08 * t / (tmax + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
+                if ((t & 31) == 0 && cb && cb(ud, 0.9 + 0.06 * t / (tmax + 1.0), "features")) { snprintf(e, sizeof e, "отменено"); rc = 1; }
             }
             free(dj.lx); free(dj.lz);
             g_stats.chunks += dj.done; g_stats.placed_calls += dj.calls; g_stats.unimpl_skipped += dj.skipped;
