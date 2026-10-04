@@ -700,6 +700,48 @@ class T04_Operators(unittest.TestCase):
         run_job('generate')                                                  # после отмены всё работает
         self.assertEqual(len(self.objs()), 14 * 14 if not REAL else 24 * 24)
 
+    def test_cancel_after_the_worker_finished_is_still_honoured(self):
+        """Кнопка отмены, нажатая когда рабочий поток уже закончил генерацию (интерфейс ещё не забрал результат), раньше игнорировалась и сцена всё равно строилась."""
+        run_job('generate')
+        sess = jobs.session(bpy.context.scene.name)
+        before = sess.region
+        stamps = {k: v['mcgen_stamp'] for k, v in self.objs().items()}
+        S().seed = '555555'
+        params = ops.collect_params(bpy.context.scene, None)
+        job = jobs.GenerateJob(bpy.context.scene, params, mode='update', skey=bpy.context.scene.name, sink_pref='FALLBACK').start()
+        job.task.join(120)                                                   # поток закончил, poll() результат ещё не забирал
+        self.assertTrue(job.task.finished)
+        job.cancel()
+        self.assertTrue(job.cancel_requested)
+        self.assertEqual(job.message, 'Cancelling …')
+        t0 = time.time()
+        while not job.finished and time.time() - t0 < 60:
+            job.poll(0.01)
+        self.assertEqual(job.state, 'cancelled')
+        self.assertIs(sess.region, before)                                   # результат выброшен, прежняя сцена не тронута
+        self.assertEqual({k: v['mcgen_stamp'] for k, v in self.objs().items()}, stamps)
+
+    def test_cancel_all_keeps_the_job_busy_until_it_stops(self):
+        """«Отмена» не должна сразу объявлять работу законченной: иначе можно запустить вторую задачу поверх первой."""
+        class FakeOp:
+            class _P:
+                finished = False
+                cancelled = 0
+
+                def cancel(self):
+                    self.cancelled += 1
+            _pump = _P()
+        op = FakeOp()
+        ops._active.append(op)
+        try:
+            self.assertTrue(ops.busy())
+            self.assertEqual(ops.cancel_all(), 1)
+            self.assertEqual(op._pump.cancelled, 1)
+            self.assertIn(op, ops._active)                                   # остаётся в списке активных, пока задача сама не завершится
+            self.assertTrue(ops.busy())
+        finally:
+            ops._active.remove(op)
+
     @unittest.skipUnless(REAL, 'нужна настоящая библиотека: слои меняют содержимое чанков')
     def test_update_after_enabling_features_and_structures(self):
         s = S()
@@ -1184,6 +1226,11 @@ def main():
     suite = unittest.TestSuite()
     for cls in (T01_Registration, T02_Properties, T03_Panels, T04_Operators, T05_W4Adapter, T05b_EditTools, T05c_SinkLifetime, T06_Presets, T07_Translations, T07b_BlendFile, T08_Unregister):
         suite.addTests(loader.loadTestsFromTestCase(cls))
+    only = os.environ.get('MCGEN_TEST_ONLY')                  # отладка: подстрока(и) имён тестов через запятую
+    if only:
+        keys = [k for k in only.split(',') if k]
+        flat = [x for x in suite]
+        suite = unittest.TestSuite([x for x in flat if any(k in x.id() for k in keys)])
     t0 = time.time()
     res = unittest.TextTestRunner(verbosity=2).run(suite)
     summary = {'blender': bpy.app.version_string, 'python': sys.version.split()[0], 'backend': BACKEND, 'ext': EXT, 'run': res.testsRun,

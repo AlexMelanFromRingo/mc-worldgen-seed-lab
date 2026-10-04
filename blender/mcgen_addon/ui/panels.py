@@ -29,6 +29,22 @@ def _fmt_bytes(n):
 
 # ---- главная панель: кнопки и прогресс ---------------------------------------------------------------------------------------------
 
+def draw_progress(layout):
+    """Полоса прогресса работающей задачи с кнопкой отмены (общая для главной панели, Resources и блока GPU: длинная панель прокручивается, и кнопка не должна теряться)."""
+    pump = next((op._pump for op in ops._active if getattr(op, '_pump', None) and not op._pump.finished), None)
+    if pump is None:
+        return False
+    cancelling = pump.cancelling
+    f = max(0.0, min(1.0, pump.fraction))
+    text = iface_('Cancelling …') if cancelling else (i18n.progress_text(pump.message) if pump.message else iface_('Working …'))
+    row = layout.row(align=True)
+    row.progress(factor=f, text=f'{text}  {int(f * 100)}%', type='BAR')
+    sub = row.row(align=True)
+    sub.enabled = not cancelling
+    sub.operator('mcgen.cancel', text='', icon='CANCEL')
+    return True
+
+
 def draw_main(layout, context):
     s = _s(context)
     layout.use_property_split = False
@@ -45,12 +61,7 @@ def draw_main(layout, context):
     row2.operator('mcgen.biome_map', icon='IMAGE_DATA')
     row2.operator('mcgen.clear', icon='TRASH')
     if running:
-        pump = next((op._pump for op in ops._active if getattr(op, '_pump', None) and not op._pump.finished), None)
-        if pump is not None:
-            row = layout.row(align=True)
-            f = max(0.0, min(1.0, pump.fraction))
-            row.progress(factor=f, text=f'{i18n.progress_text(pump.message) if pump.message else iface_("Working …")}  {int(f * 100)}%', type='BAR')
-            row.operator('mcgen.cancel', text='', icon='CANCEL')
+        draw_progress(layout)
     st = s.stats
     if st.error:
         box = layout.box()
@@ -220,6 +231,7 @@ def draw_resources(layout, context, prefs=None, in_prefs=False):
         layout.label(text=iface_('Enable the add-on to edit its preferences'), icon='ERROR')
         return
     s = context.scene.mcgen if (context.scene and hasattr(context.scene, 'mcgen')) else None
+    draw_progress(layout)                      # подготовка ресурсов идёт долго: прогресс и «Отмена» — здесь же, а не только в главной панели
     box = layout.box()
     box.label(text=iface_('Minecraft jars (your own copy, not shipped)'), icon='FILE_FOLDER')
     box.prop(prefs, 'server_jar')
@@ -283,6 +295,7 @@ def draw_gpu(layout, context):
     """Блок «Compute»: режим, устройство, самопроверка, причины отказа, замеры."""
     st = gpu.status()
     box = layout.box()
+    draw_progress(box)                         # сборка GPU-библиотеки: прогресс и «Отмена» рядом с кнопкой
     row = box.row()
     row.label(text=iface_('Compute: {m}').format(m=st.get('mode') or iface_('CPU')), icon='MEMORY' if st.get('ready') else 'SYSTEM')
     row.operator('mcgen.gpu_selftest', text='', icon='CHECKMARK')

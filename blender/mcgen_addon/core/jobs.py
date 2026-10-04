@@ -68,12 +68,14 @@ def _generate_worker(task, params, pack_dir, reuse):
     t0 = time.perf_counter()
     gen = backend.open_gen(pack_dir, params.version)
     t['open'] = time.perf_counter() - t0
+    task.check()                                 # контрольные точки отмены: библиотека проверяет её только между шагами обратного вызова прогресса
     world = reuse
     if world is None:
         t0 = time.perf_counter()
         task.report(0.02, 'Creating world')
         world = gen.world(params.dimension, params.preset, params.seeds, params.tweaks_dict(), params.schedule)
         t['world'] = time.perf_counter() - t0
+        task.check()
     stage_times = {}
     last = [time.perf_counter(), None]
 
@@ -93,6 +95,7 @@ def _generate_worker(task, params, pack_dir, reuse):
     if last[1] is not None:
         stage_times[last[1]] = stage_times.get(last[1], 0.0) + (now - last[0])
     t['generate'] = now - t0
+    task.check()
     stage_times.pop('done', None)
     structs = None
     if params.stages & 32:                                   # MC_STAGE_STRUCTURES: список стартов (типы, координаты) для панели Stats
@@ -158,6 +161,7 @@ class GenerateJob:
         self._t0 = 0.0
         self._gen_result = None
         self._ctx = None
+        self.cancel_requested = False
 
     # --- запуск ---
     def start(self):
@@ -213,7 +217,8 @@ class GenerateJob:
                 self.message = t.message
                 if not t.finished:
                     return self.state
-                if t.state == 'cancelled':
+                if self.cancel_requested or t.state == 'cancelled':          # отмена нажата — результат (даже готовый) выбрасывается, сцена не строится
+                    self._discard_generated(t)
                     self.state, self.phase, self.message = 'cancelled', 'done', 'Cancelled'
                     return self.state
                 if t.state == 'error':
@@ -238,6 +243,20 @@ class GenerateJob:
             self.tb = traceback.format_exc()
             self.state, self.phase = 'error', 'done'
         return self.state
+
+    def _discard_generated(self, t):
+        """Освобождает регион и мир, созданные отменённой генерацией (кроме принадлежащих сессии)."""
+        r = t.result if isinstance(getattr(t, 'result', None), dict) else None
+        if not r:
+            return
+        s = self.sess
+        for key, keep in (('region', s.region), ('world', s.world)):             # gen — общий экземпляр из кэша backend: его закрывать нельзя
+            obj = r.get(key)
+            if obj is not None and obj is not keep:
+                try:
+                    obj.close()
+                except Exception:      # noqa: BLE001 - освобождение необязательно
+                    pass
 
     def _begin_build(self, gen, world, region, changed):
         s = self.sess
@@ -294,6 +313,12 @@ class GenerateJob:
         self.state, self.phase, self.message = 'done', 'done', 'Done'
 
     def cancel(self):
+        """Запрос отмены. Фаза генерации: рабочий поток останавливается на ближайшей контрольной точке (библиотека проверяет отмену между шагами прогресса), а если он уже
+        закончил — poll() выбрасывает результат; сцена не строится. Фаза построения: останавливается сразу."""
+        if self.finished:
+            return
+        self.cancel_requested = True
+        self.message = 'Cancelling …'
         if self.task and not self.task.finished:
             self.task.cancel()
         if self.phase == 'build':

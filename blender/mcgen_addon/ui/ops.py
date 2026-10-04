@@ -101,6 +101,10 @@ class _Pump:
     def cancel(self):
         self.obj.cancel()
 
+    @property
+    def cancelling(self):
+        return bool(getattr(self.obj, 'cancel_requested', False))
+
 
 class McGenPumpOperator(Operator):
     """Базовый класс: подкласс задаёт start(context) -> объект с finished/fraction/message/cancel() [и poll()] и finish(context, obj)."""
@@ -198,6 +202,18 @@ class McGenPumpOperator(Operator):
 
 def busy():
     return any(not op._pump.finished for op in _active if getattr(op, '_pump', None))
+
+
+def cancel_all():
+    """Кнопка «Отмена»: запрос отмены всем работающим задачам. Операторы остаются в _active, пока задача не остановится (busy() верно показывает, что работа ещё идёт,
+    и нельзя запустить вторую поверх первой); интерфейс видит cancelling и пишет «Cancelling …»."""
+    n = 0
+    for op in list(_active):
+        pump = getattr(op, '_pump', None)
+        if pump is not None and not pump.finished:
+            pump.cancel()
+            n += 1
+    return n
 
 
 def stop_all():
@@ -324,7 +340,9 @@ class MCGEN_OT_cancel(Operator):
     bl_description = 'Cancel the running MC World job'
 
     def execute(self, context):
-        stop_all()
+        if cancel_all():
+            self.report({'INFO'}, rpt('Cancelling …'))
+        tag_redraw(context)
         return {'FINISHED'}
 
 

@@ -65,6 +65,10 @@ class Task:
     def should_cancel(self):
         return self._cancel.is_set()
 
+    @property
+    def cancel_requested(self):
+        return self._cancel.is_set()
+
     # --- вызывается из главного потока ---
     @property
     def fraction(self):
