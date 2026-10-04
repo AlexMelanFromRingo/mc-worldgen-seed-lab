@@ -92,13 +92,69 @@ def win_cache_fits(root):
     return len(root) + WIN_PATH_BUDGET <= WIN_MAX_PATH
 
 
+def is_packaged_app():
+    """Windows: Blender запущен как упакованное приложение (Microsoft Store / MSIX). Такие приложения не пишут в AppData по-настоящему:
+    записи перенаправляются в приватную папку пакета (…\\Packages\\<пакет>\\LocalCache\\…), и внешние программы (Java, nvcc, cmd) этих файлов не видят."""
+    if not sys.platform.startswith('win'):
+        return False
+    try:
+        import ctypes
+        n = ctypes.c_uint32(0)
+        return ctypes.windll.kernel32.GetCurrentPackageFullName(ctypes.byref(n), None) != 15700      # APPMODEL_ERROR_NO_PACKAGE
+    except Exception:       # noqa: BLE001 - старая Windows без этой функции: определяем по пути exe
+        return 'windowsapps' in (sys.executable or '').lower()
+
+
+NO_WINDOW = 0x08000000 if sys.platform.startswith('win') else 0         # CREATE_NO_WINDOW: дочерние консольные программы без мигающего окна
+_visible = {}
+
+
+def children_see_files(d):
+    """Видит ли ДОЧЕРНИЙ процесс (Java, cmd, nvcc) файлы, которые мы пишем в каталог d. Проверка прямая: пишем пробный файл и просим cmd его прочитать.
+    Если не удалось даже запустить cmd — считаем, что видит (не блокируем без причины)."""
+    if not sys.platform.startswith('win'):
+        return True
+    if d in _visible:
+        return _visible[d]
+    import subprocess
+    ok = False
+    probe = os.path.join(d, f'.probe-{os.getpid()}')
+    try:
+        os.makedirs(d, exist_ok=True)
+        with open(probe, 'w') as f:
+            f.write('1')
+        try:
+            r = subprocess.run([os.environ.get('COMSPEC', 'cmd.exe'), '/d', '/c', 'type', probe], capture_output=True, timeout=30, creationflags=NO_WINDOW)
+            ok = r.returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            ok = True
+        finally:
+            try:
+                os.remove(probe)
+            except OSError:
+                pass
+    except OSError:
+        ok = False
+    _visible[d] = ok
+    return ok
+
+
 def _default_cache():
+    win = sys.platform.startswith('win')
     d = _bpy_cache()
-    if d and sys.platform.startswith('win') and not win_cache_fits(d):
-        d = None
+    if win:
+        if is_packaged_app():
+            # Blender из Microsoft Store: ни AppData, ни путь расширения не подходят (внешние программы их не видят) — каталог пользователя вне AppData
+            cands = [os.path.join(os.path.expanduser('~'), '.mcgen'), 'C:\\mcgen']
+            for c in cands:
+                if children_see_files(c):
+                    return c
+            return cands[0]
+        if d and not win_cache_fits(d):
+            d = None
     if d:
         return d
-    if sys.platform.startswith('win'):
+    if win:
         return os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), 'mcgen')
     if sys.platform == 'darwin':
         return os.path.expanduser('~/Library/Caches/mcgen')

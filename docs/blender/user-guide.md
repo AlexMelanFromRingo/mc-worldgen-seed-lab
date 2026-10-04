@@ -38,10 +38,10 @@
 
 | Платформа | Файл |
 |---|---|
-| Windows x64 | `mcgen-0.1.2-windows-x64.zip` |
-| Linux x64 | `mcgen-0.1.2-linux-x64.zip` |
-| macOS (Apple Silicon) | `mcgen-0.1.2-macos-arm64.zip` |
-| macOS (Intel) | `mcgen-0.1.2-macos-x64.zip` |
+| Windows x64 | `mcgen-0.1.3-windows-x64.zip` |
+| Linux x64 | `mcgen-0.1.3-linux-x64.zip` |
+| macOS (Apple Silicon) | `mcgen-0.1.3-macos-arm64.zip` |
+| macOS (Intel) | `mcgen-0.1.3-macos-x64.zip` |
 
 Файлы собирает `python3 tools/build_extension.py` (каталог `blender/dist/`; библиотеки под все четыре платформы строятся кросс-компилятором zig: `python3 libmcgen/build.py`). В zip лежат только наш код и библиотека `libmcgen` — **ни одного файла Mojang** в нём нет.
 
@@ -50,7 +50,7 @@
 3. Blender покажет запрашиваемые разрешения — **Files** (читать ваши jar игры и держать кэш распакованных данных) и **Network** (необязательно: скачивание jar у Mojang). Подтвердите.
 4. Расширение «MC Worldgen» включается сразу; проверить можно в **Preferences ▸ Add-ons**.
 
-Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.2-linux-x64.zip`.
+Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.3-linux-x64.zip`.
 
 Где искать интерфейс: **Properties editor ▸ вкладка Scene ▸ панель «MC World»** и та же панель в **боковой панели 3D-вида (клавиша `N`) ▸ вкладка «MC World»**. Вкладки в редакторе свойств Python добавлять не позволяет, поэтому «вкладка» — верхняя панель Scene с подпанелями, как у Render. Язык интерфейса — английский; при выборе русского языка Blender (**Preferences ▸ Interface ▸ Language**) аддон переводится целиком (включая подписи и описания всех ползунков).
 
@@ -113,7 +113,12 @@
 
 Моды в лаунчере не мешают: нужно лишь, чтобы там лежал чистый jar Mojang нужной версии. Jar'ы модлоадеров (Forge / Fabric / NeoForge) и «склеенные» сборки не подходят: аддон их отклонит сообщением «does not look like a Mojang client/server jar». Расположение файлов в Prism / MultiMC / Modrinth App проверено по устройству этих лаунчеров и на тестовых каталогах; если у вас другая раскладка, укажите jar вручную (шаг 2) — это работает всегда.
 
-**Windows: длина путей и Microsoft Store.** Windows по умолчанию не открывает файлы, путь к которым длиннее 259 символов, а датапак игры содержит имена до ~140 символов. Если папка кэша глубоко вложена (так бывает у Blender из Microsoft Store: `…\AppData\Local\Packages\BlenderFoundation.Blender_…\LocalCache\Roaming\Blender Foundation\Blender\5.2\extensions\.user\user_default\mcgen\cache`), аддон сам выбирает короткую папку `%LOCALAPPDATA%\mcgen`. Если вы указали свою **Cache folder**, держите путь короче ~70 символов (например, `C:\mcgen`); слишком длинный путь аддон отклонит заранее понятной ошибкой, а не посреди распаковки. Не-ASCII имена (кириллица в имени пользователя) библиотека открывает через «широкие» API Windows (UTF-8 → UTF-16); если с такими путями всё же что-то пойдёт не так, укажите Cache folder вида `C:\\mcgen`.
+**Windows: Blender из Microsoft Store и длинные пути.** Здесь две отдельные беды.
+
+* **Лимит 259 символов.** Windows по умолчанию не открывает файлы, путь к которым длиннее 259 символов, а датапак игры содержит имена до ~140 символов. Если свою **Cache folder** вы задаёте сами, держите путь коротким (например, `C:\mcgen`); слишком длинный путь аддон отклонит заранее понятной ошибкой, а не посреди распаковки.
+* **Виртуализация AppData.** Blender из Microsoft Store — «упакованное» приложение: всё, что он пишет в `…\AppData\…`, на самом деле попадает в приватную папку `…\AppData\Local\Packages\BlenderFoundation.Blender_…\LocalCache\…`. Сам Blender свои файлы видит, а **внешние программы — нет**: Java (генератор данных игры) отвечает «Unable to access jarfile …», `cmd` — «`build_gpu.bat` не является внутренней или внешней командой», а в Проводнике «папки по этому пути нет». Аддон 0.1.3+ распознаёт такую установку и сам кладёт кэш в `%USERPROFILE%\.mcgen` (запасной вариант — `C:\mcgen`), причём проверяет это не догадкой, а пробным файлом, который читает дочерний процесс. Если вы указали **Cache folder** внутри AppData, аддон скажет об этом ошибкой и подскажет выход: папка вне AppData, например `C:\mcgen`. Версия Blender с blender.org (не из Store) этим не страдает.
+
+Не-ASCII имена (кириллица в имени пользователя) библиотека открывает через «широкие» API Windows (UTF-8 → UTF-16); если с такими путями всё же что-то пойдёт не так, укажите Cache folder вида `C:\mcgen`.
 
 ## 3. Быстрый старт
 
@@ -376,6 +381,7 @@ python3 tools/gt/record_schedule.py convert ~/rec/schedule.jfr --dim overworld -
 | «Resources not prepared» / Generate отказывается | не выполнена **Prepare Resources** для выбранной версии; галки «ready» в панели Resources должны быть все |
 | «Java 25+ not found» | установите JRE 25 (Temurin/Adoptium, Oracle, Microsoft…) или укажите её в поле **Java**; можно взять среду лаунчера Minecraft. Без Java: поле **Reports folder** с готовым `reports/blocks.json` |
 | «Block flags: missing» | не удалось выполнить наш класс правил декораций (нет Java) — генерация работает, но часть декораций использует эвристики |
+| «The cache folder … is hidden from other programs» / «Unable to access jarfile» / «`build_gpu.bat` не является внутренней…» (Windows) | Blender из Microsoft Store: AppData виртуализировано, внешние программы (Java, cmd, nvcc) не видят файлов кэша — см. [§2.1](#21-свои-jar-официальный-лаунчер-multimc--prism-modrinth). Аддон 0.1.3+ сам берёт `%USERPROFILE%\.mcgen`; на 0.1.2 задайте в настройках **Cache folder** = `C:\mcgen`, выберите jar заново и нажмите Prepare Resources |
 | «The cache folder path is too long for Windows» / `FileNotFoundError` при Prepare Resources (Windows) | путь кэша + имена датапака длиннее 259 символов (типично для Blender из Microsoft Store). Аддон версии 0.1.2+ выбирает короткий `%LOCALAPPDATA%\mcgen` сам; если вы задали **Cache folder** — укажите короткую, например `C:\mcgen`, и снова нажмите Prepare Resources (после **Clear Cache** файл jar в кэше исчезает: выберите jar заново или нажмите Download) |
 | «The jar file … does not exist» | файл jar из полей удалён или перенесён — чаще всего после **Clear Cache** (скачанный Download jar лежал в кэше); выберите jar заново или нажмите Download |
 | «… does not look like a Mojang server/client jar» | это не чистый jar Mojang (нет `version.json`), он повреждён или перепутаны server и client; см. [§2.1](#21-свои-jar-официальный-лаунчер-multimc--prism-modrinth) |

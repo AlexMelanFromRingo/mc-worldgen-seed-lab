@@ -103,6 +103,9 @@ def main():
             if a.v and R['top_pairs']:
                 for t in R['top_pairs'][:6]:
                     print('      ', t)
+            if a.v and a.list and R.get('samples'):
+                for sm in R['samples'][:a.list]:
+                    print('       @', sm['x'], sm['y'], sm['z'], sm['ours'], '<-', sm['ref'])
     if a.json:
         out = [dict(set=r[0], world=r[1], error=True) if not r[2] else dict(set=r[0], world=r[1], area_pct=r[2][0], area_mismatch=r[2][1], chunks=r[2][2], chunk_mismatch=r[2][3],
                      chunk_pct=r[2][4], secs=r[2][5], structures=sorted(set(r[2][6])), struct_blocks=r[2][7], struct_pct=r[2][8]) for r in rows]

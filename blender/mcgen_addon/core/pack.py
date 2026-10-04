@@ -218,7 +218,7 @@ def java_major(path):
         return _java_cache[path]
     major = None
     try:
-        r = subprocess.run([path, '-version'], capture_output=True, text=True, timeout=20)
+        r = subprocess.run([path, '-version'], capture_output=True, text=True, timeout=20, creationflags=paths.NO_WINDOW)
         m = re.search(r'version "(\d+)(?:\.(\d+))?', r.stderr + r.stdout)
         if m:
             major = int(m.group(2)) if m.group(1) == '1' and m.group(2) else int(m.group(1))
@@ -271,10 +271,29 @@ def java_candidates():
     return res
 
 
+def check_children_visible():
+    """Внешние программы (Java генератора данных, nvcc) должны видеть файлы кэша. Blender из Microsoft Store перенаправляет записи в AppData
+    в приватную папку пакета — тогда понятная ошибка с выходом (папка вне AppData), а не «Unable to access jarfile»."""
+    d = paths.cache_dir()
+    if not paths.children_see_files(d):
+        raise PackError('The cache folder "{path}" is hidden from other programs: Blender from the Microsoft Store redirects AppData to a private folder, so Java and nvcc cannot see the files. '
+                        'Set "Cache folder" in the add-on preferences to a folder outside AppData, for example C:\\mcgen, and prepare the resources again.', path=d)
+
+
+def console_java(path):
+    """javaw.exe (без консоли: ни вывода, ни кода ошибки, только окно) заменяем соседней java.exe."""
+    if path and os.path.basename(path).lower() == 'javaw.exe':
+        alt = os.path.join(os.path.dirname(path), 'java.exe')
+        if os.path.isfile(alt):
+            return alt
+    return path
+
+
 def find_java(min_major, preferred=None):
     """(путь, major) первой Java с major >= min_major (preferred — путь из настроек), иначе None."""
     cands = ([preferred] if preferred else []) + java_candidates()
     for p in cands:
+        p = console_java(p)
         if p and os.path.isfile(p):
             m = java_major(p)
             if m is not None and m >= min_major:
@@ -469,11 +488,12 @@ def reports_from_folder(folder):
 
 def run_data_generator(server_jar, java, out_dir, task=None, timeout=1800):
     """Запускает генератор данных игры; результат — out_dir/reports/*.json. Возвращает каталог reports."""
+    check_children_visible()
     work = tempfile.mkdtemp(prefix='mcgen-gen-', dir=paths.cache_dir())
     try:
         out = os.path.join(work, 'out')
-        cmd = [java, '-DbundlerMainClass=net.minecraft.data.Main', '-jar', os.fspath(server_jar), '--reports', '--output', out]
-        proc = subprocess.Popen(cmd, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace')
+        cmd = [console_java(java), '-DbundlerMainClass=net.minecraft.data.Main', '-jar', os.fspath(server_jar), '--reports', '--output', out]
+        proc = subprocess.Popen(cmd, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', creationflags=paths.NO_WINDOW)
         t0 = time.time()
         providers = 0
         tail = []
@@ -555,8 +575,9 @@ def bundle_classpath(server_jar, java, work, task=None):
             joined = z.read('META-INF/classpath-joined').decode().strip()
     except (KeyError, OSError, zipfile.BadZipFile):
         raise PackError('Could not unpack the server bundle: {log}', log='no META-INF/classpath-joined')
-    r = subprocess.run([java, '-DbundlerMainClass=net.minecraft.data.Main', '-jar', os.fspath(server_jar), '--help'], cwd=work,
-                       capture_output=True, text=True, timeout=300)
+    check_children_visible()
+    r = subprocess.run([console_java(java), '-DbundlerMainClass=net.minecraft.data.Main', '-jar', os.fspath(server_jar), '--help'], cwd=work,
+                       capture_output=True, text=True, timeout=300, creationflags=paths.NO_WINDOW)
     if r.returncode != 0:
         raise PackError('Could not unpack the server bundle: {log}', log=(r.stderr or r.stdout)[-400:])
     parts = [os.path.join(work, *p.split('/')) for p in joined.split(';') if p]
@@ -584,8 +605,8 @@ def run_block_flags(server_jar, java, out_path, task=None, timeout=900):
                 raise PackError('javac failed on BlockFlags.java:\n{log}', log=r.stderr[-800:])
         tmp = out_path + '.tmp'
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        cmd = [java, '-Xss8m', '--sun-misc-unsafe-memory-access=allow', '-cp', cls_dir + os.pathsep + cp, FLAGS_CLASS, tmp]
-        proc = subprocess.Popen(cmd, cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace')
+        cmd = [console_java(java), '-Xss8m', '--sun-misc-unsafe-memory-access=allow', '-cp', cls_dir + os.pathsep + cp, FLAGS_CLASS, tmp]
+        proc = subprocess.Popen(cmd, cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, errors='replace', creationflags=paths.NO_WINDOW)
         t0 = time.time()
         while proc.poll() is None:
             if task and task.should_cancel():

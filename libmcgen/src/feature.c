@@ -247,7 +247,11 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
     u64 xs = (u64)frnd_long(&rnd) | 1ull, zs = (u64)frnd_long(&rnd) | 1ull;
     i64 dec = (i64)(((u64)(i64)ox * xs + (u64)(i64)oz * zs) ^ (u64)seed);
     frnd_seed(&rnd, dec);
-    if (c->no_features) { for (int step = 0; step < 11; step++) structures_decorate_step(c, &rnd, dec, step, cx, cz); return; }   /* только постройки (structure.c) */
+    if (c->no_features) {                         /* только постройки (structure.c) */
+        for (int step = 0; step < 11; step++) structures_decorate_step(c, &rnd, dec, step, cx, cz);
+        fc_snapshot_sections(c, c->grid[(cz - c->gz0) * c->gnx + (cx - c->gx0)]);   /* видимость света соседям — как в полном конвейере: иначе маска пуста, и грибы построек (особняк) гибнут */
+        return;
+    }
     /* биомы в окне 3×3 чанков */
     u8 mask[32]; memset(mask, 0, sizeof mask);
     for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) {

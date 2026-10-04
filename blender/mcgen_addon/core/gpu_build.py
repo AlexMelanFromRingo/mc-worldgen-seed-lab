@@ -20,7 +20,7 @@ import threading
 import time
 
 from . import paths
-from .pack import PackError
+from .pack import PackError, check_children_visible
 from .tasks import Cancelled
 
 WINDOWS = sys.platform.startswith('win')
@@ -136,7 +136,7 @@ def find_nvcc(hint=''):
 def nvcc_version(nvcc):
     """'12.0' из `nvcc --version` или ''."""
     try:
-        r = subprocess.run([nvcc, '--version'], capture_output=True, text=True, timeout=60, errors='replace')
+        r = subprocess.run([nvcc, '--version'], capture_output=True, text=True, timeout=60, errors='replace', creationflags=paths.NO_WINDOW)
         m = re.search(r'release (\d+\.\d+)', r.stdout + r.stderr)
         return m.group(1) if m else ''
     except (OSError, subprocess.SubprocessError):
@@ -146,7 +146,7 @@ def nvcc_version(nvcc):
 def nvcc_supported(nvcc, what='code'):
     """Множество поддерживаемых этим nvcc архитектур ('75', '89', …) по `nvcc --list-gpu-code|--list-gpu-arch`; пусто — не удалось узнать."""
     try:
-        r = subprocess.run([nvcc, '--list-gpu-' + what], capture_output=True, text=True, timeout=60, errors='replace')
+        r = subprocess.run([nvcc, '--list-gpu-' + what], capture_output=True, text=True, timeout=60, errors='replace', creationflags=paths.NO_WINDOW)
         return {m for m in re.findall(r'(?:sm|compute)_(\d+)', r.stdout)}
     except (OSError, subprocess.SubprocessError):
         return set()
@@ -175,7 +175,7 @@ def detect_arches():
     if not smi:
         return []
     try:
-        r = subprocess.run([smi, '--query-gpu=compute_cap', '--format=csv,noheader'], capture_output=True, text=True, timeout=30, errors='replace')
+        r = subprocess.run([smi, '--query-gpu=compute_cap', '--format=csv,noheader'], capture_output=True, text=True, timeout=30, errors='replace', creationflags=paths.NO_WINDOW)
         return parse_compute_caps(r.stdout) if r.returncode == 0 else []
     except (OSError, subprocess.SubprocessError):
         return []
@@ -191,7 +191,7 @@ def find_vcvars():
         for extra, enc in ((['-utf8'], 'utf-8'), ([], 'mbcs')):
             try:
                 r = subprocess.run([vsw, '-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-property', 'installationPath'] + extra,
-                                   capture_output=True, timeout=60)
+                                   capture_output=True, timeout=60, creationflags=paths.NO_WINDOW)
                 if r.returncode == 0 and r.stdout.strip():
                     bat = os.path.join(r.stdout.decode(enc, 'replace').strip().splitlines()[0], 'VC', 'Auxiliary', 'Build', 'vcvars64.bat')
                     if os.path.isfile(bat):
@@ -257,18 +257,18 @@ def _bat_quote(a):
 
 
 def write_build_bat(path, cmd, vcvars):
-    lines = ['@echo off']
+    lines = ['@echo off', 'chcp 65001 >nul']                    # вывод cmd/cl/nvcc в UTF-8: журнал читается на любой локали
     if vcvars:
         lines += [f'call "{vcvars}" >nul', 'if errorlevel 1 exit /b 101']
     lines += [' '.join(_bat_quote(a) for a in cmd), 'exit /b %errorlevel%']
-    with open(path, 'w', encoding='mbcs' if WINDOWS else 'utf-8', errors='replace', newline='\r\n') as f:
+    with open(path, 'w', encoding='utf-8', newline='') as f:
         f.write('\r\n'.join(lines) + '\r\n')
 
 
 def _kill(proc):
     try:
         if WINDOWS:
-            subprocess.run(['taskkill', '/T', '/F', '/PID', str(proc.pid)], capture_output=True, timeout=30)
+            subprocess.run(['taskkill', '/T', '/F', '/PID', str(proc.pid)], capture_output=True, timeout=30, creationflags=paths.NO_WINDOW)
         else:
             proc.kill()
     except (OSError, subprocess.SubprocessError):
@@ -277,8 +277,7 @@ def _kill(proc):
 
 def _run(task, argv, cwd, label):
     """Запускает argv, читает вывод в журнал, передаёт прогресс по времени, по отмене убивает дерево процессов. -> (код, текст вывода)."""
-    enc = 'oem' if WINDOWS else 'utf-8'
-    proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding=enc, errors='replace')
+    proc = subprocess.Popen(argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace', creationflags=paths.NO_WINDOW)      # .bat включает chcp 65001
     lines = []
 
     def reader():
@@ -316,6 +315,7 @@ def build(task, nvcc_hint='', arches=None, keep_log=True):
     """Собирает библиотеку в <кэш>/gpu/. Возвращает словарь {'path','nvcc','arches','seconds','pending'}; ошибки — PackError с текстом для пользователя."""
     tc = toolchain(nvcc_hint)
     _problem(tc)
+    check_children_visible()                          # nvcc и cmd должны видеть файлы кэша (Blender из Microsoft Store их прячет в AppData)
     src_dir = tc['sources']
     out_dir = gpu_dir(create=True)
     work = os.path.join(out_dir, 'work')

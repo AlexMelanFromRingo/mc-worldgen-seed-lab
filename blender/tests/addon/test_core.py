@@ -691,12 +691,59 @@ class PackSyntheticTests(unittest.TestCase):
         finally:
             sys.platform = old
 
+    def test_store_blender_cache_outside_appdata(self):
+        """Blender из Microsoft Store: AppData виртуализирован, внешние программы (Java, nvcc) файлов не видят — кэш уходит в каталог пользователя вне AppData."""
+        old = (sys.platform, paths.is_packaged_app, paths.children_see_files, paths._bpy_cache, os.environ.get('MCGEN_CACHE'))
+        paths.set_cache_override(None)
+        os.environ.pop('MCGEN_CACHE', None)
+        try:
+            sys.platform = 'win32'
+            paths.is_packaged_app = lambda: True
+            paths._bpy_cache = lambda: 'C:\\Users\\u\\AppData\\Roaming\\Blender Foundation\\Blender\\5.2\\extensions\\.user\\user_default\\mcgen\\cache'
+            paths.children_see_files = lambda d: True
+            c = paths.cache_dir(create=False)
+            self.assertTrue(c.endswith('.mcgen'), c)
+            self.assertNotIn('AppData', c)
+            paths.children_see_files = lambda d: d == 'C:\\mcgen'                       # профиль тоже не подошёл — запасной C:\mcgen
+            self.assertEqual(paths.cache_dir(create=False), 'C:\\mcgen')
+        finally:
+            sys.platform, paths.is_packaged_app, paths.children_see_files, paths._bpy_cache = old[:4]
+            if old[4] is not None:
+                os.environ['MCGEN_CACHE'] = old[4]
+
+    def test_hidden_cache_gives_clear_error(self):
+        old = paths.children_see_files
+        try:
+            paths.children_see_files = lambda d: False
+            with self.assertRaises(pack.PackError) as cm:
+                pack.check_children_visible()
+            self.assertIn('hidden from other programs', str(cm.exception))
+            self.assertIn(paths.cache_dir(False), str(cm.exception))
+            paths.children_see_files = lambda d: True
+            pack.check_children_visible()
+        finally:
+            paths.children_see_files = old
+
+    def test_children_see_files_on_posix(self):
+        d = tempfile.mkdtemp()
+        self.assertTrue(paths.children_see_files(d))                    # вне Windows проверка не нужна
+
+    def test_javaw_is_replaced_by_java(self):
+        d = tempfile.mkdtemp()
+        for n in ('javaw.exe', 'java.exe'):
+            open(os.path.join(d, n), 'w').close()
+        self.assertEqual(pack.console_java(os.path.join(d, 'javaw.exe')), os.path.join(d, 'java.exe'))
+        self.assertEqual(pack.console_java(os.path.join(d, 'java.exe')), os.path.join(d, 'java.exe'))
+        os.remove(os.path.join(d, 'java.exe'))
+        self.assertEqual(pack.console_java(os.path.join(d, 'javaw.exe')), os.path.join(d, 'javaw.exe'))     # нет java.exe — не трогаем
+
     def test_default_cache_is_short_on_windows(self):
         long_root = 'C:\\' + 'a' * 120
-        old_plat, old_bpy, old_env = sys.platform, paths._bpy_cache, {k: os.environ.get(k) for k in ('LOCALAPPDATA', 'MCGEN_CACHE')}
+        old_plat, old_bpy, old_pk, old_env = sys.platform, paths._bpy_cache, paths.is_packaged_app, {k: os.environ.get(k) for k in ('LOCALAPPDATA', 'MCGEN_CACHE')}
         paths.set_cache_override(None)
         try:
             sys.platform = 'win32'
+            paths.is_packaged_app = lambda: False
             paths._bpy_cache = lambda: long_root
             os.environ.pop('MCGEN_CACHE', None)
             os.environ['LOCALAPPDATA'] = 'C:\\Users\\u\\AppData\\Local'
@@ -706,7 +753,7 @@ class PackSyntheticTests(unittest.TestCase):
             paths.set_cache_override(long_root)
             self.assertEqual(paths.cache_dir(create=False), long_root)       # явный выбор пользователя уважается
         finally:
-            sys.platform, paths._bpy_cache = old_plat, old_bpy
+            sys.platform, paths._bpy_cache, paths.is_packaged_app = old_plat, old_bpy, old_pk
             for k, v in old_env.items():
                 if v is None:
                     os.environ.pop(k, None)
@@ -1428,6 +1475,7 @@ class GpuBuildTests(unittest.TestCase):
         self.assertIn('-DX=100%%', text)                        # % в .bat удваивается
         self.assertIn('"a&b.cu"', text)                         # & — в кавычках
         self.assertIn('\r\n', text)
+        self.assertIn('chcp 65001', text)                       # вывод в UTF-8
 
     def test_toolchain_problems(self):
         old = (gpu_build.find_nvcc, gpu_build.sources_dir)
