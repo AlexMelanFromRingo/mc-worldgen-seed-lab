@@ -175,8 +175,8 @@
    Изолированные фичи от порядка почти не зависят (`ice_patch`: 16 блоков — один конфликт двух соседних дисков).
 3. **`WorldgenRandom` ≠ `XoroshiroRandomSource`** по методам (§3.2 п. 1) — иначе ни одна фича не совпадёт; это самое важное наблюдение каркаса.
 4. **Карты высот зависят от версии**: `*_WG` — снимок после TERRAIN во всех версиях (поправка W10: ленивая модель 26.3 была неверной). 26.4 принята как 26.3 (эталона нет).
-5. **Освещение в декорациях не считается** (свет = 0, как в игре на этой стадии — освещение считается позже, поэтому условие грибов `getRawBrightness < 13` всегда выполнено). Планируемые тики (`scheduleTick`) не выполняются — как в эталоне с `tick freeze`.
-6. **Пометки пост-обработки** (`markAboveForPostProcessing`, `postProcess` блоков) пишутся в `PPMarks` региона, растекание — W1 (`fluidpp.c`); `updateFromNeighbourShapes` для не-жидкостей (потеря растений на диске и т. п.) пока не реализован — нужен группе «растительность».
+5. **Свет в декорациях** — не «0 всегда»: игра читает свет движка «как есть», и условие грибов `getRawBrightness < 13` зависит от того, какие соседние чанки уже «видны» световому потоку (гонка потоков); модель — `fc_sky_light` (`feature_region.c`, лаг по умолчанию 3 шага или точная маска из записи JFR), при пост-обработке FULL — настоящий свет (`light.c`). Подробности — `nondeterminism.md`. Планируемые тики (`scheduleTick`) не выполняются — как в эталоне с `tick freeze`.
+6. **Пометки пост-обработки** (`markAboveForPostProcessing`, `postProcess` блоков) пишутся в `PPMarks` региона, растекание — `fluidpp.c`; `updateFromNeighbourShapes` для не-жидкостей реализован в `structure_post.c` (растения, грибы, лоза, какао, мультигрань, ступени, заборы и т. д.).
 7. **26.4-snapshot-2**: биомы блоков в игре хранятся поблочно; каркас берёт клетки 4×4×4 региона (как 26.3) — без эталона точность не заявляется; `feature.c` использует `surface_apply_chunk_ex`/`surface_carves_inside`.
 8. **Нереализованный тип** не ломает порядок: фича занимает индекс и ничего не ставит; вложенные нереализованные фичи в реализованном селекторе тоже молча пропускаются (в таблице — «частично»).
 9. **Проверки версий 26.1/26.2** выполнены на уровне порядка фич (9/9) и разбора всех форматов JSON (`config`-обёртка, `Name`/`Properties`, `configured_feature`); эталонных миров фич для них у W6 пока нет (запрошены `ore_diamond`, `ore_coal_lower`, `disk_grass`, `forest_rock`).
@@ -200,38 +200,38 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 «частично» — реализован верхний тип, но вложенная фича (дерево, патч, блок-колонна…) не реализована и молча пропускается; «не начата» — тип не реализован. В таблице 210 placed_feature, достижимых из биомов трёх измерений
 (остальные из 273 — вложенные в селекторы/постройки).
 
-Всего placed_feature в биомах измерений (26.3): 210; реализована: 91, проверена: 50, не начата: 39, частично: 28, реализована (расхождения): 2
+Всего placed_feature в биомах измерений (26.3): 210; реализована: 158, проверена: 50, реализована (расхождения): 2
 
 | placed_feature | тип фичи | измерения | шаг | статус | G5i (изоляция) |
 |---|---|---|---|---|---|
-| `amethyst_geode` | `geode` | overworld | LOCAL_MODIFICATIONS | не начата | — |
-| `bamboo` | `bamboo` | overworld | VEGETAL_DECORATION | не начата | — |
-| `bamboo_light` | `bamboo` | overworld | VEGETAL_DECORATION | не начата | — |
+| `amethyst_geode` | `geode` | overworld | LOCAL_MODIFICATIONS | реализована | — |
+| `bamboo` | `bamboo` | overworld | VEGETAL_DECORATION | реализована | — |
+| `bamboo_light` | `bamboo` | overworld | VEGETAL_DECORATION | реализована | — |
 | `bamboo_vegetation` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `basalt_blobs` | `netherrack_replace_blobs` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `basalt_pillar` | `overlay` | nether | LOCAL_MODIFICATIONS | реализована | — |
-| `birch_tall` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
+| `birch_tall` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `blackstone_blobs` | `netherrack_replace_blobs` | nether | UNDERGROUND_DECORATION | реализована | — |
-| `blue_ice` | `blue_ice` | overworld | SURFACE_STRUCTURES | не начата | — |
+| `blue_ice` | `blue_ice` | overworld | SURFACE_STRUCTURES | реализована | — |
 | `brown_mushroom_dappled_forest` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `brown_mushroom_nether` | `simple_block` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `brown_mushroom_normal` | `simple_block` | nether,overworld | VEGETAL_DECORATION | реализована | — |
 | `brown_mushroom_old_growth` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `brown_mushroom_swamp` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `brown_mushroom_taiga` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
-| `cave_vines` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
+| `cave_vines` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
 | `chorus_plant` | `chorus_plant` | end | VEGETAL_DECORATION | реализована | — |
-| `classic_vines_cave_feature` | `vines` | overworld | VEGETAL_DECORATION | не начата | — |
+| `classic_vines_cave_feature` | `vines` | overworld | VEGETAL_DECORATION | реализована | — |
 | `crimson_forest_vegetation` | `simple_block` | nether | VEGETAL_DECORATION | реализована | — |
-| `crimson_fungi` | `huge_fungus` | nether | VEGETAL_DECORATION | не начата | — |
-| `dark_forest_vegetation` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
+| `crimson_fungi` | `huge_fungus` | nether | VEGETAL_DECORATION | реализована | — |
+| `dark_forest_vegetation` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `delta` | `delta_feature` | nether | SURFACE_STRUCTURES | реализована | — |
-| `desert_well` | `overlay` | overworld | SURFACE_STRUCTURES | частично | — |
+| `desert_well` | `overlay` | overworld | SURFACE_STRUCTURES | реализована | — |
 | `disk_clay` | `disk` | overworld | UNDERGROUND_ORES | проверена | 100 % (168 блоков эффекта), 100 % (33 блоков эффекта) |
 | `disk_grass` | `disk` | overworld | UNDERGROUND_ORES | проверена | 100 % (14798 блоков эффекта) |
 | `disk_gravel` | `disk` | overworld | UNDERGROUND_ORES | проверена | 100 % (684 блоков эффекта), 100 % (87 блоков эффекта) |
 | `disk_sand` | `disk` | overworld | UNDERGROUND_ORES | проверена | 100 % (2389 блоков эффекта), 100 % (557 блоков эффекта) |
-| `dripstone_cluster` | `speleothem_cluster` | overworld | UNDERGROUND_DECORATION | не начата | — |
+| `dripstone_cluster` | `speleothem_cluster` | overworld | UNDERGROUND_DECORATION | реализована | — |
 | `end_gateway_return` | `end_gateway` | end | SURFACE_STRUCTURES | реализована | — |
 | `end_island_decorated` | `end_island` | end | RAW_GENERATION | реализована | — |
 | `end_platform` | `end_platform` | end | TOP_LAYER_MODIFICATION | реализована | — |
@@ -247,28 +247,28 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 | `flower_warm` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `forest_flowers` | `simple_random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `forest_rock` | `block_blob` | overworld | LOCAL_MODIFICATIONS | проверена | 100 % (2880 блоков эффекта) |
-| `fossil_lower` | `fossil` | overworld | UNDERGROUND_STRUCTURES | не начата | — |
-| `fossil_upper` | `fossil` | overworld | UNDERGROUND_STRUCTURES | не начата | — |
-| `freeze_top_layer` | `freeze_top_layer` | overworld | TOP_LAYER_MODIFICATION | не начата | — |
-| `glow_lichen` | `multiface_growth` | overworld | VEGETAL_DECORATION | не начата | — |
+| `fossil_lower` | `fossil` | overworld | UNDERGROUND_STRUCTURES | реализована | — |
+| `fossil_upper` | `fossil` | overworld | UNDERGROUND_STRUCTURES | реализована | — |
+| `freeze_top_layer` | `freeze_top_layer` | overworld | TOP_LAYER_MODIFICATION | реализована | — |
+| `glow_lichen` | `multiface_growth` | overworld | VEGETAL_DECORATION | реализована | — |
 | `glowstone` | `random_neighbor_spread` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `glowstone_extra` | `random_neighbor_spread` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `ice_patch` | `disk` | overworld | SURFACE_STRUCTURES | реализована (расхождения) | 99.9999 % |
-| `ice_spike` | `spike` | overworld | SURFACE_STRUCTURES | не начата | — |
-| `iceberg_blue` | `iceberg` | overworld | LOCAL_MODIFICATIONS | не начата | — |
-| `iceberg_packed` | `iceberg` | overworld | LOCAL_MODIFICATIONS | не начата | — |
-| `kelp_cold` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
-| `kelp_warm` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
+| `ice_spike` | `spike` | overworld | SURFACE_STRUCTURES | реализована | — |
+| `iceberg_blue` | `iceberg` | overworld | LOCAL_MODIFICATIONS | реализована | — |
+| `iceberg_packed` | `iceberg` | overworld | LOCAL_MODIFICATIONS | реализована | — |
+| `kelp_cold` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
+| `kelp_warm` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
 | `lake_lava_surface` | `lake` | overworld | LAKES | реализована | эталон без эффекта |
 | `lake_lava_underground` | `lake` | overworld | LAKES | проверена | 100 % (2546 блоков эффекта), 100 % (939 блоков эффекта), 100 % (1985 блоков эффекта) |
 | `large_basalt_columns` | `weighted_random_selector` | nether | SURFACE_STRUCTURES | реализована | — |
-| `large_dripstone` | `large_dripstone` | overworld | LOCAL_MODIFICATIONS | не начата | — |
-| `lush_caves_ceiling_vegetation` | `vegetation_patch` | overworld | VEGETAL_DECORATION | не начата | — |
-| `lush_caves_clay` | `random_boolean_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `lush_caves_vegetation` | `vegetation_patch` | overworld | VEGETAL_DECORATION | не начата | — |
-| `monster_room` | `monster_room` | overworld | UNDERGROUND_STRUCTURES | не начата | — |
-| `monster_room_deep` | `monster_room` | overworld | UNDERGROUND_STRUCTURES | не начата | — |
-| `mushroom_island_vegetation` | `random_boolean_selector` | overworld | VEGETAL_DECORATION | частично | — |
+| `large_dripstone` | `large_dripstone` | overworld | LOCAL_MODIFICATIONS | реализована | — |
+| `lush_caves_ceiling_vegetation` | `vegetation_patch` | overworld | VEGETAL_DECORATION | реализована | — |
+| `lush_caves_clay` | `random_boolean_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `lush_caves_vegetation` | `vegetation_patch` | overworld | VEGETAL_DECORATION | реализована | — |
+| `monster_room` | `monster_room` | overworld | UNDERGROUND_STRUCTURES | реализована | — |
+| `monster_room_deep` | `monster_room` | overworld | UNDERGROUND_STRUCTURES | реализована | — |
+| `mushroom_island_vegetation` | `random_boolean_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `nether_sprouts` | `simple_block` | nether | VEGETAL_DECORATION | проверена | 100 % (3223 блоков эффекта) |
 | `ore_ancient_debris_large` | `scattered_ore` | nether | UNDERGROUND_DECORATION | проверена | 100 % (131 блоков эффекта) |
 | `ore_andesite_lower` | `ore` | overworld | UNDERGROUND_ORES | проверена | 100 % (86887 блоков эффекта) |
@@ -311,13 +311,13 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 | `ore_soul_sand` | `ore` | nether | UNDERGROUND_DECORATION | проверена | 100 % (9900 блоков эффекта) |
 | `ore_tuff` | `ore` | overworld | UNDERGROUND_ORES | проверена | 100 % (118885 блоков эффекта) |
 | `pale_garden_flowers` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
-| `pale_garden_vegetation` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `pale_moss_patch` | `vegetation_patch` | overworld | VEGETAL_DECORATION | не начата | — |
+| `pale_garden_vegetation` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `pale_moss_patch` | `vegetation_patch` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_berry_common` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_berry_rare` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_bush` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
-| `patch_cactus_decorated` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
-| `patch_cactus_desert` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
+| `patch_cactus_decorated` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
+| `patch_cactus_desert` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_crimson_roots` | `simple_block` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `patch_dead_bush` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_dead_bush_2` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
@@ -344,24 +344,24 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 | `patch_pumpkin` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_red_shrub` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_soul_fire` | `simple_block` | nether | UNDERGROUND_DECORATION | реализована | — |
-| `patch_sugar_cane` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
-| `patch_sugar_cane_badlands` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
-| `patch_sugar_cane_desert` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
-| `patch_sugar_cane_swamp` | `block_column` | overworld | VEGETAL_DECORATION | не начата | — |
+| `patch_sugar_cane` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
+| `patch_sugar_cane_badlands` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
+| `patch_sugar_cane_desert` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
+| `patch_sugar_cane_swamp` | `block_column` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_sunflower` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_tall_grass` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_tall_grass_2` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `patch_waterlily` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
-| `pointed_dripstone` | `simple_random_selector` | overworld | UNDERGROUND_DECORATION | частично | — |
+| `pointed_dripstone` | `simple_random_selector` | overworld | UNDERGROUND_DECORATION | реализована | — |
 | `red_mushroom_nether` | `simple_block` | nether | UNDERGROUND_DECORATION | реализована | — |
 | `red_mushroom_normal` | `simple_block` | nether,overworld | VEGETAL_DECORATION | реализована | — |
 | `red_mushroom_old_growth` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `red_mushroom_swamp` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `red_mushroom_taiga` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
-| `rooted_azalea_tree` | `root_system` | overworld | VEGETAL_DECORATION | не начата | — |
-| `rooted_sulfur_spring` | `root_system` | overworld | LAKES | не начата | — |
-| `sculk_patch_deep_dark` | `sequence` | overworld | UNDERGROUND_DECORATION | частично | — |
-| `sculk_vein` | `multiface_growth` | overworld | UNDERGROUND_DECORATION | не начата | — |
+| `rooted_azalea_tree` | `root_system` | overworld | VEGETAL_DECORATION | реализована | — |
+| `rooted_sulfur_spring` | `root_system` | overworld | LAKES | реализована | — |
+| `sculk_patch_deep_dark` | `sequence` | overworld | UNDERGROUND_DECORATION | реализована | — |
+| `sculk_vein` | `multiface_growth` | overworld | UNDERGROUND_DECORATION | реализована | — |
 | `sea_pickle` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `seagrass_cold` | `weighted_random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `seagrass_deep` | `weighted_random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
@@ -381,42 +381,44 @@ python3 tools/gt/diff.py --ref run/gt/26.3/features/overworld-s12345-c0_0-r10 --
 | `spring_open` | `spring_feature` | nether | UNDERGROUND_DECORATION | проверена | 100 % (14 блоков эффекта) |
 | `spring_water` | `spring_feature` | overworld | FLUID_SPRINGS | проверена | 100 % (11 блоков эффекта) |
 | `sulfur_pool` | `sequence` | overworld | LAKES | реализована | — |
-| `sulfur_spike` | `simple_random_selector` | overworld | UNDERGROUND_DECORATION | частично | — |
-| `sulfur_spike_cluster` | `speleothem_cluster` | overworld | UNDERGROUND_DECORATION | не начата | — |
+| `sulfur_spike` | `simple_random_selector` | overworld | UNDERGROUND_DECORATION | реализована | — |
+| `sulfur_spike_cluster` | `speleothem_cluster` | overworld | UNDERGROUND_DECORATION | реализована | — |
 | `trees_badlands` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
-| `trees_birch` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_birch_and_oak_leaf_litter` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_cherry` | `tree` | overworld | VEGETAL_DECORATION | не начата | — |
-| `trees_dappled_forest` | `weighted_random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_flower_forest` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_grove` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_jungle` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_mangrove` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_meadow` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_old_growth_pine_taiga` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_old_growth_spruce_taiga` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_plains` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_savanna` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_snowy` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
+| `trees_birch` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_birch_and_oak_leaf_litter` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_cherry` | `tree` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_dappled_forest` | `weighted_random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_flower_forest` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_grove` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_jungle` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_mangrove` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_meadow` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_old_growth_pine_taiga` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_old_growth_spruce_taiga` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_plains` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_savanna` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_snowy` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `trees_sparse_jungle` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
-| `trees_swamp` | `tree` | overworld | VEGETAL_DECORATION | не начата | — |
+| `trees_swamp` | `tree` | overworld | VEGETAL_DECORATION | реализована | — |
 | `trees_taiga` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
-| `trees_water` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_windswept_forest` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_windswept_hills` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `trees_windswept_savanna` | `random_selector` | overworld | VEGETAL_DECORATION | частично | — |
-| `twisting_vines` | `block_column` | nether | VEGETAL_DECORATION | не начата | — |
-| `underwater_magma` | `underwater_magma` | overworld | UNDERGROUND_ORES | не начата | — |
-| `vines` | `vines` | overworld | VEGETAL_DECORATION | не начата | — |
-| `warm_ocean_vegetation` | `simple_random_selector` | overworld | VEGETAL_DECORATION | частично | — |
+| `trees_water` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_windswept_forest` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_windswept_hills` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `trees_windswept_savanna` | `random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
+| `twisting_vines` | `block_column` | nether | VEGETAL_DECORATION | реализована | — |
+| `underwater_magma` | `underwater_magma` | overworld | UNDERGROUND_ORES | реализована | — |
+| `vines` | `vines` | overworld | VEGETAL_DECORATION | реализована | — |
+| `warm_ocean_vegetation` | `simple_random_selector` | overworld | VEGETAL_DECORATION | реализована | — |
 | `warped_forest_vegetation` | `simple_block` | nether | VEGETAL_DECORATION | реализована | — |
-| `warped_fungi` | `huge_fungus` | nether | VEGETAL_DECORATION | не начата | — |
-| `weeping_vines` | `overlay` | nether | VEGETAL_DECORATION | частично | — |
+| `warped_fungi` | `huge_fungus` | nether | VEGETAL_DECORATION | реализована | — |
+| `weeping_vines` | `overlay` | nether | VEGETAL_DECORATION | реализована | — |
 | `wildflowers_birch_forest` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 | `wildflowers_meadow` | `simple_block` | overworld | VEGETAL_DECORATION | реализована | — |
 
 
 ## 8. Приоритетный список оставшихся типов (для групп фич)
+
+> **Актуально на 2026-10-04:** все типы реализованы — в таблице §7 нет ни «не начата», ни «частично» (210 placed_feature: 158 реализованы и проверены только в сборе, 50 проверены в изоляции, 2 — с расхождениями). Список ниже — исторический (порядок работ по группам).
 
 > Пункт 1 (деревья, грибы-деревья, фунги, корневые системы) выполнен потоком W11: см. `docs/blender/features-trees.md` (устройство, таблица placed_feature × статус, недетерминизм игры, воспроизведение).
 > Пункты 3–5 (подземные, вода/лёд, Nether/End: геоды, дрипстоун, комнаты, окаменелости, скалк, лёд, `freeze_top_layer`, базальт, дельты, шипы/острова/хорус Края) выполнены потоком W12: см. `docs/blender/features-misc.md`.
