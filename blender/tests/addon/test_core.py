@@ -932,6 +932,40 @@ class RealLibraryTests(unittest.TestCase):
             self.assertEqual((w.min_y, w.height, w.sea_level), (miny, h, sea), d)
         self.assertEqual(self.gen.world('minecraft:overworld', 'normal', 1, {'sea_level_offset': 5}).sea_level, 68)
 
+    def test_schedule_file(self):
+        """mcgen_world_set_schedule: расписание записанного прогона сервера (.mcsched) — ошибки, смена порядка декораций, возврат к модели планировщика."""
+        if self.L.mcgen_world_set_schedule is None:
+            self.skipTest('в библиотеке нет mcgen_world_set_schedule')
+        import tempfile
+        d = tempfile.mkdtemp()
+        w = self.gen.world('minecraft:overworld', 'normal', 12345)
+        with self.assertRaises(lib.McError):
+            w.set_schedule(os.path.join(d, 'missing.mcsched'))
+        empty = os.path.join(d, 'empty.mcsched')
+        with open(empty, 'w') as f:
+            f.write('# нет строк F/P\n')
+        with self.assertRaises(lib.McError):
+            w.set_schedule(empty)
+        other = os.path.join(d, 'nether.mcsched')
+        with open(other, 'w') as f:
+            f.write('# dim the_nether\nF 0 0 0\n')
+        with self.assertRaises(lib.McError):
+            w.set_schedule(other)                                   # расписание другого измерения
+        area = (0, 0, 5, 5)
+        base = self.region(w, *area, 0x1f, 1)
+        chunks = [(cx, cz) for cx in range(-3, 9) for cz in range(-3, 9)]
+        rev = os.path.join(d, 'rev.mcsched')
+        with open(rev, 'w') as f:                                   # обход «x по убыванию, z по убыванию» с пустыми масками света
+            f.write('# dim overworld\n' + ''.join(f'F {x} {z} 0\n' for x, z in sorted(chunks, reverse=True)))
+        w.set_schedule(rev)
+        alt = self.region(w, *area, 0x1f, 1)
+        self.assertEqual(alt.info.nx, base.info.nx)
+        w.set_schedule('')                                          # сброс: снова модель планировщика, результат воспроизводим
+        again = self.region(w, *area, 0x1f, 1)
+        for cx in range(0, 5):
+            for cz in range(0, 5):
+                self.assertTrue((again.blocks(cx, cz) == base.blocks(cx, cz)).all(), (cx, cz))
+
     def test_errors(self):
         with self.assertRaises(lib.McError):
             self.gen.world('minecraft:nowhere', 'normal', 1)

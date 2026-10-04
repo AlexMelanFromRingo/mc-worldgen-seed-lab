@@ -403,6 +403,7 @@ RU = {
     # --- имена стадий (время по стадиям) ---
     'The library has no mcgen_structure_starts': 'В библиотеке нет mcgen_structure_starts',
     'The library has no mcgen_structure_piece_bb': 'В библиотеке нет mcgen_structure_piece_bb',
+    'The library has no mcgen_world_set_schedule': 'В библиотеке нет mcgen_world_set_schedule',
     'mcgen_structure_starts failed': 'mcgen_structure_starts завершилась с ошибкой',
     'Could not unpack the server bundle: {log}': 'Не удалось распаковать серверный bundle: {log}',
     'The BlockFlags helper class is not part of this build and no JDK (javac) is available to compile it': 'Вспомогательного класса BlockFlags нет в этой сборке, а JDK (javac) для его компиляции не найден',

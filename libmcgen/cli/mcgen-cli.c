@@ -3,6 +3,7 @@
  *   mcgen-cli --pack run/pack-26.3 --version 26.3 --dim minecraft:overworld --preset normal --seed 12345 \
  *             [--seeds climate,terrain,structures,features] [--tweak id=value …] \
  *             --cx0 0 --cz0 0 --nx 8 --nz 8 --stages 0x3f --threads 0 --out region.mcr
+ *             [--schedule файл.mcsched]  расписание записанного прогона сервера (tools/gt/record_schedule.py)
  *             [--pp-margin K]  растекание жидкостей только в чанках на расстоянии >= K от края (эмуляция загруженной
  *                              игрой области: внешние кольца FULL/proto-чанков postProcessGeneration не проходят)
  *   mcgen-cli info  --pack … --version …                        измерения, пресеты, число состояний/биомов, настройки
@@ -24,7 +25,7 @@ typedef struct {
     const char *cmd, *pack, *version, *dim, *preset, *out, *id;
     int64_t seed; int has_seeds; McSeeds seeds;
     McTweakValue tw[64]; int ntw;
-    int cx0, cz0, nx, nz, threads, pp_margin; unsigned stages;
+    int cx0, cz0, nx, nz, threads, pp_margin; unsigned stages; const char *schedule;
     int x0, z0, step, y;
 } Args;
 
@@ -72,6 +73,7 @@ static int parse_args(int argc, char **argv, Args *a) {
         else if (!strcmp(k, "--stages")) { NEXT(); a->stages = (unsigned)strtoul(v, NULL, 0); }
         else if (!strcmp(k, "--threads")) { NEXT(); a->threads = atoi(v); }
         else if (!strcmp(k, "--pp-margin")) { NEXT(); a->pp_margin = atoi(v); }
+        else if (!strcmp(k, "--schedule")) { NEXT(); a->schedule = v; }                 /* расписание записанного прогона сервера (.mcsched) */
         else if (!strcmp(k, "--out")) { NEXT(); a->out = v; }
         else if (!strcmp(k, "--id")) { NEXT(); a->id = v; }
         else if (!strcmp(k, "--x0")) { NEXT(); a->x0 = atoi(v); }
@@ -108,6 +110,7 @@ int main(int argc, char **argv) {
     }
     McWorld *w;
     if (mcgen_world_new(g, a.dim, a.preset, &a.seeds, a.tw, a.ntw, &w, err, sizeof err)) { fprintf(stderr, "mcgen_world_new: %s\n", err); mcgen_close(g); return 1; }
+    if (a.schedule && mcgen_world_set_schedule(w, a.schedule, err, sizeof err)) { fprintf(stderr, "mcgen_world_set_schedule: %s\n", err); mcgen_close(g); return 1; }
     if (a.cmd && !strcmp(a.cmd, "df")) {
         /* --id a,b,c — несколько функций за один запуск: вывод по функциям подряд */
         if (!a.id) { fprintf(stderr, "df: нужен --id\n"); return 2; }
