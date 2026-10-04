@@ -16,9 +16,20 @@ int main(int argc, char **argv) {
     for (int k = 0; k < RF__COUNT; k++) {
         if (!w->s_rf[k]) continue;
         McgProg p; const S *r[1] = { w->s_rf[k] };
-        gpu_export_new(r, 1, &p);
+        gpu_export_new(r, 1, 0, &p);
         int h[64] = {0}; for (int i = 0; i < p.nnodes; i++) h[p.nodes[i].k]++;
         printf("%-20s %4d узлов, %3d шумов %4d октав %3d сплайнов;", RN[k], p.nnodes, p.nnoise, p.noct, p.nsp);
+        for (int i = 0; i < 64; i++) if (h[i]) printf(" %s×%d", KN[i], h[i]);
+        printf("\n");
+        gpu_prog_free(&p);
+    }
+    static const char *AN[] = { "aq.barrier","aq.flood","aq.spread","aq.lava","aq.exclusion","aq.surface_level" };
+    for (int k = 0; k < AQ__COUNT; k++) {
+        if (!w->s_aq[k]) continue;
+        McgProg p; const S *r[1] = { w->s_aq[k] };
+        gpu_export_new(r, 1, 0, &p);
+        int h[64] = {0}; for (int i = 0; i < p.nnodes; i++) h[p.nodes[i].k]++;
+        printf("%-20s %4d узлов, %3d шумов %4d октав %3d сплайнов;", AN[k], p.nnodes, p.nnoise, p.noct, p.nsp);
         for (int i = 0; i < 64; i++) if (h[i]) printf(" %s×%d", KN[i], h[i]);
         printf("\n");
         gpu_prog_free(&p);

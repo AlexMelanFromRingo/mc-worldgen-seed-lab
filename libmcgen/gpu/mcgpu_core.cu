@@ -22,6 +22,7 @@ bool mcgpu_ensure_init(void) {
     if (e != cudaSuccess || n <= 0) { mcgpu_set_error("нет устройств CUDA: %s", e == cudaSuccess ? "0 устройств" : cudaGetErrorString(e)); return false; }
     if (g_dev < 0) g_dev = 0;
     if (g_dev >= n) { mcgpu_set_error("устройство %d не существует (всего %d)", g_dev, n); return false; }
+    cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);   /* ожидание GPU без «вращения» ядра CPU (рабочие потоки CPU заняты) */
     e = cudaSetDevice(g_dev);
     if (e != cudaSuccess) { mcgpu_set_error("cudaSetDevice(%d): %s", g_dev, cudaGetErrorString(e)); return false; }
     e = cudaFree(0);   /* создаёт контекст */

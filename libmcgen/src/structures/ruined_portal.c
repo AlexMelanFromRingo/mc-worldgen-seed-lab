@@ -67,7 +67,7 @@ static void add_vines(StCtx *c, int x, int y, int z) {                /* maybeAd
     int dir = HD[rs_bound(c->rs, 4)];
     int nx = x + DIR_DX[dir], nz = z + DIR_DZ[dir];
     if (!(bs->flags[fc_get(c->fc, nx, y, nz)] & BSF_AIR)) return;
-    if (!((bs->sturdy[st] >> dir) & 1)) return;                         /* Block.isFaceFull(collisionShape, direction) */
+    if (!((bs->flags[st] & BSF_FULL_COLL) || ((bs->sturdy[st] >> dir) & 1))) return;     /* Block.isFaceFull(collisionShape, direction): полный куб (листва: коллизия полная, опорная форма пуста) или прочная грань */
     static const char *DN[6] = { "down", "up", "north", "south", "west", "east" };
     int v = bs_with(bs, sp_st(c, "minecraft:vine"), DN[dir_opp(dir)], "true");
     if (v >= 0) fc_set(c->fc, nx, y, nz, v, 3);

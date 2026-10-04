@@ -5,6 +5,7 @@
 #include "carver.h"
 #include "surface.h"
 #include "feature.h"
+#include "gpu_bridge.h"
 void structures_begin_region(McWorld *w);   /* structure.c */
 void structure_shape_update(void *fw, int x, int y, int z);   /* structure_post.c */
 void features_post_chunk(void *fw, McWorld *w, int cx, int cz);  /* feature_miscx.c: пузырьковые столбцы над магмой/песком душ */
@@ -305,8 +306,8 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     return 0;
 }
 
-static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
-                    McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
+static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
+                         McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     if (!w || !out || nx <= 0 || nz <= 0 || (long)nx * nz > 1 << 20) { set_err(err, errlen, "mcgen_generate_region: аргументы"); return MCGEN_E_ARG; }
     *out = NULL;
     uint32_t sup = MC_STAGE_BIOMES | MC_STAGE_TERRAIN | MC_STAGE_SURFACE | MC_STAGE_CARVERS | MC_STAGE_FEATURES | MC_STAGE_STRUCTURES;
@@ -316,6 +317,8 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
     if (stages & MC_STAGE_STRUCTURES) stages |= MC_STAGE_TERRAIN | MC_STAGE_BIOMES;   /* постройки: Beardifier в заполнении, части — в цикле декорации (structure.c) */
     if (stages & MC_STAGE_STRUCTURES) structures_begin_region(w);                    /* части кэшированных стартов — в исходное состояние */
     w->struct_on = (stages & MC_STAGE_STRUCTURES) != 0;                              /* Beardifier учитывается в terrain_fill_chunk при любом числе потоков */
+    /* GPU (поток W7): опережающий расчёт плотности/жил для чанков региона и кольца гало; закрывается в generate() */
+    gpu_terrain_begin(w, cx0, cz0, nx, nz, stages, pp_margin < 0 && w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0);
     if (stages & ~sup & MC_STAGE_ALL) {
         /* стадии SURFACE и выше — другие потоки работ; пока считаем доступные */
         stages &= sup;
@@ -367,6 +370,12 @@ static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stage
     return MCGEN_OK;
 }
 
+static int generate(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
+                    McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
+    int rc = generate_impl(w, cx0, cz0, nx, nz, stages, threads, pp_margin, cb, ud, out, err, errlen);
+    if (w) gpu_terrain_end(w);
+    return rc;
+}
 int mcgen_generate_region(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads,
                           McProgressFn cb, void *ud, McRegion **out, char *err, size_t errlen) {
     return generate(w, cx0, cz0, nx, nz, stages, threads, -1, cb, ud, out, err, errlen);

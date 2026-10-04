@@ -18,7 +18,7 @@ SRCS=("$HERE"/mcgpu_core.cu "$HERE"/mcgpu_biome.cu)
 set -x
 "$NVCC" -O3 -std=c++17 --shared -Xcompiler -fPIC,-ffp-contract=off,-fvisibility=hidden -Xlinker -z,noexecstack \
   "${GEN[@]}" --fmad=false -prec-div=true -prec-sqrt=true -ftz=false \
-  -Xptxas -O3 -lineinfo -I"$HERE" ${EXTRA_NVFLAGS:-} \
+  -Xptxas -O3 -lineinfo -I"$HERE" -I"$HERE/../../engine" ${EXTRA_NVFLAGS:-} \
   -Xcompiler -static-libstdc++,-static-libgcc \
   -o "$OUT/libmcgen_cuda.so" "${SRCS[@]}"
 set +x

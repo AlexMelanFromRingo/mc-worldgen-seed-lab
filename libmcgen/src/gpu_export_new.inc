@@ -21,7 +21,7 @@ typedef struct {
     const S **skey; GCtx *sctx; int *sval; int ns, cap;  /* (S*, контекст) → индекс узла (мемо) */
     const NStack **nkey; int *nval; int nn, ncap;        /* NStack* → индекс McgNoise */
     int cap_nodes, cap_noise, cap_layers, cap_oct, cap_sp, cap_splf, cap_spc, cap_arr, cap_thr;
-    int fail;
+    int fail; int bake_ctx;     /* bake_ctx: 1 — срезы slice «запекаются» в контекст узлов (точечный вычислитель); 0 — срезы остаются узлами (объёмный исполнитель) */
 } GExp;
 
 #define GX_GROW(arr, n, cap) do { if ((n) >= (cap)) { (cap) = (cap) ? (cap) * 2 : 64; (arr) = xrealloc((arr), sizeof(*(arr)) * (size_t)(cap)); } } while (0)
@@ -82,7 +82,7 @@ static int gx_node(GExp *g, const S *s, GCtx cx) {
     n.cm = cx.cm; n.cx = cx.cx; n.cy = cx.cy; n.cz = cx.cz;
     n.i0 = s->i0; n.i1 = s->i1; n.i2 = s->i2; n.i3 = s->i3; n.f0 = s->f0; n.f1 = s->f1; n.f2 = s->f2; n.f3 = s->f3; n.d0 = s->d0; n.d1 = s->d1;
     GCtx cc = cx;      /* контекст детей: срезы фиксируют оси (позднейший срез перекрывает ранний) */
-    switch (s->k) {
+    if (g->bake_ctx) switch (s->k) {
     case K_SLICE_X: cc.cm |= 1; cc.cx = s->i0; break;
     case K_SLICE_Y: cc.cm |= 2; cc.cy = s->i0; break;
     case K_SLICE_Z: cc.cm |= 4; cc.cz = s->i0; break;
@@ -123,14 +123,51 @@ static int gx_node(GExp *g, const S *s, GCtx cx) {
     return idx;
 }
 /* roots[i] (NULL допустим) → prog->root[i]; 0 — успех */
-int gpu_export_new(const S *const *roots, int nroots, McgProg *out) {
+int gpu_export_new(const S *const *roots, int nroots, int bake_ctx, McgProg *out) {
     memset(out, 0, sizeof *out);
     GExp g; memset(&g, 0, sizeof g);
-    g.p = out; out->old = 0;
+    g.p = out; out->old = 0; g.bake_ctx = bake_ctx;
     if (nroots > MCG_MAX_ROOTS) nroots = MCG_MAX_ROOTS;
     out->nroots = nroots;
     GCtx top = { 0, 0, 0, 0 };
     for (int i = 0; i < nroots; i++) out->root[i] = roots[i] ? gx_node(&g, roots[i], top) : -1;
     free(g.skey); free(g.sctx); free(g.sval); free(g.nkey); free(g.nval);
     return 0;
+}
+
+/* ---- кэши: номера cid в дереве сэмплеров (для ячеек, которые CPU должен получить от GPU) ---- */
+typedef struct { const S **seen; int n, cap; int *ids; int nid, cid_cap; } GCol;
+static void gcol_walk(GCol *c, const S *s) {
+    if (!s) return;
+    for (int i = 0; i < c->n; i++) if (c->seen[i] == s) return;
+    if (c->n == c->cap) { c->cap = c->cap ? c->cap * 2 : 64; c->seen = xrealloc(c->seen, sizeof(*c->seen) * (size_t)c->cap); }
+    c->seen[c->n++] = s;
+    if (s->k == K_CACHE) {
+        int i = 0; for (; i < c->nid; i++) if (c->ids[i] == s->cid) break;
+        if (i == c->nid && c->nid < c->cid_cap) c->ids[c->nid++] = s->cid;
+    }
+    gcol_walk(c, s->a); gcol_walk(c, s->b); gcol_walk(c, s->c);
+    for (int i = 0; i < s->narr; i++) gcol_walk(c, s->arr[i]);
+    for (int i = 0; i < s->ncoord; i++) gcol_walk(c, s->coords[i]);
+}
+/* дописывает в ids (ёмкость cap, текущее число *n) номера кэшей дерева root; без дублей */
+void gpu_collect_cache_ids(const S *root, int *ids, int cap, int *n) {
+    GCol c; memset(&c, 0, sizeof c); c.ids = ids; c.nid = *n; c.cid_cap = cap;
+    gcol_walk(&c, root);
+    *n = c.nid; free(c.seen);
+}
+/* выставить ячейку кэша cid в контексте x (как после s_volume по объёму v): буфер values — vol_size(v) значений */
+void gpu_sctx_set_cell(SCtx *x, int cid, const Vol *v, const float *values) {
+    if (cid < 0 || cid >= x->ncells) return;
+    Cell *cl = &x->cells[cid];
+    int n = vol_size(v);
+    if (cl->cap < n) { free(cl->buf); cl->buf = xmalloc(sizeof(float) * (size_t)n); cl->cap = n; }
+    memcpy(cl->buf, values, sizeof(float) * (size_t)n);
+    cl->vol = *v; cl->has_buf = 1;
+}
+int gpu_sctx_cache_count(const SCtx *x) { return x->ncells; }
+/* тесты: прочитать ячейку кэша cid (объём и значения). 1 — ячейка выставлена */
+int gpu_sctx_get_cell(const SCtx *x, int cid, Vol *v, const float **values) {
+    if (cid < 0 || cid >= x->ncells || !x->cells[cid].has_buf) return 0;
+    *v = x->cells[cid].vol; *values = x->cells[cid].buf; return 1;
 }

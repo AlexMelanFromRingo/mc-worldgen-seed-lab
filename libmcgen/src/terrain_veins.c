@@ -121,3 +121,14 @@ void veins_apply_new(McWorld *w, SCtx *x, int cx, int cz, int y0, int ny, uint16
     }
     for (int i = 0; i < V->n; i++) { free(dens[i]); free(rich[i]); }
 }
+
+/* GPU (W7): правила жил для выгрузки в libmcgen_cuda. Возвращает число правил (0 — нет жил). */
+int veins_gpu_info(const McWorld *w, const S **dens, const S **rich, const S **gap, int *ore, int *raw, int *filler, float *raw_chance) {
+    const Veins *V = w->veins;
+    if (!V) return 0;
+    for (int i = 0; i < V->n; i++) {
+        dens[i] = V->r[i].density; rich[i] = V->r[i].richness; gap[i] = V->r[i].gap;
+        ore[i] = V->r[i].ore; raw[i] = V->r[i].raw; filler[i] = V->r[i].filler; raw_chance[i] = V->r[i].raw_chance;
+    }
+    return V->n;
+}

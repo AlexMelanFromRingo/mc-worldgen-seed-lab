@@ -9,7 +9,28 @@ static int cached_state(StructWorld *sw, const char *name) {
     intptr_t v = (intptr_t)sm_get(&sw->st_cache, name);
     mutex_unlock(sw->lock);
     if (v) return (int)v - 1;
-    int st = gen_state_id(sw->g, name);
+    /* BlockState из строки: блок по умолчанию + указанные свойства (в отличие от gen_state_id, который при неполном списке берёт первое подходящее состояние) */
+    int st = -1;
+    const char *br = strchr(name, '[');
+    if (br) {
+        char *base = xstrndup(name, (size_t)(br - name));
+        int blk = bs_block_index(sw->bs, base); free(base);
+        if (blk >= 0) {
+            st = sw->bs->blk[blk].def;
+            const char *p = br + 1;
+            while (st >= 0 && *p && *p != ']') {
+                const char *e = p; while (*e && *e != ',' && *e != ']') e++;
+                const char *eq = memchr(p, '=', (size_t)(e - p));
+                if (eq) {
+                    char *k = xstrndup(p, (size_t)(eq - p)), *v = xstrndup(eq + 1, (size_t)(e - eq - 1));
+                    int ns = bs_with(sw->bs, st, k, v); free(k); free(v);
+                    if (ns < 0) st = -1; else st = ns;
+                }
+                p = *e == ',' ? e + 1 : e;
+            }
+        }
+    }
+    if (st < 0) st = gen_state_id(sw->g, name);
     mutex_lock(sw->lock);
     sm_put(&sw->st_cache, name, (void *)(intptr_t)(st + 1));
     mutex_unlock(sw->lock);

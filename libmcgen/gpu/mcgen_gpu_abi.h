@@ -70,7 +70,7 @@ typedef struct McgNode {
     int cid;             /* номер кэша (CACHE) */
 } McgNode;
 
-#define MCG_MAX_ROOTS 8
+#define MCG_MAX_ROOTS 16
 typedef struct McgProg {
     int old;             /* 0 — float (26.3+), 1 — double (26.1/26.2) */
     int nnodes;          McgNode *nodes;
@@ -101,5 +101,23 @@ typedef struct McgBiomeWorld {
     const McgProg *prog;     /* корни: 0 temperature, 1 vegetation, 2 continents, 3 erosion, 4 depth, 5 ridges */
     int ntree; const McgTreeNode *tree; int tree_root;
 } McgBiomeWorld;
+
+/* ---- описание мира для TERRAIN (26.3+): объёмный исполнитель плотности и жилы руд ---- */
+#define MCG_MAX_VEINS 4
+typedef struct McgVein { int density_root, richness_root, gap_root; int ore, raw, filler; float raw_chance; } McgVein;
+typedef struct McgTerrainWorld {
+    const McgProg *vol;       /* объёмная программа (bake_ctx = 0): root[0] = final_density, корни жил — индексами в root[] */
+    const McgProg *gap;       /* точечная программа «щели» жил (bake_ctx = 1): корни gap_root */
+    int nmin, nh;             /* объём шума по y: [nmin, nmin+nh) */
+    int root_density;         /* индекс в vol->root[] */
+    int nveins; McgVein vein[MCG_MAX_VEINS];
+    uint64_t ore_lo, ore_hi;  /* PositionalRandomFactory "minecraft:ore" (Xoroshiro) */
+    int veins_on;             /* 1 — считать жилы на GPU */
+    int cache_ids[32]; int ncache_ids;   /* номера кэшей, ячейки которых нужны CPU после плотности (aquifer) */
+    int pre_root;             /* индекс в vol->root[] функции, объём которой CPU считает ДО плотности (aq surface_level; −1 — нет): нужна для трассы состояния кэшей */
+    int pre_sx, pre_sy, pre_sz, pre_dx, pre_dy, pre_dz, pre_y0, pre_xoff, pre_zoff;   /* её объём (x, z — относительно чанка) */
+} McgTerrainWorld;
+/* колбэк Beardifier: заполняет out объёмом (vol = {sx,sy,sz,x0,y0,z0,dx,dy,dz}, блоковые координаты) для чанка chunk_index батча; 0 — у чанка нет Beardifier */
+typedef int (*McgBeardFn)(void *ud, int chunk_index, const int vol[9], float *out);
 
 #endif /* MCGEN_GPU_ABI_H */

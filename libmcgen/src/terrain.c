@@ -11,6 +11,7 @@
 #include "mcgen_tweaks_table.h"
 #include "df_old.h"
 #include "fluidpp.h"
+#include "gpu_bridge.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -384,11 +385,19 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
     pk.sea_type = w->def_fluid; pk.lava_type = g->st_lava;
     Aq aq; aq_init(&aq, w, x, &v, &pk);
     float *dens = sctx_acquire(x, vol_size(&v));
-    Beard *bd = w->struct_on ? beard_for_chunk(w, cx, cz) : NULL;       /* Beardifier.forStructuresInChunk (structure.c) */
-    SBeard sbd = { bd, beard_cb_value, beard_cb_volume };
-    sctx_set_beardifier(x, bd ? &sbd : NULL);
-    s_volume(x, w->s_rf[RF_FINAL_DENSITY], dens, &v);
-    sctx_set_beardifier(x, NULL); beard_free(bd);
+    /* GPU (поток W7, gpu_bridge.c): плотность и заплатки жил предвычислены пакетом на видеокарте; ячейки кэшей, которые оставил бы s_volume, вставляются в контекст */
+    GpuChunk gc; memset(&gc, 0, sizeof gc);
+    int gpu_ok = gpu_terrain_acquire(w, cx, cz, &gc);
+    if (gpu_ok) {
+        memcpy(dens, gc.dens, sizeof(float) * (size_t)vol_size(&v));
+        gpu_terrain_inject_cells(w, x, cx, cz, &gc);
+    } else {
+        Beard *bd = w->struct_on ? beard_for_chunk(w, cx, cz) : NULL;       /* Beardifier.forStructuresInChunk (structure.c) */
+        SBeard sbd = { bd, beard_cb_value, beard_cb_volume };
+        sctx_set_beardifier(x, bd ? &sbd : NULL);
+        s_volume(x, w->s_rf[RF_FINAL_DENSITY], dens, &v);
+        sctx_set_beardifier(x, NULL); beard_free(bd);
+    }
     int defb = w->def_block;
     for (int z = 0; z < 16; z++) for (int xx = 0; xx < 16; xx++) for (int y = nh - 1; y >= 0; y--) {
         int by = nmin + y;
@@ -399,6 +408,10 @@ int terrain_fill_chunk(McWorld *w, TerrainCtx *t, int cx, int cz, uint16_t *bloc
     }
     sctx_release(x, dens);
     t->aq = aq; t->aq_ok = 1;
-    if (w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0) veins_apply_new(w, x, cx, cz, nmin - w->min_y, nh, blocks);
+    if (w->tweak[MCGEN_TWEAK_ORE_VEINS] != 0.0) {
+        if (gpu_ok && gc.veins) gpu_terrain_apply_veins(w, &gc, blocks);
+        else veins_apply_new(w, x, cx, cz, nmin - w->min_y, nh, blocks);
+    }
+    if (gpu_ok) gpu_terrain_release(w, &gc);
     return MCGEN_OK;
 }
