@@ -253,5 +253,67 @@ class TestWeld(unittest.TestCase):
         self.assertEqual((w[4], w[5]), (0, 0))
 
 
+class TestReady(unittest.TestCase):
+    """Mesher.mesh_ready (mcmesh_ready: разделение, сварка и приведение типов одним вызовом ядра) = то же через MeshData + numpy."""
+
+    @classmethod
+    def setUpClass(cls):
+        if not _boot.have_resources():
+            raise unittest.SkipTest('нет ресурсов клиента')
+        cls.t = common.table()
+        cls.m = mesher.Mesher(cls.t)
+        if not cls.m.can_ready():
+            raise unittest.SkipTest('библиотека без mcmesh_ready')
+
+    @staticmethod
+    def _expect(md, merged):
+        n = md.n_quads
+        r = {}
+        r['uv'] = np.ascontiguousarray(md.uv, dtype=np.float32).reshape(-1)
+        r['col'] = np.ascontiguousarray(md.col[:, 0, :]).reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0)
+        r['mat'] = md.mat.astype(np.int32)
+        r['code'] = ((md.block.astype(np.int32) << 3) | md.dir.astype(np.int32))
+        r['rect'] = np.ascontiguousarray(md.rect, dtype=np.float32).reshape(-1) if merged else None
+        r['welded'] = mesher.weld_quads(md.pos, mesher.load_library(build=False))
+        return r
+
+    def _check(self, rd, md, merged):
+        e = self._expect(md, merged)
+        self.assertEqual(rd.n, md.n_quads)
+        for k in ('uv', 'col', 'mat', 'code'):
+            self.assertTrue(np.array_equal(getattr(rd, k), e[k]), k)
+        if merged:
+            self.assertTrue(np.array_equal(rd.rect, e['rect']), 'rect')
+        else:
+            self.assertIsNone(rd.rect)
+        for a, b in zip(rd.welded[:4], e['welded'][:4]):
+            self.assertTrue(np.array_equal(a, b))
+        self.assertEqual(rd.welded[4:], e['welded'][4:])
+
+    def test_equals_numpy_path(self):
+        for seed in range(4):
+            rng = np.random.default_rng(seed)
+            nb, nbio = common.random_world(self.t, rng)
+            cx, cz = 3, -2
+            opt = self.m.opt.copy(merge=True)
+            blocks = {(cx + dx, cz + dz): nb[(dz + 1) * 3 + dx + 1] for dz in (-1, 0, 1) for dx in (-1, 0, 1) if nb[(dz + 1) * 3 + dx + 1] is not None}
+            bio = {(cx + dx, cz + dz): nbio[(dz + 1) * 3 + dx + 1] for dz in (-1, 0, 1) for dx in (-1, 0, 1) if nbio[(dz + 1) * 3 + dx + 1] is not None}
+            md = self.m.mesh_arrays(cx, cz, nb, nbio, -64, 32, opt)
+            main_e, merged_e = md.split_merged()
+            main, merged = self.m.mesh_ready(cx, cz, blocks, bio, -64, 32, split=True, options=opt)
+            self.assertIsNotNone(main)
+            self._check(main, main_e, False)
+            if merged_e is None:
+                self.assertIsNone(merged)
+            else:
+                self._check(merged, merged_e, True)
+            # без разделения — все грани одной частью
+            opt2 = self.m.opt.copy(merge=False)
+            md2 = self.m.mesh_arrays(cx, cz, nb, nbio, -64, 32, opt2)
+            allp, none = self.m.mesh_ready(cx, cz, blocks, bio, -64, 32, split=False, options=opt2)
+            self.assertIsNone(none)
+            self._check(allp, md2, False)
+
+
 if __name__ == '__main__':
     unittest.main()

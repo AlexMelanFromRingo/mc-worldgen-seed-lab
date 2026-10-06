@@ -1067,3 +1067,45 @@ int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_p
     counts[0] = nv; counts[1] = ne;
     return 0;
 }
+
+/* ---- готовые к записи в Blender массивы части выхода (см. mcgen_mesh.h) ---- */
+int mcmesh_split_counts(const McMeshOutput *o, int32_t *counts)
+{
+    if (!o || !counts) return -1;
+    int32_t m = 0;
+    for (int32_t q = 0; q < o->n_quads; q++) m += o->merged[q] != 0;
+    counts[0] = o->n_quads - m;
+    counts[1] = m;
+    return 0;
+}
+
+int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r)
+{
+    if (!o || !r || part < 0 || part > 2 || r->n < 0) return -1;
+    int32_t n = r->n;
+    if (n == 0) { r->nv = r->ne = 0; return 0; }
+    float *pos = malloc(sizeof(float) * 12 * (size_t)n);
+    if (!pos) return -2;
+    const float k255 = 1.0f / 255.0f;
+    int32_t k = 0;
+    for (int32_t q = 0; q < o->n_quads; q++) {
+        if (part != 2 && ((o->merged[q] != 0) != (part == 1))) continue;
+        if (k >= n) { free(pos); return -1; }
+        memcpy(pos + 12 * (size_t)k, o->pos + 12 * (size_t)q, 12 * sizeof(float));
+        memcpy(r->uv + 8 * (size_t)k, o->uv + 8 * (size_t)q, 8 * sizeof(float));
+        const uint8_t *c = o->col + 16 * (size_t)q;                      /* цвет грани один: берём первый угол */
+        for (int i = 0; i < 4; i++) r->col[4 * (size_t)k + i] = (float)c[i] * k255;
+        r->mat[k] = (int32_t)o->mat[q];
+        r->code[k] = (int32_t)((o->block[q] << MCM_FACE_DIR_BITS) | o->dir[q]);
+        if (r->rect) memcpy(r->rect + 4 * (size_t)k, o->rect + 4 * (size_t)q, 4 * sizeof(float));
+        k++;
+    }
+    if (k != n) { free(pos); return -1; }
+    int32_t cnt[2];
+    int rc = mcmesh_weld(pos, n, r->corner_vert, r->vert_pos, r->edge_verts, r->corner_edge, cnt);
+    free(pos);
+    if (rc) return rc;
+    r->nv = cnt[0];
+    r->ne = cnt[1];
+    return 0;
+}

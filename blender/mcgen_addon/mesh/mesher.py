@@ -19,7 +19,7 @@ import tempfile
 import numpy as np
 
 __all__ = ['MeshOptions', 'MeshData', 'Mesher', 'load_library', 'build_core', 'MAT_SOLID', 'MAT_CUTOUT', 'MAT_TRANSLUCENT', 'MAT_WATER',
-           'N_MAT', 'DIR_NAMES', 'ABI_VERSION', 'reference_mesh_chunk', 'weld_quads']
+           'N_MAT', 'DIR_NAMES', 'ABI_VERSION', 'reference_mesh_chunk', 'weld_quads', 'ReadyMesh']
 
 ABI_VERSION = 3
 MAT_SOLID, MAT_CUTOUT, MAT_TRANSLUCENT, MAT_WATER, N_MAT = 0, 1, 2, 3, 4
@@ -86,6 +86,13 @@ class _Output(ctypes.Structure):
         ('pos', P), ('uv', P), ('col', P), ('mat', P), ('block', P), ('dir', P), ('merged', P), ('rect', P),
         ('n_blocks_visited', ctypes.c_int32), ('n_sections_skipped', ctypes.c_int32), ('n_merged_from', ctypes.c_int32),
         ('n_mat', ctypes.c_int32 * N_MAT),
+    ]
+
+
+class _ReadyC(ctypes.Structure):
+    _fields_ = [
+        ('n', ctypes.c_int32), ('nv', ctypes.c_int32), ('ne', ctypes.c_int32),
+        ('corner_vert', P), ('vert_pos', P), ('edge_verts', P), ('corner_edge', P), ('uv', P), ('col', P), ('mat', P), ('code', P), ('rect', P),
     ]
 
 
@@ -192,6 +199,11 @@ def _bind(lib):
     lib.mcmesh_pick_weighted.restype = ctypes.c_int
     lib.mcmesh_swamp_noise.argtypes = [P, ctypes.c_double, ctypes.c_double]
     lib.mcmesh_swamp_noise.restype = ctypes.c_float
+    if hasattr(lib, 'mcmesh_ready') and hasattr(lib, 'mcmesh_split_counts'):       # необязательно (библиотеки старее v0.1.15 их не имеют)
+        lib.mcmesh_split_counts.argtypes = [ctypes.POINTER(_Output), P]
+        lib.mcmesh_split_counts.restype = ctypes.c_int
+        lib.mcmesh_ready.argtypes = [ctypes.POINTER(_Output), ctypes.c_int32, ctypes.POINTER(_ReadyC)]
+        lib.mcmesh_ready.restype = ctypes.c_int
     if hasattr(lib, 'mcmesh_weld'):          # необязательная функция (библиотеки старее v0.1.14 её не имеют — меш тогда строится без сварки)
         lib.mcmesh_weld.argtypes = [P, ctypes.c_int32, P, P, P, P, P]
         lib.mcmesh_weld.restype = ctypes.c_int
@@ -314,23 +326,28 @@ class MeshOptions:
 
 class MeshData:
     """Результат меширования одного чанка: четырёхугольники (4 вершины на грань, вершины не общие)."""
-    __slots__ = ('pos', 'uv', 'col', 'mat', 'block', 'dir', 'stats', 'merged', 'rect')
+    __slots__ = ('pos', 'uv', 'col', 'mat', 'block', 'dir', 'stats', 'merged', 'rect', 'ready')
 
     def __init__(self, pos, uv, col, mat, block, dir_, stats=None, merged=None, rect=None):
         self.pos, self.uv, self.col, self.mat, self.block, self.dir = pos, uv, col, mat, block, dir_
         self.stats = stats or {}
         self.merged = merged if merged is not None else np.zeros(mat.shape[0], dtype=np.uint8)   # 1 — слитая грань (тайл повторяется в шейдере)
         self.rect = rect if rect is not None else np.zeros((mat.shape[0], 4), dtype=np.float32)  # прямоугольник спрайта слитой грани
+        self.ready = None       # render/scene.py: массивы, подготовленные к записи в меш Blender (готовятся в рабочем потоке)
 
     def split_merged(self):
-        """(обычные грани, слитые грани) как два MeshData."""
+        """(обычные грани, слитые грани) как два MeshData. Индексы считаются один раз, дальше take по ним (numpy освобождает GIL на копировании): это
+        выполняется в рабочих потоках мешера и не должно сериализовать их."""
         m = self.merged.astype(bool)
-        if not m.any():
+        if not np.count_nonzero(m):
             return self, None
-        def sel(mask):
-            return MeshData(self.pos[mask], self.uv[mask], self.col[mask], self.mat[mask], self.block[mask], self.dir[mask], self.stats,
-                            self.merged[mask], self.rect[mask])
-        return sel(~m), sel(m)
+        im = np.flatnonzero(m)
+        ip = np.flatnonzero(~m)
+
+        def sel(idx):
+            return MeshData(self.pos.take(idx, axis=0), self.uv.take(idx, axis=0), self.col.take(idx, axis=0), self.mat.take(idx, axis=0),
+                            self.block.take(idx, axis=0), self.dir.take(idx, axis=0), self.stats, self.merged.take(idx, axis=0), self.rect.take(idx, axis=0))
+        return sel(ip), sel(im)
 
     @property
     def n_quads(self):
@@ -355,6 +372,16 @@ class MeshData:
 
 def _ptr(a):
     return a.ctypes.data if a is not None else None
+
+
+class ReadyMesh:
+    """Массивы одной части меша, готовые к foreach_set в Blender (грани сварены: welded = (corner_vert, vert_pos, edge_verts, corner_edge, nv, ne) или None).
+    Готовятся в рабочем потоке: mcmesh_ready (всё в C, без GIL) либо scene.make_ready (numpy). pos — исходные позиции [4n·3] только если сварки нет."""
+    __slots__ = ('n', 'welded', 'pos', 'uv', 'col', 'mat', 'code', 'rect')
+
+    @property
+    def n_quads(self):
+        return self.n
 
 
 class Mesher:
@@ -425,8 +452,70 @@ class Mesher:
                 nbio.append(biomes_by_chunk.get((cx + dx, cz + dz)) if biomes_by_chunk else None)
         return self.mesh_arrays(cx, cz, nb, nbio, min_y, height, options)
 
-    def mesh_arrays(self, cx, cz, nb, nbio, min_y, height, options=None):
-        """nb, nbio — по 9 массивов (или None) окрестности 3×3 (индекс (dz+1)*3 + dx+1)."""
+    def can_ready(self):
+        return hasattr(self.lib, 'mcmesh_ready') and hasattr(self.lib, 'mcmesh_split_counts') and not os.environ.get('MCGEN_NO_WELD')
+
+    def mesh_ready(self, cx, cz, blocks_by_chunk, biomes_by_chunk, min_y, height, split=False, options=None):
+        """Меш чанка сразу в виде готовых к записи в Blender массивов (ReadyMesh): разделение на обычные/слитые грани, сварка вершин и приведение типов —
+        одним вызовом ядра без GIL. Возвращает (основная часть | None, слитая часть | None) — None, если в части нет граней; без split основная часть — все грани.
+        Нет mcmesh_ready в библиотеке — вызывайте mesh_chunk."""
+        c = blocks_by_chunk.get((cx, cz))
+        if c is None:
+            raise KeyError('нет блоков чанка (%d, %d)' % (cx, cz))
+        nb, nbio = [], []
+        for dz in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nb.append(blocks_by_chunk.get((cx + dx, cz + dz)))
+                nbio.append(biomes_by_chunk.get((cx + dx, cz + dz)) if biomes_by_chunk else None)
+        I, O, keep = self._call_args(cx, cz, nb, nbio, min_y, height, options)
+        out = _Output()
+        rc = self.lib.mcmesh_chunk(ctypes.byref(self._T), ctypes.byref(I), ctypes.byref(O), ctypes.byref(out))
+        if rc != 0:
+            raise RuntimeError('mcmesh_chunk вернул %d' % rc)
+        try:
+            n = out.n_quads
+            if n == 0:
+                return None, None
+            cnt = np.zeros(2, np.int32)
+            self.lib.mcmesh_split_counts(ctypes.byref(out), cnt.ctypes.data)
+            parts = ((0, int(cnt[0]), False), (1, int(cnt[1]), True)) if split else ((2, n, False),)
+            res = []
+            for part, k, with_rect in parts:
+                if k == 0:
+                    res.append(None)
+                    continue
+                cv = np.empty(4 * k, np.int32)
+                vp = np.empty(12 * k, np.float32)
+                ev = np.empty(8 * k, np.int32)
+                ce = np.empty(4 * k, np.int32)
+                uv = np.empty(8 * k, np.float32)
+                col = np.empty(4 * k, np.float32)
+                mat = np.empty(k, np.int32)
+                code = np.empty(k, np.int32)
+                rect = np.empty(4 * k, np.float32) if with_rect else None
+                R = _ReadyC()
+                R.n = k
+                R.corner_vert, R.vert_pos, R.edge_verts, R.corner_edge = cv.ctypes.data, vp.ctypes.data, ev.ctypes.data, ce.ctypes.data
+                R.uv, R.col, R.mat, R.code = uv.ctypes.data, col.ctypes.data, mat.ctypes.data, code.ctypes.data
+                R.rect = rect.ctypes.data if rect is not None else None
+                rc = self.lib.mcmesh_ready(ctypes.byref(out), part, ctypes.byref(R))
+                if rc != 0:
+                    raise RuntimeError('mcmesh_ready вернул %d' % rc)
+                r = ReadyMesh()
+                r.n = k
+                r.welded = (cv, vp[:3 * R.nv], ev[:2 * R.ne], ce, R.nv, R.ne)
+                r.pos = None
+                r.uv, r.col, r.mat, r.code, r.rect = uv, col, mat, code, rect
+                res.append(r)
+            if not split:
+                res.append(None)
+            return res[0], res[1]
+        finally:
+            self.lib.mcmesh_output_free(ctypes.byref(out))
+            del keep
+
+    def _call_args(self, cx, cz, nb, nbio, min_y, height, options):
+        """Структуры входа/опций для mcmesh_chunk; keep держит массивы живыми на время вызова."""
         o = options or self.opt
         I = _Input()
         keep = []
@@ -461,6 +550,11 @@ class Mesher:
         O.y_offset = int(o.y_offset)
         O.y_lo = 0 if o.y_min is None else max(0, int(o.y_min) - min_y)
         O.y_hi = height - 1 if o.y_max is None else min(height - 1, int(o.y_max) - min_y)
+        return I, O, keep
+
+    def mesh_arrays(self, cx, cz, nb, nbio, min_y, height, options=None):
+        """nb, nbio — по 9 массивов (или None) окрестности 3×3 (индекс (dz+1)*3 + dx+1)."""
+        I, O, keep = self._call_args(cx, cz, nb, nbio, min_y, height, options)
         out = _Output()
         rc = self.lib.mcmesh_chunk(ctypes.byref(self._T), ctypes.byref(I), ctypes.byref(O), ctypes.byref(out))
         if rc != 0:

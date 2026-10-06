@@ -33,6 +33,8 @@ def main():
     ap.add_argument('--res', default='1600x700')
     ap.add_argument('--samples', type=int, default=64)
     ap.add_argument('--only', default=None, choices=[None, 'off', 'on'])
+    ap.add_argument('--device', default='cpu', choices=['cpu', 'cuda', 'optix'], help='устройство Cycles')
+    ap.add_argument('--merge', type=int, default=1, help='Greedy merge (1/0)')
     a = ap.parse_args(argv)
     a.sun_az, a.sun_el, a.sun_strength = 250.0, 24.0, 5.0
     t = common.table()
@@ -65,12 +67,20 @@ def main():
         clean_default_scene()
         for m in list(bpy.data.materials):
             bpy.data.materials.remove(m)
-        vs = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'), merge_flat=True,
+        vs = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'), merge_flat=bool(a.merge),
                                     pbr=(mode == 'on'))
         sb = scene_mod.SceneBuilder(vs)
         sb.build(blocks, bio, {'min_y': 0, 'height': H, 'cx0': 0, 'cz0': 0, 'nx': 1, 'nz': 1}, None, common.biome_names())
         setup_render(a)
         scn = bpy.context.scene
+        if a.device != 'cpu' and a.engine == 'cycles':
+            prefs = bpy.context.preferences.addons['cycles'].preferences
+            prefs.compute_device_type = a.device.upper()
+            prefs.get_devices()
+            for d in prefs.devices:
+                d.use = (d.type == a.device.upper())
+            scn.cycles.device = 'GPU'
+            print('CYCLES GPU devices:', [(d.name, d.type, d.use) for d in prefs.devices])
         # камера: чуть сверху, смотрит на два ряда
         cam = bpy.data.cameras.new('cam')
         co = bpy.data.objects.new('cam', cam)

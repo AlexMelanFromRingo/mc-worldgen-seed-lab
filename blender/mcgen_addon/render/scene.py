@@ -19,7 +19,7 @@ import numpy as np
 
 from ..assets import state_table
 from ..mesh import lod as lod_mod
-from ..mesh.mesher import MeshOptions, Mesher, weld_quads
+from ..mesh.mesher import MeshOptions, Mesher, ReadyMesh, weld_quads
 from . import materials as materials_mod
 from .settings import ViewSettings
 
@@ -34,6 +34,21 @@ def face_info(code):
     """Распаковка атрибута `mc_face` грани -> (индекс чанка в группе, индекс блока ((y*16)+z)*16+x, направление 0..5)."""
     code = int(code)
     return code >> CHUNK_SHIFT, (code >> FACE_DIR_BITS) & ((1 << FACE_BLOCK_BITS) - 1), code & ((1 << FACE_DIR_BITS) - 1)
+
+
+def make_ready(pos, uv, col, mat, code, rect, lib):
+    """Готовые к foreach_set массивы части меша средствами numpy (запасной путь: нет mcmesh_ready в библиотеке, группы из нескольких чанков, LOD).
+    Основной путь (группа из одного чанка) — Mesher.mesh_ready: то же одним вызовом ядра без GIL."""
+    r = ReadyMesh()
+    r.n = n = int(mat.shape[0])
+    r.welded = weld_quads(pos, lib) if n else None
+    r.pos = np.ascontiguousarray(pos, dtype=np.float32).reshape(-1) if r.welded is None else None
+    r.uv = None if uv is None else np.ascontiguousarray(uv, dtype=np.float32).reshape(-1)
+    r.col = np.ascontiguousarray(col[:, 0, :]).reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0)
+    r.mat = mat.astype(np.int32)
+    r.code = None if code is None else code.astype(np.int32)
+    r.rect = None if rect is None else np.ascontiguousarray(rect, dtype=np.float32).reshape(-1)
+    return r
 
 
 class _Part:
@@ -370,10 +385,18 @@ class SceneBuilder:
         self._lod_heights.pop((cx, cz), None)
 
     def _mesh_one(self, ck):
+        if self._n() == 1 and self.mesher.can_ready():
+            # группа из одного чанка: разделение граней, сварка и приведение типов — одним вызовом ядра (без GIL), в главный поток уходят готовые массивы
+            return self.mesher.mesh_ready(ck[0], ck[1], self.blocks, self.biomes, self.min_y, self.height, split=bool(self.vs.merge_flat))
         md = self.mesher.mesh_chunk(ck[0], ck[1], self.blocks, self.biomes, self.min_y, self.height)
-        if self.vs.merge_flat:
-            return md.split_merged()
-        return md, None
+        pair = md.split_merged() if self.vs.merge_flat else (md, None)
+        if self._n() == 1:                                         # старая библиотека без mcmesh_ready: готовим массивы здесь (numpy)
+            lib = self._mesh_lib()
+            for i, m in enumerate(pair):
+                if m is not None and m.n_quads:
+                    code = (m.block.astype(np.int32) << FACE_DIR_BITS) | m.dir.astype(np.int32)
+                    m.ready = make_ready(m.pos, m.uv, m.col, m.mat, code, m.rect if i == 1 else None, lib)
+        return pair
 
     def _mesh_many(self, cks):
         """Меши нескольких чанков (список (MeshData, MeshData|None)) потоками; ядро освобождает GIL."""
@@ -446,21 +469,22 @@ class SceneBuilder:
         return cls._ONES['a'][:n]
 
     @classmethod
-    def _fill_mesh(cls, mesh, pos, uv, col, mat, code, rect=None, lib=None):
+    def _fill_mesh(cls, mesh, pos, uv, col, mat, code, rect=None, lib=None, ready=None):
         """Заполняет меш n четырёхугольников. Быстрый путь — через атрибуты (position, .corner_vert, .edge_verts, .corner_edge, UVMap, material_index): на порядок
         быстрее RNA-доступа и mesh.update(calc_edges=True). Общие вершины и рёбра сварены ядром (mcmesh_weld: вершин ≈ на 70 % и рёбер ≈ на 50 % меньше, меш
         ≈ на 30 % легче по памяти); из-за общих вершин грани помечаются плоскими (`sharp_face`), иначе Blender усреднил бы нормали соседних граней. Нет
-        mcmesh_weld (старая библиотека) — 4 своих вершины на грань. Цвет граней — атрибут `Col` (BYTE_COLOR, область FACE: цвет у грани один, 4× меньше данных)."""
-        n = int(mat.shape[0])
+        mcmesh_weld (старая библиотека) — 4 своих вершины на грань. Цвет граней — атрибут `Col` (BYTE_COLOR, область FACE: цвет у грани один, 4× меньше данных).
+        ready — массивы, уже подготовленные в рабочем потоке (make_ready); иначе готовятся здесь."""
+        r = ready if ready is not None else make_ready(pos, uv, col, mat, code, rect, lib)
+        n = r.n
         mesh.clear_geometry()
         if n == 0:
             return
         ar, ls, ev = cls._index_arrays(n)
         a = mesh.attributes
         fast = False
-        welded = weld_quads(pos, lib)
-        if welded is not None:
-            cv, vp, evw, ce, nv, ne = welded
+        if r.welded is not None:
+            cv, vp, evw, ce, nv, ne = r.welded
             mesh.vertices.add(nv)
             mesh.loops.add(n * 4)
             mesh.polygons.add(n)
@@ -485,12 +509,13 @@ class SceneBuilder:
                 mesh.clear_geometry()
                 a = mesh.attributes
         if not fast:
+            pos_flat = r.pos if r.pos is not None else r.welded[1].reshape(-1, 3)[r.welded[0]].reshape(-1)       # позиции четырёх углов каждой грани
             mesh.vertices.add(n * 4)
             mesh.loops.add(n * 4)
             mesh.polygons.add(n)
             mesh.edges.add(n * 4)
             try:
-                a['position'].data.foreach_set('vector', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+                a['position'].data.foreach_set('vector', pos_flat)
                 a['.corner_vert'].data.foreach_set('value', ar)
                 a['.edge_verts'].data.foreach_set('value', ev)
                 a['.corner_edge'].data.foreach_set('value', ar)
@@ -502,33 +527,32 @@ class SceneBuilder:
             if not fast:
                 mesh.clear_geometry()
                 mesh.vertices.add(n * 4)
-                mesh.vertices.foreach_set('co', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+                mesh.vertices.foreach_set('co', pos_flat)
                 mesh.loops.add(n * 4)
                 mesh.loops.foreach_set('vertex_index', ar)
                 mesh.polygons.add(n)
                 mesh.polygons.foreach_set('loop_start', ls)
                 mesh.update(calc_edges=True)
-        if uv is not None:
+        if r.uv is not None:
             if fast:
                 ua = a.new('UVMap', 'FLOAT2', 'CORNER')
-                ua.data.foreach_set('vector', np.ascontiguousarray(uv, dtype=np.float32).reshape(-1))
+                ua.data.foreach_set('vector', r.uv)
             else:
                 uvl = mesh.uv_layers.new(name='UVMap')
-                uvl.data.foreach_set('uv', np.ascontiguousarray(uv, dtype=np.float32).reshape(-1))
+                uvl.data.foreach_set('uv', r.uv)
         ca = a.new('Col', 'BYTE_COLOR', 'FACE')
-        ca.data.foreach_set('color_srgb', np.ascontiguousarray(col[:, 0, :]).reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0))
-        if mat is not None:
-            if fast:
-                ma = a.get('material_index') or a.new('material_index', 'INT', 'FACE')
-                ma.data.foreach_set('value', mat.astype(np.int32))
-            else:
-                mesh.polygons.foreach_set('material_index', mat.astype(np.int32))
-        if code is not None:
+        ca.data.foreach_set('color_srgb', r.col)
+        if fast:
+            ma = a.get('material_index') or a.new('material_index', 'INT', 'FACE')
+            ma.data.foreach_set('value', r.mat)
+        else:
+            mesh.polygons.foreach_set('material_index', r.mat)
+        if r.code is not None:
             fa = a.new('mc_face', 'INT', 'FACE')
-            fa.data.foreach_set('value', code.astype(np.int32))
-        if rect is not None:
+            fa.data.foreach_set('value', r.code)
+        if r.rect is not None:
             ra = a.new('Rect', 'FLOAT_COLOR', 'FACE')
-            ra.data.foreach_set('color', np.ascontiguousarray(rect, dtype=np.float32).reshape(-1))
+            ra.data.foreach_set('color', r.rect)
 
     def _link_part(self, g, kind, name, mesh, materials, loc, col):
         obj = bpy.data.objects.new(name, mesh)
@@ -560,29 +584,36 @@ class SceneBuilder:
         for ck in g.chunks:
             self.chunk_group[ck] = gk
 
+    def _fill_part_mesh(self, gk, mesh, mds, with_rect):
+        """Записывает в mesh грани группы; возвращает (face_code, число граней). Группа из одного чанка с готовыми массивами (_mesh_one в рабочем потоке) —
+        без пересчёта в главном потоке; иначе массивы чанков объединяются здесь."""
+        m0 = mds[0][1] if len(mds) == 1 else None
+        rd = m0 if isinstance(m0, ReadyMesh) else (getattr(m0, 'ready', None) if m0 is not None else None)
+        if rd is not None:
+            self._fill_mesh(mesh, None, None, None, None, None, ready=rd)
+            return rd.code, rd.n
+        pos, uv, c, mat, rect, code = self._concat(gk, mds)
+        self._fill_mesh(mesh, pos, uv, c, mat, code, rect if with_rect else None, lib=self._mesh_lib())
+        return code, int(mat.shape[0])
+
     def _fill_group_parts(self, g, main_mds, merged_mds, loc, col):
         gk = g.key
-        pos, uv, c, mat, rect, code = self._concat(gk, main_mds)
         name = 'mc_%d_%d' % gk
         p = g.parts.get('main')
         if p is None:
             mesh = bpy.data.meshes.new(name)
             p = self._link_part(g, 'main', name, mesh, self.materials, loc, col)
-        self._fill_mesh(p.mesh, pos, uv, c, mat, code, lib=self._mesh_lib())
-        p.face_code, p.n_quads = code, int(mat.shape[0])
+        p.face_code, p.n_quads = self._fill_part_mesh(gk, p.mesh, main_mds, False)
         if self.vs.merge_flat:
-            pos, uv, c, mat, rect, code = self._concat(gk, merged_mds)
-            n = int(mat.shape[0])
             pm = g.parts.get('merged')
-            if n == 0:
+            if not any(m is not None and m.n_quads for _, m in merged_mds):
                 if pm is not None:
                     self._remove_part(g, 'merged')
             else:
                 if pm is None:
                     mesh = bpy.data.meshes.new(name + '_m')
                     pm = self._link_part(g, 'merged', name + '_m', mesh, self.materials_tiled, loc, col)
-                self._fill_mesh(pm.mesh, pos, uv, c, mat, code, rect, lib=self._mesh_lib())
-                pm.face_code, pm.n_quads = code, n
+                pm.face_code, pm.n_quads = self._fill_part_mesh(gk, pm.mesh, merged_mds, True)
 
     def _remove_part(self, g, kind):
         p = g.parts.pop(kind, None)

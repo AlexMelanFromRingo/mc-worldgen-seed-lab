@@ -152,6 +152,20 @@ MCMESH_API void mcmesh_output_free(McMeshOutput *out);
  * (её дубли — отдельные вершины). Порядок: вершины и рёбра нумеруются по первому появлению. 0 — успех, -1 аргументы, -2 память. Потокобезопасно. */
 MCMESH_API int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_pos, int32_t *edge_verts, int32_t *corner_edge, int32_t *counts);
 
+/* Готовые к записи в меш Blender массивы одной части выхода (без единого вызова numpy в рабочем потоке: Python-код держит GIL, и на многих потоках
+ * мелкие операции numpy сериализуют рабочие потоки). Буферы выделяет вызывающий; n — число граней части (mcmesh_split_counts), ёмкость: corner_vert[4n],
+ * vert_pos[12n], edge_verts[8n], corner_edge[4n], uv[8n], col[4n], mat[n], code[n], rect[4n] (rect — NULL, если не нужен).
+ * Части: 0 — обычные грани, 1 — слитые, 2 — все. Содержимое: uv как есть; col — цвет грани (первый угол) RGBA / 255; mat — int32; code = (block << MCM_FACE_DIR_BITS) | dir;
+ * вершины и рёбра сварены (mcmesh_weld). Выход: nv, ne. 0 — успех, -1 аргументы / несовпадение n, -2 память. */
+#define MCM_FACE_DIR_BITS 3
+typedef struct McMeshReady {
+    int32_t n, nv, ne;
+    int32_t *corner_vert; float *vert_pos; int32_t *edge_verts; int32_t *corner_edge;
+    float *uv, *col; int32_t *mat, *code; float *rect;
+} McMeshReady;
+MCMESH_API int mcmesh_split_counts(const McMeshOutput *o, int32_t *counts);          /* counts[0] — обычных граней, counts[1] — слитых */
+MCMESH_API int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r);
+
 /* Для тестов: выбор варианта (Mth.getSeed → LegacyRandomSource) — вернуть индекс варианта в группе `total` весов по позиции. */
 MCMESH_API int64_t mcmesh_mth_get_seed(int32_t x, int32_t y, int32_t z);
 MCMESH_API int mcmesh_pick_weighted(int64_t seed, int32_t total);
