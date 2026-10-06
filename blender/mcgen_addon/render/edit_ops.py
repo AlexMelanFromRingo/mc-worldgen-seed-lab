@@ -118,6 +118,11 @@ def _finish(label, t0, n_blocks, affected):
     t_edit = time.time() - t0
     t1 = time.time()
     sb.update_chunks(affected)
+    try:
+        from . import banner_overlay
+        banner_overlay.refresh(sb)               # сломанный баннер теряет слои узоров
+    except Exception:      # noqa: BLE001 - узоры необязательны
+        pass
     STATE.last = {'op': label, 'blocks': n_blocks, 'chunks': len(affected), 'edit_ms': t_edit * 1000.0, 'mesh_ms': (time.time() - t1) * 1000.0}
     store_edits()
     return STATE.last

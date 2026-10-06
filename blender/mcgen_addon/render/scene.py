@@ -671,6 +671,8 @@ class SceneBuilder:
     # ------------------------------------------------------------------------------------------------------------------
     def clear(self, full=False):
         """Удаляет объекты и меши сцены; full=True — ещё материалы и изображение атласа."""
+        from . import banner_overlay
+        banner_overlay.remove_all()
         for gk in list(self.groups):
             self._remove_group(gk)
         self.groups.clear()

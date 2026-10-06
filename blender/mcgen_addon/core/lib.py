@@ -131,6 +131,7 @@ class Library:
         'mcgen_region_blocks': (_P, [_P, C.c_int, C.c_int], True),
         'mcgen_region_biomes': (_P, [_P, C.c_int, C.c_int], True),
         'mcgen_region_heightmap': (_P, [_P, C.c_int, C.c_int, C.c_int], True),
+        'mcgen_region_block_entities': (C.c_char_p, [_P], False),       # v0.1.8: баннеры с узорами (необязательная: у старых библиотек нет)
         'mcgen_region_write_mcr': (C.c_int, [_P, _P, C.c_char_p, C.c_char_p, C.c_size_t], False),
         'mcgen_structure_starts': (C.c_int, [_P, C.c_int, C.c_int, C.c_int, C.c_int, C.POINTER(_McStructureStart), C.c_int], False),
         'mcgen_structure_piece_bb': (C.c_int, [_P, C.c_int, C.c_int, C.c_int, C.c_int, C.POINTER(C.c_int)], False),
@@ -508,6 +509,21 @@ class McRegion:
     def heightmap(self, cx, cz, kind=MC_HM_WORLD_SURFACE):
         a = self._lib.mcgen_region_heightmap(self._need(), cx, cz, int(kind))
         return _numpy_view(self, a, C.c_int16, 256, (16, 16))
+
+    def block_entities(self):
+        """Блок-сущности построек в области (баннеры с узорами): [{'x','y','z','block':'minecraft:..._banner','patterns':[(цвет, 'minecraft:узор'), …]}]. Пусто, если библиотека старая."""
+        fn = self._lib.mcgen_region_block_entities
+        if fn is None:
+            return []
+        raw = fn(self._need())
+        try:
+            import json
+            out = json.loads(raw.decode('utf-8')) if raw else []
+        except ValueError:
+            return []
+        for e in out:
+            e['patterns'] = [tuple(p) for p in e.get('patterns', [])]
+        return out
 
     def memory_bytes(self):
         """Оценка занятой памяти: блоки u16 + биомы + 4 карты высот на чанк."""

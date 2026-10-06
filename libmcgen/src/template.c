@@ -74,8 +74,38 @@ static const char *stairs_mirror_shape(const char *shape, int mir, int *flip) {
     (void)mir;
 }
 
+/* Какие блоки поворачиваются/отражаются на самом деле: BlockBehaviour.rotate/mirror по умолчанию возвращают состояние как есть, а
+   переопределяют их только перечисленные классы (javap по классам клиента 26.3; подклассы наследуют). Например, у AnvilBlock переопределён лишь
+   rotate: наковальня при отражении остаётся прежней, хотя у неё есть facing. Без данных о классах (эвристические флаги) — поведение «всё по свойствам». */
+static const char *const MIRROR_CLASSES[] = {
+    "AbstractFurnaceBlock", "AmethystClusterBlock", "AttachedStemBlock", "BannerBlock", "BarrelBlock", "BaseCoralWallFanBlock", "BeehiveBlock",
+    "BellBlock", "CalibratedSculkSensorBlock", "CampfireBlock", "CeilingHangingSignBlock", "ChestBlock", "ChiseledBookShelfBlock", "CommandBlock",
+    "CopperGolemStatueBlock", "CrafterBlock", "CrossCollisionBlock", "DecoratedPotBlock", "DetectorRailBlock", "DispenserBlock", "DoorBlock",
+    "EndPortalFrameBlock", "EnderChestBlock", "FlowerBedBlock", "GrindstoneBlock", "HopperBlock", "HorizontalDirectionalBlock", "HugeMushroomBlock",
+    "JigsawBlock", "LadderBlock", "LeafLitterBlock", "LecternBlock", "MossyCarpetBlock", "MovingPistonBlock", "MultifaceBlock", "ObserverBlock",
+    "PistonBaseBlock", "PistonHeadBlock", "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RodBlock", "ShelfBlock",
+    "ShulkerBoxBlock", "SkullBlock", "SmallDripleafBlock", "StairBlock", "StandingSignBlock", "StonecutterBlock", "TripWireBlock", "TripWireHookBlock",
+    "VaultBlock", "VineBlock", "WallBannerBlock", "WallBlock", "WallHangingSignBlock", "WallSignBlock", "WallSkullBlock", "WallTorchBlock", NULL };
+
+static const char *const ROTATE_CLASSES[] = {
+    "AbstractFurnaceBlock", "AmethystClusterBlock", "AnvilBlock", "AttachedStemBlock", "BannerBlock", "BarrelBlock", "BaseCoralWallFanBlock",
+    "BeehiveBlock", "BellBlock", "CalibratedSculkSensorBlock", "CampfireBlock", "CeilingHangingSignBlock", "ChestBlock", "ChiseledBookShelfBlock",
+    "CommandBlock", "CopperGolemStatueBlock", "CrafterBlock", "CreakingHeartBlock", "CrossCollisionBlock", "DecoratedPotBlock", "DetectorRailBlock",
+    "DispenserBlock", "DoorBlock", "EndPortalFrameBlock", "EnderChestBlock", "FlowerBedBlock", "GrindstoneBlock", "HopperBlock",
+    "HorizontalDirectionalBlock", "HugeMushroomBlock", "InfestedRotatedPillarBlock", "JigsawBlock", "LadderBlock", "LeafLitterBlock", "LecternBlock",
+    "MossyCarpetBlock", "MovingPistonBlock", "MultifaceBlock", "NetherPortalBlock", "ObserverBlock", "PistonBaseBlock", "PistonHeadBlock",
+    "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RodBlock", "RotatedPillarBlock", "ShelfBlock", "ShulkerBoxBlock",
+    "SkullBlock", "SmallDripleafBlock", "StairBlock", "StandingSignBlock", "StonecutterBlock", "TripWireBlock", "TripWireHookBlock", "VaultBlock",
+    "VineBlock", "WallBannerBlock", "WallBlock", "WallHangingSignBlock", "WallSignBlock", "WallSkullBlock", "WallTorchBlock", NULL };
+
+static int overrides_op(const BsTab *t, int st, const char *const *classes) {
+    if (!t->blk[t->g->state_block[st]].chain) return 1;
+    for (int i = 0; classes[i]; i++) if (bs_is_a(t, st, classes[i])) return 1;
+    return 0;
+}
+
 static int rotate_raw(const BsTab *t, int st, int rot) {
-    if (rot == ROT_NONE) return st;
+    if (rot == ROT_NONE || !overrides_op(t, st, ROTATE_CLASSES)) return st;
     const char *v;
     if (get_s(t, st, "facing", &v)) { int d = dir_of_name(v); if (d >= 0) { int nd = dir_rotate(d, rot); if (nd != d) st = with_s(t, st, "facing", DNAME[nd]); } }
     if ((rot & 1) && get_s(t, st, "axis", &v) && v[0] != 'y') st = with_s(t, st, "axis", v[0] == 'x' ? "z" : "x");
@@ -105,7 +135,7 @@ static int rotate_raw(const BsTab *t, int st, int rot) {
 }
 
 static int mirror_raw(const BsTab *t, int st, int mir) {
-    if (mir == MIR_NONE) return st;
+    if (mir == MIR_NONE || !overrides_op(t, st, MIRROR_CLASSES)) return st;
     const char *v;
     int is_stair = get_s(t, st, "shape", &v) && (!strncmp(v, "inner_", 6) || !strncmp(v, "outer_", 6) || !strcmp(v, "straight")) && bs_is_a(t, st, "StairBlock");
     if (is_stair) {
@@ -401,6 +431,30 @@ static const u8 *randomizable_blocks(McWorld *w) {
     return r;
 }
 
+/* Баннер с узорами: BannerBlockEntity.patterns (26.x: [{color:"black", pattern:"minecraft:triangle_top"}, …]); запись {"block":…,"patterns":[[цвет, узор], …]} для отрисовки узоров.
+ * Старый формат Patterns:[{Color:int, Pattern:"ts"}] в шаблонах 26.1–26.4 не встречается. Блоки без узоров записываются тоже (список пуст): цвет — в самом блоке. */
+static void record_banner(McWorld *w, int st, const TInfo *b) {
+    const char *nm = w->g->state_names[st];
+    const char *us = strstr(nm, "_banner");
+    if (!us) return;
+    const Nbt *pl = nbt_get(b->nbt, "patterns");
+    if (!pl || pl->type != NBT_LIST || pl->n <= 0) return;
+    StrBuf sb = {0};
+    size_t bl = 0; while (nm[bl] && nm[bl] != '[') bl++;
+    sb_printf(&sb, "{\"block\":\"%.*s\",\"patterns\":[", (int)bl, nm);
+    int first = 1;
+    for (int i = 0; i < pl->n; i++) {
+        const Nbt *e = nbt_at(pl, i);
+        const char *c = nbt_str(nbt_get(e, "color"), NULL), *p = nbt_str(nbt_get(e, "pattern"), NULL);
+        if (!c || !p || strchr(c, '"') || strchr(p, '"') || strchr(c, '\\') || strchr(p, '\\')) continue;
+        if (!first) sb_putc(&sb, ',');
+        first = 0;
+        sb_printf(&sb, "[\"%s\",\"%s\"]", c, p);
+    }
+    sb_puts(&sb, "]}");
+    world_bent_add(w, b->x, b->y, b->z, sb_take(&sb));
+}
+
 int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z, int rx, int ry, int rz,
                    const TSettings *s, i64 level_seed, int flags) {
     const BsTab *bs = bs_get(w->g);
@@ -422,6 +476,7 @@ int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z,
         if (s->waterlog) prev = bs->fluid[fc_get(fc, b->x, b->y, b->z)];
         int st = bsx_rotate(bs, bsx_mirror(bs, b->state, s->mir), s->rot);
         if (!fc_set(fc, b->x, b->y, b->z, st, flags)) continue;
+        if (b->nbt) record_banner(w, st, b);
         if (placed) { placed[3 * nplaced] = b->x; placed[3 * nplaced + 1] = b->y; placed[3 * nplaced + 2] = b->z; nplaced++; }
         if (rand_blk && b->nbt && rand_blk[w->g->state_block[st]]) (void)rs_long(s->rnd);       /* blockInfo.nbt.putLong("LootTableSeed", random.nextLong()) */
         if (s->waterlog) {

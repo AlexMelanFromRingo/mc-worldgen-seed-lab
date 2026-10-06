@@ -713,6 +713,9 @@ class McRegion:
         i = self.info
         return i.cx0 <= cx < i.cx0 + i.nx and i.cz0 <= cz < i.cz0 + i.nz
 
+    def block_entities(self):
+        return []                               # макет построек не создаёт
+
     def chunks(self):
         i = self.info
         return [(cx, cz) for cz in range(i.cz0, i.cz0 + i.nz) for cx in range(i.cx0, i.cx0 + i.nx)]

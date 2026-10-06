@@ -169,6 +169,7 @@ int mcgen_world_new(McGen *g, const char *dimension, const char *preset, const M
     McWorld *w = xcalloc(1, sizeof *w);
     w->g = g; w->preset = p; w->ns = ns; w->dim_kind = dk; w->seeds = *seeds;
     w->lock = mutex_new();
+    w->bent_lock = mutex_new();
     w->min_y = p->min_y; w->height = p->height; w->sea_level = ns->sea_level;
     w->noise_mxz = w->noise_my = w->cave_m = 1.0;
     w->def_fluid = ns->default_fluid;
@@ -226,9 +227,59 @@ void mcgen_world_free(McWorld *w) {
     for (int i = 0; i < w->nblended; i++) { ns_free(&w->blended[i]->min_lim); ns_free(&w->blended[i]->max_lim); ns_free(&w->blended[i]->main); free(w->blended[i]); }
     sm_free(&w->noise_inst, noise_inst_free);
     sm_free(&w->climate_noises, NULL);
+    world_bent_reset(w);
+    free(w->bent);
+    if (w->bent_lock) mutex_free(w->bent_lock);
     mutex_free(w->lock);
     free(w->tweak);
     free(w);
+}
+
+/* ---- блок-сущности построек ---- */
+void world_bent_reset(McWorld *w) {
+    if (!w || !w->bent_lock) return;
+    mutex_lock(w->bent_lock);
+    for (int i = 0; i < w->nbent; i++) free(w->bent[i].json);
+    w->nbent = 0;
+    mutex_unlock(w->bent_lock);
+}
+void world_bent_add(McWorld *w, int x, int y, int z, char *json) {
+    mutex_lock(w->bent_lock);
+    if (w->nbent == w->cbent) { w->cbent = w->cbent ? w->cbent * 2 : 64; w->bent = xrealloc(w->bent, (size_t)w->cbent * sizeof *w->bent); }
+    w->bent[w->nbent].x = x; w->bent[w->nbent].y = y; w->bent[w->nbent].z = z; w->bent[w->nbent].json = json;
+    w->nbent++;
+    mutex_unlock(w->bent_lock);
+}
+static int bent_cmp(const void *a, const void *b) {
+    const struct McBEnt *p = a, *q = b;
+    if (p->y != q->y) return p->y < q->y ? -1 : 1;
+    if (p->z != q->z) return p->z < q->z ? -1 : 1;
+    return p->x < q->x ? -1 : (p->x > q->x);
+}
+/* порядок записи зависит от потоков — выдаём отсортированно (y, z, x); повторы одной позиции (перезапись блока) — последняя запись остаётся */
+char *world_bent_json(McWorld *w, int x0, int z0, int x1, int z1) {
+    StrBuf b = {0};
+    sb_putc(&b, '[');
+    mutex_lock(w->bent_lock);
+    struct McBEnt *tmp = xmalloc((size_t)(w->nbent ? w->nbent : 1) * sizeof *tmp);
+    int n = 0;
+    for (int i = 0; i < w->nbent; i++) {
+        const struct McBEnt *e = &w->bent[i];
+        if (e->x < x0 || e->x >= x1 || e->z < z0 || e->z >= z1) continue;
+        tmp[n++] = *e;
+    }
+    qsort(tmp, (size_t)n, sizeof *tmp, bent_cmp);
+    int first = 1;
+    for (int i = 0; i < n; i++) {
+        if (i + 1 < n && tmp[i].x == tmp[i + 1].x && tmp[i].y == tmp[i + 1].y && tmp[i].z == tmp[i + 1].z) continue;
+        if (!first) sb_putc(&b, ',');
+        first = 0;
+        sb_printf(&b, "{\"x\":%d,\"y\":%d,\"z\":%d,%s", tmp[i].x, tmp[i].y, tmp[i].z, tmp[i].json + 1);
+    }
+    mutex_unlock(w->bent_lock);
+    free(tmp);
+    sb_putc(&b, ']');
+    return sb_take(&b);
 }
 int mcgen_world_min_y(const McWorld *w) { return w ? w->min_y : 0; }
 int mcgen_world_height(const McWorld *w) { return w ? w->height : 0; }

@@ -96,6 +96,7 @@ struct McSchedule;
 struct McWorld {
     McGen *g;
     struct McSchedule *sched;   /* расписание записанного прогона сервера (mcgen_world_set_schedule) или NULL */
+    struct McBEnt { int x, y, z; char *json; } *bent; int nbent, cbent; McMutex *bent_lock;   /* блок-сущности построек (баннеры с узорами): пишутся при размещении шаблонов, читаются в конце mcgen_generate_region */
     const McPreset *preset;
     const NoiseSettings *ns;
     int dim_kind;               /* 0 OW, 1 Nether, 2 End */
@@ -135,6 +136,10 @@ struct McWorld {
     int struct_on;              /* Beardifier включён (region.c ставит перед генерацией, если запрошена стадия STRUCTURES) */
     void *gpu;                  /* GPU-состояние мира (gpu_bridge.c, поток W7): дескриптор libmcgen_cuda и результат самопроверки; лениво */
 };
+/* блок-сущности построек (world.c): сброс перед генерацией региона, добавление (json — «{...}» без x/y/z, владение переходит), выборка в область [x0,x1)×[z0,z1) в виде JSON-массива (malloc) */
+void world_bent_reset(McWorld *w);
+void world_bent_add(McWorld *w, int x, int y, int z, char *json);
+char *world_bent_json(McWorld *w, int x0, int z0, int x1, int z1);
 void structures_world_free(McWorld *w);  /* structure.c */
 void bs_free(void *tab);                 /* blockstate.c */
 void features_world_free(McWorld *w);    /* feature.c */

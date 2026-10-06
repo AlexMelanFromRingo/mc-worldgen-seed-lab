@@ -21,6 +21,7 @@ struct McRegion {
     uint8_t *biomes;       /* nx*nz*(height/4)*16 */
     int16_t *hm;           /* nx*nz*4*256 */
     PPMarks *marks;        /* пометки пост-обработки жидкостей по чанкам */
+    char *bents;           /* блок-сущности построек (баннеры с узорами) в области — JSON-массив (malloc), см. mcgen_region_block_entities */
 };
 
 static int chunk_index(const McRegion *r, int cx, int cz);
@@ -452,6 +453,7 @@ static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t 
         uint16_t air = (uint16_t)w->g->st_air;
         if (air) for (size_t i = 0; i < n * H * 256; i++) r->blocks[i] = air;
     }
+    world_bent_reset(w);
     Job j; memset(&j, 0, sizeof j);
     j.w = w; j.r = r; j.stages = stages; j.total = (int)n; j.lock = mutex_new(); j.cb = cb; j.ud = ud;
     j.cls = w->g->state_cls;
@@ -480,6 +482,7 @@ static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t 
         if (cb) cb(ud, 0.99, "heightmaps");
         heightmaps_all(w, r, threads);
     }
+    r->bents = world_bent_json(w, cx0 * 16, cz0 * 16, (cx0 + nx) * 16, (cz0 + nz) * 16);
     if (cb) cb(ud, 1.0, "done");
     *out = r;
     return MCGEN_OK;
@@ -504,8 +507,9 @@ PPMarks *region_chunk_marks(McRegion *r, int cx, int cz) { int i = chunk_index(r
 void mcgen_region_free(McRegion *r) {
     if (!r) return;
     if (r->marks) for (int i = 0; i < r->info.nx * r->info.nz; i++) ppmarks_free(&r->marks[i]);
-    free(r->marks); free(r->blocks); free(r->biomes); free(r->hm); free(r);
+    free(r->marks); free(r->blocks); free(r->biomes); free(r->hm); free(r->bents); free(r);
 }
+const char *mcgen_region_block_entities(const McRegion *r) { return r && r->bents ? r->bents : "[]"; }
 void mcgen_region_info(const McRegion *r, McRegionInfo *info) { if (r && info) *info = r->info; }
 static int chunk_index(const McRegion *r, int cx, int cz) {
     int ix = cx - r->info.cx0, iz = cz - r->info.cz0;

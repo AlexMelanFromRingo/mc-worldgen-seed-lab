@@ -1,14 +1,13 @@
 """Заглушки «особых» блоков, которые игра рисует не JSON-моделью, а моделью сущности: сундуки (обычный, ловушка, эндер, медные),
 шулкеры, баннеры (цвет флага), головы/черепа, корпус колокола, плоскость портала Края. Геометрия и раскладка текстур — как в классах
 ModelPart.Cube / ChestModel / ShulkerModel / BannerModel / SkullModel / BellModel игры 26.x (коробки с их `texOffs`), текстуры — из
-каталога ресурсов пользователя (`textures/entity/...`). Не воспроизводится: анимация (крышки, колокол), узоры баннеров, ушки/шляпы голов,
-драконья голова, оверлей порталов. Чистый Python, без bpy.
+каталога ресурсов пользователя (`textures/entity/...`). Узоры баннеров рисует render/banner_overlay.py слоями поверх полотна (banner_cloth_faces). Не воспроизводится: анимация (крышки, колокол, челюсть дракона при питании), ушки/шляпы голов, оверлей порталов. Чистый Python, без bpy.
 """
 import math
 
 from .models import DIR_VEC, Quad, _closest_dir
 
-__all__ = ['entity_quads', 'is_entity_block', 'DYE_RGB', 'banner_color']
+__all__ = ['entity_quads', 'is_entity_block', 'DYE_RGB', 'banner_color', 'banner_cloth_faces']
 
 DYE_RGB = {
     'white': 16383998, 'orange': 16351261, 'magenta': 13061821, 'light_blue': 3847130, 'yellow': 16701501, 'lime': 8439583, 'pink': 15961002,
@@ -80,11 +79,14 @@ def _apply(m, p):
 ALL_FACES = ('down', 'up', 'west', 'north', 'east', 'south')
 
 
-def _cube_polygons(origin, size, texoffs, faces=ALL_FACES):
-    """Полигоны коробки как в ModelPart.Cube: список (вершины[4] (x, y, z) в пикселях, uv[4] (u, v) в пикселях текстуры)."""
+def _cube_polygons(origin, size, texoffs, faces=ALL_FACES, mirror=False):
+    """Полигоны коробки как в ModelPart.Cube: список (вершины[4] (x, y, z) в пикселях, uv[4] (u, v) в пикселях текстуры).
+    mirror — CubeListBuilder.mirror(true): x и x2 меняются местами (геометрия отражается, раскладка текстуры остаётся), порядок вершин полигона обращается (Polygon.mirror)."""
     x0, y0, z0 = origin
     w, h, d = size
     x1, y1, z1 = x0 + w, y0 + h, z0 + d
+    if mirror:
+        x0, x1 = x1, x0
     t0, t1, t2, t3 = (x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)
     l0, l1, l2, l3 = (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)
     tu, tv = texoffs
@@ -109,6 +111,8 @@ def _cube_polygons(origin, size, texoffs, faces=ALL_FACES):
     for f in faces:
         verts, (a0, b0, a1, b1) = spec[f]
         uv = ((a1, b0), (a0, b0), (a0, b1), (a1, b1))      # Polygon: вершины 0..3 <- (u1,v0), (u0,v0), (u0,v1), (u1,v1)
+        if mirror:
+            verts, uv = tuple(reversed(verts)), tuple(reversed(uv))
         out.append((verts, uv))
     return out
 
@@ -194,6 +198,25 @@ def _banner(block, props):
     return q
 
 
+def banner_cloth_faces(block, props):
+    """Лицевая и тыльная грани полотна баннера (flag, коробка 20×40×1 пикселей модели BannerFlagModel), на которые накладываются узоры:
+    [(вершины[4] (x, y, z) в долях блока, uv[4] (u, v) в долях текстуры 64×64 с v СВЕРХУ, нормаль (x, y, z) наружу)].
+    Узор — слой с текстурой entity/banner/<имя>.png той же раскладки, что banner_base, цветом оттенка красителя."""
+    wall = '_wall_banner' in block
+    ang = _FACING_YROT.get(props.get('facing', 'north'), 180) if wall else int(props.get('rotation', '0')) * 22.5
+    mat = _mul(_trans(0.5, 0, 0.5), _mul(_roty(-ang), _scale(2.0 / 3.0, -2.0 / 3.0, -2.0 / 3.0)))
+    pose = (0, -44.0 if not wall else -20.5, 0.0 if not wall else 10.5)
+    out = []
+    for face, nrm in (('north', (0.0, 0.0, -1.0)), ('south', (0.0, 0.0, 1.0))):
+        for verts, uv in _cube_polygons((-10, 0, -2), (20, 40, 1), (0, 0), (face,)):
+            pos = tuple(_apply(mat, ((v[0] + pose[0]) / 16.0, (v[1] + pose[1]) / 16.0, (v[2] + pose[2]) / 16.0)) for v in verts)
+            n = (mat[0][0] * nrm[0] + mat[0][1] * nrm[1] + mat[0][2] * nrm[2], mat[1][0] * nrm[0] + mat[1][1] * nrm[1] + mat[1][2] * nrm[2],
+                 mat[2][0] * nrm[0] + mat[2][1] * nrm[1] + mat[2][2] * nrm[2])
+            ln = math.sqrt(n[0] ** 2 + n[1] ** 2 + n[2] ** 2) or 1.0
+            out.append((pos, tuple((u / 64.0, v / 64.0) for u, v in uv), (n[0] / ln, n[1] / ln, n[2] / ln)))
+    return out
+
+
 _SKULL_TEX = {
     'skeleton_skull': ('minecraft:entity/skeleton/skeleton', 64, 32), 'wither_skeleton_skull': ('minecraft:entity/skeleton/wither_skeleton', 64, 32),
     'zombie_head': ('minecraft:entity/zombie/zombie', 64, 64), 'creeper_head': ('minecraft:entity/creeper/creeper', 64, 32),
@@ -218,6 +241,43 @@ def _skull(block, props):
     return _quads(_cube_polygons((-4, -8, -4), (8, 8, 8), (0, 0)), (0, 0, 0), mat, tex, tw, th)
 
 
+# DragonHeadModel.createHeadLayer() (байткод клиента 26.3): голова — PartPose.offset(0, -7.986666, 0).scaled(0.75), челюсть — дочерняя часть (0, 4, -8) с xRot = (sin(0) + 1) * 0.2.
+# Коробки: (имя, начало, размер, texOffs, mirror); текстура 256×256 entity/enderdragon/dragon.
+_DRAGON_HEAD = (
+    ((-6, -1, -24), (12, 5, 16), (176, 44), False),      # upper_lip
+    ((-8, -8, -10), (16, 16, 16), (112, 30), False),      # upper_head
+    ((-5, -12, -4), (2, 4, 6), (0, 0), True),             # scale (левый, mirror)
+    ((-5, -3, -22), (2, 2, 4), (112, 0), True),           # nostril (левая, mirror)
+    ((3, -12, -4), (2, 4, 6), (0, 0), False),             # scale
+    ((3, -3, -22), (2, 2, 4), (112, 0), False),           # nostril
+)
+_DRAGON_JAW = ((-6, 0, -16), (12, 4, 16), (176, 65), False)
+_DRAGON_JAW_XROT = 0.2                                    # рад: (sin(animationPos · π · 0.2) + 1) · 0.2 при animationPos = 0 — рот чуть приоткрыт
+
+
+def _skull_mat(block, props):
+    """Раскладка SkullBlockRenderer: настенная голова — createWallTransformation, напольная — createGroundTransformation (scale(-1, -1, 1) в конце)."""
+    if '_wall_' in block:
+        f = props.get('facing', 'north')
+        sx, sz = _STEP[f]
+        opposite = {'north': 'south', 'south': 'north', 'east': 'west', 'west': 'east'}[f]
+        return _mul(_trans(0.5 - sx * 0.25, 0.25, 0.5 - sz * 0.25), _mul(_roty(-_FACING_YROT[opposite]), _scale(-1, -1, 1)))
+    return _mul(_trans(0.5, 0, 0.5), _mul(_roty(-int(props.get('rotation', '0')) * 22.5), _scale(-1, -1, 1)))
+
+
+def _dragon_head(block, props):
+    tex = 'minecraft:entity/enderdragon/dragon'
+    mat0 = _skull_mat(block, props)
+    m_head = _mul(_trans(0.0, -7.986666 / 16.0, 0.0), _scale(0.75, 0.75, 0.75))
+    m_jaw = _mul(m_head, _mul(_trans(0.0, 4.0 / 16.0, -8.0 / 16.0), _rotx(math.degrees(_DRAGON_JAW_XROT))))
+    q = []
+    for origin, size, uv, mirror in _DRAGON_HEAD:
+        q += _quads(_cube_polygons(origin, size, uv, mirror=mirror), (0, 0, 0), _mul(mat0, m_head), tex, 256, 256)
+    origin, size, uv, mirror = _DRAGON_JAW
+    q += _quads(_cube_polygons(origin, size, uv, mirror=mirror), (0, 0, 0), _mul(mat0, m_jaw), tex, 256, 256)
+    return q
+
+
 def _bell(block, props):
     tex = 'minecraft:entity/bell/bell_body'
     mat = _ident()
@@ -235,8 +295,8 @@ def is_entity_block(block):
     """Короткое имя блока (без minecraft:) -> есть ли заглушка."""
     if block in _CHEST_TEX or (block.startswith('waxed_') and block[6:] in _CHEST_TEX):
         return True
-    return block.endswith('shulker_box') or block.endswith('_banner') or block in ('bell', 'end_portal') or \
-        block.replace('_wall_', '_') in _SKULL_TEX
+    return block.endswith('shulker_box') or block.endswith('_banner') or block in ('bell', 'end_portal') or block.replace('_wall_', '_') in _SKULL_TEX or \
+        block in ('dragon_head', 'dragon_wall_head')
 
 
 def entity_quads(block, props):
@@ -251,6 +311,8 @@ def entity_quads(block, props):
         return _bell(block, props)
     if block == 'end_portal':
         return _end_portal(block, props)
+    if block in ('dragon_head', 'dragon_wall_head'):
+        return _dragon_head(block, props)
     if block.replace('_wall_', '_') in _SKULL_TEX:
         return _skull(block, props)
     return []

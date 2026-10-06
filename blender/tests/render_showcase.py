@@ -65,6 +65,14 @@ SHEETS = {
          S('skeleton_wall_skull', facing='north', powered='false'), S('zombie_wall_head', facing='east', powered='false'),
          S('creeper_wall_head', facing='south', powered='false'), S('piglin_head', rotation='0', powered='false'), S('white_bed', facing='east', part='foot'),
          S('white_bed', facing='east', part='head')],
+        [S('dragon_head', rotation='0', powered='false'), S('dragon_head', rotation='4', powered='false'), S('dragon_head', rotation='8', powered='false'),
+         S('dragon_head', rotation='12', powered='false'), S('dragon_wall_head', facing='north', powered='false'), S('dragon_wall_head', facing='east', powered='false'),
+         S('dragon_wall_head', facing='south', powered='false'), S('dragon_wall_head', facing='west', powered='false'), S('magenta_wall_banner', facing='west'),
+         S('white_wall_banner', facing='north'), S('gray_banner', rotation='0')],
+    ],
+    'f': [   # драконьи головы (Конец): напольные и настенные
+        [S('dragon_head', rotation='0', powered='false'), S('dragon_head', rotation='4', powered='false'), S('dragon_wall_head', facing='north', powered='false'),
+         S('dragon_wall_head', facing='east', powered='false'), S('dragon_wall_head', facing='south', powered='false')],
     ],
     'a': [   # кубы, оси, поворачиваемые кубы, листва, стекло
         [S('grass_block'), S('dirt'), S('stone'), S('cobblestone'), S('oak_planks'), S('sand'), S('glass'), S('oak_leaves'), S('birch_leaves'),

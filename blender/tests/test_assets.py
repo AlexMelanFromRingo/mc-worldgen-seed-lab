@@ -173,7 +173,12 @@ class TestEntity(unittest.TestCase):
         self.assertEqual(len(em.entity_quads('waxed_oxidized_copper_chest', {'facing': 'east', 'type': 'single'})), 18)
         self.assertEqual(len(em.entity_quads('purple_shulker_box', {'facing': 'up'})), 12)
         self.assertEqual(len(em.entity_quads('skeleton_skull', {'rotation': '3'})), 6)
-        self.assertEqual(em.entity_quads('dragon_head', {'rotation': '3'}), [])
+        dq = em.entity_quads('dragon_head', {'rotation': '3'})                          # DragonHeadModel: 6 коробок головы + челюсть = 7 × 6 граней
+        self.assertEqual(len(dq), 42)
+        self.assertTrue(all(x.tex == 'minecraft:entity/enderdragon/dragon' for x in dq))
+        self.assertTrue(all(0.0 <= c <= 1.0 for x in dq for uv in x.uv for c in uv))    # раскладка текстуры 256×256 не выходит за неё
+        self.assertEqual(len(em.entity_quads('dragon_wall_head', {'facing': 'north'})), 42)
+        self.assertTrue(em.is_entity_block('dragon_head') and em.is_entity_block('dragon_wall_head'))
         b = em.entity_quads('red_banner', {'rotation': '0'})
         self.assertEqual(sorted({x.tint for x in b}), [-1, 0])
         self.assertEqual(tint.tint_sources('minecraft:red_banner', {'rotation': '0'})[0], (tint.CONST, 11546150 & 0xFFFFFF))
@@ -183,6 +188,32 @@ class TestEntity(unittest.TestCase):
             for x in em.entity_quads(name, props):
                 for p in x.pos:
                     self.assertTrue(all(-0.02 <= c <= 1.02 for c in p), (name, p))
+
+    def test_dragon_head_geometry(self):
+        """Размеры по байткоду клиента 26.3: голова — scaled(0.75) со смещением −7.986666 px, морда на 24 px вперёд, рога выше головы; зеркальные коробки отражены."""
+        from mcgen_addon.assets import entity_models as em
+        qs = em.entity_quads('dragon_head', {'rotation': '0'})
+        ys = [p[1] for x in qs for p in x.pos]
+        self.assertGreater(max(ys), 1.0)                       # рога выступают над блоком
+        zs = [p[2] for x in qs for p in x.pos]
+        self.assertLess(min(zs) , 0.0)                         # морда (24 px × 0.75 = 1.125 блока) выходит за грань блока
+        # mirror: те же вершины, отражённые по x внутри коробки; порядок вершин обращён
+        a = em._cube_polygons((-5, -12, -4), (2, 4, 6), (0, 0))
+        b = em._cube_polygons((-5, -12, -4), (2, 4, 6), (0, 0), mirror=True)
+        self.assertEqual(len(a), len(b))
+        self.assertEqual({tuple(sorted(v)) for verts, _ in a for v in verts}, {tuple(sorted(v)) for verts, _ in b for v in verts})
+        self.assertNotEqual([uv for _, uv in a], [uv for _, uv in b])
+
+    def test_banner_cloth_faces(self):
+        """Лицевая и тыльная грани полотна для слоёв узоров: две грани с uv 64×64 и противоположными нормалями."""
+        from mcgen_addon.assets import entity_models as em
+        f = em.banner_cloth_faces('magenta_wall_banner', {'facing': 'west'})
+        self.assertEqual(len(f), 2)
+        (p0, uv0, n0), (p1, uv1, n1) = f
+        self.assertAlmostEqual(n0[0], -n1[0])
+        self.assertTrue(all(0.0 <= c <= 1.0 for uv in (uv0, uv1) for u in uv for c in u))
+        # те же координаты y/z (грань на том же полотне), x — две плоскости толщиной 1 px × 2/3
+        self.assertAlmostEqual(abs(p0[0][0] - p1[0][0]), 1.0 / 16.0 * 2.0 / 3.0, places=4)
 
     def test_chest_facing_rotates_lock(self):
         from mcgen_addon.assets import entity_models as em

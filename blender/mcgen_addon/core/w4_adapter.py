@@ -57,7 +57,7 @@ def remove_stale_objects():
     """Удаляет объекты построителя сцены (признак — свойство `mc_group`), оставшиеся от прежнего построителя: например, из открытого .blend, где сохранены меши,
     но самого построителя (и вокселей) нет. Иначе новая сборка создала бы дубликаты `mc_x_z.001`. Возвращает число удалённых объектов."""
     import bpy
-    stale = [o for o in bpy.data.objects if 'mc_group' in o.keys()]
+    stale = [o for o in bpy.data.objects if 'mc_group' in o.keys() or 'mc_overlay' in o.keys()]
     for o in stale:
         mesh = o.data if o.type == 'MESH' else None
         bpy.data.objects.remove(o, do_unlink=True)
@@ -178,9 +178,23 @@ class W4Sink(SceneSink):
             self._done = self._bi >= len(self._batches)
         if self._done:
             self._frac = 1.0
+            self.refresh_overlays()
             self._collect_stats()
             self._attach_edit()
         return self._done
+
+    def refresh_overlays(self):
+        """Узоры баннеров построек (render/banner_overlay.py) пересоздаются заново: блок-сущности берутся из региона, сломанные правкой баннеры отбрасываются."""
+        try:
+            ctx = self._ctx
+            reg = ctx.region
+            entries = reg.block_entities() if hasattr(reg, 'block_entities') else []
+            from importlib import import_module
+            mod = import_module(__package__.rsplit('.', 1)[0] + '.render.banner_overlay')
+            mod.rebuild(self._sb, reg, ctx.gen.block_names(), entries, ctx.assets_dir, ctx.view)
+        except Exception:      # noqa: BLE001 - узоры необязательны: сцена без них остаётся рабочей
+            import traceback
+            self.overlay_error = traceback.format_exc()
 
     def _attach_edit(self):
         """Привязывает инструменты строительства/разрушения (mcgen.edit_*) к собранной сцене."""

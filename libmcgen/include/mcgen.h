@@ -122,6 +122,12 @@ MCGEN_API int16_t *mcgen_region_heightmap(McRegion *r, int cx, int cz, int kind)
 /* ---- дамп региона (для тестов/эталонов): формат MCR1, см. libmcgen/README.md ---------------------------------------- */
 MCGEN_API int mcgen_region_write_mcr(const McRegion *r, const McGen *g, const char *path, char *err, size_t errlen);
 
+/* ---- блок-сущности построек --------------------------------------------------------------------------------------------------
+ * JSON-массив [{"x":..,"y":..,"z":..,"block":"minecraft:magenta_wall_banner","patterns":[["black","minecraft:triangle_top"],…]}, …] баннеров с узорами,
+ * размещённых постройками в области региона (данные из NBT шаблонов; у блоков без блок-сущности записи нет). Строка живёт до mcgen_region_free. Добавлено в v0.1.8
+ * (необязательная функция: старые библиотеки её не экспортируют). */
+MCGEN_API const char *mcgen_region_block_entities(const McRegion *r);
+
 /* ---- постройки (стадия STRUCTURES): старты ----------------------------------------------------------------------------- */
 typedef struct McStructureStart {
     const char *id;            /* "minecraft:village_plains" (строка живёт до mcgen_world_free) */

@@ -1269,6 +1269,26 @@ class RealLibraryTests(unittest.TestCase):
         self.assertGreater(diff, 0, 'FEATURES/STRUCTURES не изменили ни одного чанка')
         self.assertEqual(b.blocks(0, 0).shape, (384, 16, 16))
 
+    def test_end_city_block_entities_and_dragon_head(self):
+        """Баннеры с узорами (блок-сущности из NBT шаблонов) отдаются через region.block_entities(); корабль Края ставит dragon_wall_head."""
+        w = self.gen.world('minecraft:the_end', 'normal', 12345)
+        r = self.region(w, -64, -182, 12, 12, lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN | lib.MC_STAGE_SURFACE | lib.MC_STAGE_CARVERS | lib.MC_STAGE_STRUCTURES, 0)
+        be = r.block_entities()
+        self.assertGreaterEqual(len(be), 4, be)
+        names = self.gen.block_names()
+        for e in be:
+            self.assertEqual(e['block'], 'minecraft:magenta_wall_banner')
+            self.assertEqual(e['patterns'], [('black', 'minecraft:triangle_top'), ('black', 'minecraft:triangle_bottom')])
+            sid = int(r.blocks(e['x'] >> 4, e['z'] >> 4)[e['y'] - r.info.min_y, e['z'] & 15, e['x'] & 15])
+            self.assertTrue(names[sid].startswith('minecraft:magenta_wall_banner['), names[sid])      # запись соответствует блоку в регионе
+        r2 = self.region(w, 155, -21, 11, 11, lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN | lib.MC_STAGE_SURFACE | lib.MC_STAGE_CARVERS | lib.MC_STAGE_STRUCTURES, 0)
+        heads = [i for i, nm in enumerate(names) if nm.startswith('minecraft:dragon_wall_head[')]
+        n = sum(int(np.isin(r2.blocks(cx, cz), heads).sum()) for cx, cz in r2.chunks())
+        self.assertGreaterEqual(n, 1, 'на корабле города Края должна быть голова дракона')
+        # область без построек — пустой список
+        r3 = self.region(self.gen.world('minecraft:overworld', 'normal', 5), 0, 0, 2, 2, lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN, 0)
+        self.assertEqual(r3.block_entities(), [])
+
     def test_structure_starts_contract(self):
         w = self.gen.world('minecraft:overworld', 'normal', 12345)
         st = w.structure_starts(-64, -64, 128, 128)

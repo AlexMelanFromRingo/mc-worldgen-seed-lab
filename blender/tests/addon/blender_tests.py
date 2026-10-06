@@ -742,6 +742,27 @@ class T04_Operators(unittest.TestCase):
         finally:
             ops._active.remove(op)
 
+    @unittest.skipUnless(REAL, 'нужна настоящая библиотека: узоры баннеров берутся из NBT шаблонов построек')
+    def test_banner_pattern_overlay_in_end_city(self):
+        """Баннеры башен Края: на полотно (magenta) накладываются слои узоров (две чёрные треугольные полосы); очистка сцены удаляет слои."""
+        res = pack.resolve('26.3')
+        if not (res['assets_ok'] and res['pack_ok']):
+            self.skipTest('нет подготовленных ресурсов 26.3 в кэше')
+        props.get_prefs().sink = 'AUTO'
+        s = S()
+        s.dimension, s.seed, s.unit = 'minecraft:the_end', '12345', 'CHUNKS'
+        s.origin_x, s.origin_z, s.size_x, s.size_z = -64, -182, 12, 12
+        self._layers(terrain=True, surface=True, caves=True, structures=True)
+        run_job('generate')
+        self.assertEqual(s.stats.sink, 'render.scene')
+        ov = [o for o in bpy.data.objects if 'mc_overlay' in o.keys()]
+        self.assertTrue(ov, 'слои узоров не созданы')
+        mats = {m.name for o in ov for m in o.data.materials}
+        self.assertEqual(mats, {'MC_banner_triangle_top', 'MC_banner_triangle_bottom'})
+        self.assertGreaterEqual(sum(len(o.data.polygons) for o in ov), 4 * 2 * 2)       # ≥ 4 баннера × 2 слоя × 2 стороны
+        bpy.ops.mcgen.clear()
+        self.assertFalse([o for o in bpy.data.objects if 'mc_overlay' in o.keys()], 'очистка должна убирать слои узоров')
+
     @unittest.skipUnless(REAL, 'нужна настоящая библиотека: слои меняют содержимое чанков')
     def test_update_after_enabling_features_and_structures(self):
         s = S()
