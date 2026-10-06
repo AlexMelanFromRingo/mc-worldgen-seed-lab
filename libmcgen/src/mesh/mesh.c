@@ -1018,7 +1018,10 @@ void mcmesh_output_free(McMeshOutput *o)
     memset(o, 0, sizeof(*o));
 }
 
-/* ---- сварка вершин и рёбер (для Blender: общие вершины экономят ≈30 % памяти меша) ---- */
+/* ---- сварка вершин и рёбер (для Blender: общие вершины экономят ≈30 % памяти меша) ----
+ * Вершины — хэш-таблица по битам позиции (−0,0 = +0,0). Рёбра — списки смежности по меньшей вершине ребра (у вершины сетки несколько рёбер): поиск идёт по
+ * 2–4 записям, которые только что создавались и лежат в кэше, без второй большой хэш-таблицы (−35 % времени против хэша рёбер; результат тот же).
+ * Нумерация вершин и рёбер — по первому появлению. */
 static inline uint32_t weld_bits(float f) { uint32_t u; if (f == 0.0f) f = 0.0f; memcpy(&u, &f, 4); return u; }   /* -0.0 → +0.0 */
 static inline uint32_t weld_hash3(uint32_t x, uint32_t y, uint32_t z)
 {
@@ -1032,11 +1035,13 @@ int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_p
     if (!pos || n < 0 || !corner_vert || !vert_pos || !edge_verts || !corner_edge || !counts) return -1;
     counts[0] = counts[1] = 0;
     if (n == 0) return 0;
-    size_t nc = (size_t)n * 4, cap = 16;
-    while (cap < nc * 2) cap <<= 1;                                       /* таблицы с заполнением ≤ 1/2 */
-    int32_t *vt = malloc(cap * sizeof(int32_t)), *et = malloc(cap * sizeof(int32_t));
-    if (!vt || !et) { free(vt); free(et); return -2; }
-    memset(vt, 0xFF, cap * sizeof(int32_t)); memset(et, 0xFF, cap * sizeof(int32_t));
+    size_t nc = (size_t)n * 4, cap = 64;
+    while (cap < nc * 2) cap <<= 1;                                       /* таблица вершин: заполнение ≤ 1/2 даже в худшем случае 4 вершины на грань */
+    int32_t *vt = malloc(cap * sizeof(int32_t));
+    int32_t *head = malloc(nc * sizeof(int32_t)), *next = malloc(nc * sizeof(int32_t));   /* списки рёбер по меньшей вершине; вершин и рёбер ≤ 4n */
+    if (!vt || !head || !next) { free(vt); free(head); free(next); return -2; }
+    memset(vt, 0xFF, cap * sizeof(int32_t));
+    memset(head, 0xFF, nc * sizeof(int32_t));
     size_t mask = cap - 1;
     int32_t nv = 0, ne = 0;
     for (int32_t q = 0; q < n; q++) {
@@ -1061,64 +1066,84 @@ int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_p
             for (int j = 0; j < k; j++)
                 if (id[k] == id[j]) {
                     const float *p = pos + ((size_t)q * 4 + k) * 3; float *o = vert_pos + (size_t)nv * 3; o[0] = p[0]; o[1] = p[1]; o[2] = p[2];
-                    id[k] = nv++; break;
+                    id[k] = nv++;
+                    break;
                 }
         for (int k = 0; k < 4; k++) {
             int32_t a = id[k], b = id[(k + 1) & 3];
             corner_vert[(size_t)q * 4 + k] = a;
-            uint32_t lo = (uint32_t)(a < b ? a : b), hi = (uint32_t)(a < b ? b : a);
-            size_t h = weld_hash3(lo, hi, 0x7F4A7C15u) & mask;
-            for (;;) {
-                int32_t e = et[h];
-                if (e < 0) {
-                    edge_verts[(size_t)ne * 2] = a; edge_verts[(size_t)ne * 2 + 1] = b;
-                    et[h] = e = ne++;
-                    corner_edge[(size_t)q * 4 + k] = e; break;
-                }
+            int32_t lo = a < b ? a : b, hi = a < b ? b : a;
+            int32_t e = head[lo];
+            while (e >= 0) {
                 int32_t ea = edge_verts[(size_t)e * 2], eb = edge_verts[(size_t)e * 2 + 1];
-                if ((ea == a && eb == b) || (ea == b && eb == a)) { corner_edge[(size_t)q * 4 + k] = e; break; }
-                h = (h + 1) & mask;
+                if ((ea == lo ? eb : ea) == hi) break;
+                e = next[e];
             }
+            if (e < 0) {
+                edge_verts[(size_t)ne * 2] = a; edge_verts[(size_t)ne * 2 + 1] = b;
+                next[ne] = head[lo]; head[lo] = ne;
+                e = ne++;
+            }
+            corner_edge[(size_t)q * 4 + k] = e;
         }
     }
-    free(vt); free(et);
+    free(vt); free(head); free(next);
     counts[0] = nv; counts[1] = ne;
     return 0;
 }
 
 /* ---- готовые к записи в Blender массивы части выхода (см. mcgen_mesh.h) ---- */
-int mcmesh_split_counts(const McMeshOutput *o, int32_t *counts)
+int mcmesh_split_counts_n(const McMeshOutput *const *os, int32_t k, int32_t *counts)
 {
-    if (!o || !counts) return -1;
-    int32_t m = 0;
-    for (int32_t q = 0; q < o->n_quads; q++) m += o->merged[q] != 0;
-    counts[0] = o->n_quads - m;
+    if (!os || k < 0 || !counts) return -1;
+    int32_t m = 0, tot = 0;
+    for (int32_t i = 0; i < k; i++) {
+        const McMeshOutput *o = os[i];
+        if (!o) return -1;
+        tot += o->n_quads;
+        for (int32_t q = 0; q < o->n_quads; q++) m += o->merged[q] != 0;
+    }
+    counts[0] = tot - m;
     counts[1] = m;
     return 0;
 }
 
-int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r)
+int mcmesh_split_counts(const McMeshOutput *o, int32_t *counts)
 {
-    if (!o || !r || part < 0 || part > 2 || r->n < 0) return -1;
+    const McMeshOutput *os[1] = { o };
+    return mcmesh_split_counts_n(os, 1, counts);
+}
+
+int mcmesh_ready_n(const McMeshOutput *const *os, int32_t k, const float *off, int32_t chunk_shift, int32_t part, McMeshReady *r)
+{
+    if (!os || !r || k < 0 || part < 0 || part > 2 || r->n < 0) return -1;
     int32_t n = r->n;
     if (n == 0) { r->nv = r->ne = 0; return 0; }
     float *pos = malloc(sizeof(float) * 12 * (size_t)n);
     if (!pos) return -2;
     const float k255 = 1.0f / 255.0f;
-    int32_t k = 0;
-    for (int32_t q = 0; q < o->n_quads; q++) {
-        if (part != 2 && ((o->merged[q] != 0) != (part == 1))) continue;
-        if (k >= n) { free(pos); return -1; }
-        memcpy(pos + 12 * (size_t)k, o->pos + 12 * (size_t)q, 12 * sizeof(float));
-        memcpy(r->uv + 8 * (size_t)k, o->uv + 8 * (size_t)q, 8 * sizeof(float));
-        const uint8_t *c = o->col + 16 * (size_t)q;                      /* цвет грани один: берём первый угол */
-        for (int i = 0; i < 4; i++) r->col[4 * (size_t)k + i] = (float)c[i] * k255;
-        r->mat[k] = (int32_t)o->mat[q];
-        r->code[k] = (int32_t)((o->block[q] << MCM_FACE_DIR_BITS) | o->dir[q]);
-        if (r->rect) memcpy(r->rect + 4 * (size_t)k, o->rect + 4 * (size_t)q, 4 * sizeof(float));
-        k++;
+    int32_t m = 0;
+    for (int32_t ci = 0; ci < k; ci++) {
+        const McMeshOutput *o = os[ci];
+        if (!o) { free(pos); return -1; }
+        const float fx = off ? off[2 * (size_t)ci] : 0.0f, fy = off ? off[2 * (size_t)ci + 1] : 0.0f;
+        const int32_t cbits = (int32_t)((uint32_t)ci << chunk_shift);
+        for (int32_t q = 0; q < o->n_quads; q++) {
+            if (part != 2 && ((o->merged[q] != 0) != (part == 1))) continue;
+            if (m >= n) { free(pos); return -1; }
+            float *pp = pos + 12 * (size_t)m;
+            memcpy(pp, o->pos + 12 * (size_t)q, 12 * sizeof(float));
+            if (off) for (int c = 0; c < 4; c++) { pp[c * 3] += fx; pp[c * 3 + 1] += fy; }
+            memcpy(r->uv + 8 * (size_t)m, o->uv + 8 * (size_t)q, 8 * sizeof(float));
+            const uint8_t *c4 = o->col + 16 * (size_t)q;                  /* цвет грани один: берём первый угол */
+            for (int i = 0; i < 4; i++) r->col[4 * (size_t)m + i] = (float)c4[i] * k255;
+            r->mat[m] = (int32_t)o->mat[q];
+            r->code[m] = (int32_t)((o->block[q] << MCM_FACE_DIR_BITS) | o->dir[q]) | cbits;
+            if (r->rect) memcpy(r->rect + 4 * (size_t)m, o->rect + 4 * (size_t)q, 4 * sizeof(float));
+            m++;
+        }
     }
-    if (k != n) { free(pos); return -1; }
+    if (m != n) { free(pos); return -1; }
     int32_t cnt[2];
     int rc = mcmesh_weld(pos, n, r->corner_vert, r->vert_pos, r->edge_verts, r->corner_edge, cnt);
     free(pos);
@@ -1126,4 +1151,10 @@ int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r)
     r->nv = cnt[0];
     r->ne = cnt[1];
     return 0;
+}
+
+int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r)
+{
+    const McMeshOutput *os[1] = { o };
+    return mcmesh_ready_n(os, 1, NULL, 0, part, r);
 }

@@ -314,6 +314,84 @@ class TestReady(unittest.TestCase):
             self.assertIsNone(none)
             self._check(allp, md2, False)
 
+    def test_group_equals_concatenated_chunks(self):
+        """mesh_group_ready (один меш на группу чанков, сварка общая) = грани чанков подряд, со сдвигом позиций и номером чанка в коде; вершины могут быть
+        сварены и через границы чанков."""
+        rng = np.random.default_rng(7)
+        blocks, bio = {}, {}
+        for cz in (-1, 0, 1, 2):
+            for cx in (-1, 0, 1, 2):
+                nb, nbio = common.random_world(self.t, rng)
+                blocks[(cx, cz)] = nb[4]
+                bio[(cx, cz)] = nbio[4]
+        cks = [(0, 0), (1, 0), (0, 1), (1, 1)]
+        offs = [0.0, 0.0, 16.0, 0.0, 0.0, -16.0, 16.0, -16.0]
+        shift = 15
+        opt = self.m.opt.copy(merge=True)
+        for split in (True, False):
+            o2 = opt if split else self.m.opt.copy(merge=False)
+            main, merged = self.m.mesh_group_ready(cks, offs, blocks, bio, -64, 32, split=split, chunk_shift=shift, options=o2)
+            exp_main, exp_merged = [], []
+            for ci, ck in enumerate(cks):
+                nb, nbio = [], []
+                for dz in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        nb.append(blocks.get((ck[0] + dx, ck[1] + dz)))
+                        nbio.append(bio.get((ck[0] + dx, ck[1] + dz)))
+                md = self.m.mesh_arrays(ck[0], ck[1], nb, nbio, -64, 32, o2)
+                parts = md.split_merged() if split else (md, None)
+                for lst, md_part, is_m in ((exp_main, parts[0], False), (exp_merged, parts[1], True)):
+                    if md_part is None or not md_part.n_quads:
+                        continue
+                    pos = md_part.pos.copy()
+                    pos[:, :, 0] += np.float32(offs[2 * ci])
+                    pos[:, :, 1] += np.float32(offs[2 * ci + 1])
+                    code = ((md_part.block.astype(np.int32) << 3) | md_part.dir.astype(np.int32)) | np.int32(ci << shift)
+                    lst.append((pos, md_part, code, is_m))
+            for got, exp in ((main, exp_main), (merged, exp_merged)):
+                if not exp:
+                    self.assertIsNone(got)
+                    continue
+                self.assertIsNotNone(got)
+                pos = np.concatenate([e[0] for e in exp])
+                self.assertEqual(got.n, pos.shape[0])
+                cv, vp, ev, ce, nv, ne = got.welded
+                corner_pos = vp.reshape(-1, 3)[cv].reshape(-1, 4, 3)
+                self.assertTrue(np.array_equal(corner_pos + np.float32(0.0), pos + np.float32(0.0)), 'позиции углов')
+                self.assertTrue(np.array_equal(got.uv, np.concatenate([np.ascontiguousarray(e[1].uv, dtype=np.float32).reshape(-1) for e in exp])), 'uv')
+                self.assertTrue(np.array_equal(got.code, np.concatenate([e[2] for e in exp])), 'code')
+                self.assertTrue(np.array_equal(got.mat, np.concatenate([e[1].mat.astype(np.int32) for e in exp])), 'mat')
+                colexp = np.concatenate([np.ascontiguousarray(e[1].col[:, 0, :]).reshape(-1).astype(np.float32) * np.float32(1.0 / 255.0) for e in exp])
+                self.assertTrue(np.array_equal(got.col, colexp), 'col')
+                if exp[0][3]:
+                    self.assertTrue(np.array_equal(got.rect, np.concatenate([np.ascontiguousarray(e[1].rect, dtype=np.float32).reshape(-1) for e in exp])), 'rect')
+                evv = ev.reshape(-1, 2)
+                cvq = cv.reshape(-1, 4)
+                for kk in range(4):
+                    a, b = cvq[:, kk], cvq[:, (kk + 1) & 3]
+                    e = evv[ce.reshape(-1, 4)[:, kk]]
+                    self.assertTrue(((e[:, 0] == a) & (e[:, 1] == b) | (e[:, 0] == b) & (e[:, 1] == a)).all(), 'ребро')
+                # сварка общая: вершин не больше, чем сумма по чанкам
+                per_chunk = sum(mesher.weld_quads(e[0], self.m.lib)[4] for e in exp)
+                self.assertLessEqual(nv, per_chunk)
+
+    def test_group_with_pool(self):
+        import concurrent.futures as cf
+        rng = np.random.default_rng(3)
+        blocks, bio = {}, {}
+        for cz in (-1, 0, 1):
+            for cx in (-1, 0, 1):
+                nb, nbio = common.random_world(self.t, rng)
+                blocks[(cx, cz)] = nb[4]
+                bio[(cx, cz)] = nbio[4]
+        cks = [(0, 0), (1, 0), (0, 1), (1, 1)]
+        a = self.m.mesh_group_ready(cks, [0.0] * 8, blocks, bio, -64, 32, split=False)
+        with cf.ThreadPoolExecutor(4) as ex:
+            b = self.m.mesh_group_ready(cks, [0.0] * 8, blocks, bio, -64, 32, split=False, pool=ex)
+        for k in ('uv', 'col', 'mat', 'code'):
+            self.assertTrue(np.array_equal(getattr(a[0], k), getattr(b[0], k)), k)
+        self.assertEqual(a[0].welded[4:], b[0].welded[4:])
+
 
 if __name__ == '__main__':
     unittest.main()

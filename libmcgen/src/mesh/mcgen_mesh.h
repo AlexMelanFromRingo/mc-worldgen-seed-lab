@@ -165,6 +165,10 @@ typedef struct McMeshReady {
 } McMeshReady;
 MCMESH_API int mcmesh_split_counts(const McMeshOutput *o, int32_t *counts);          /* counts[0] — обычных граней, counts[1] — слитых */
 MCMESH_API int mcmesh_ready(const McMeshOutput *o, int32_t part, McMeshReady *r);
+/* То же для группы из k чанков (один меш Blender на группу): грани чанков идут подряд в порядке o[0..k-1]; позиции сдвигаются на off[2i], off[2i+1] (оси 0 и 1
+ * вывода: Blender X и Y), код грани получает номер чанка (i << chunk_shift); сварка общая — углы на границах чанков тоже сваркой объединяются. */
+MCMESH_API int mcmesh_split_counts_n(const McMeshOutput *const *o, int32_t k, int32_t *counts);
+MCMESH_API int mcmesh_ready_n(const McMeshOutput *const *o, int32_t k, const float *off, int32_t chunk_shift, int32_t part, McMeshReady *r);
 
 /* Для тестов: выбор варианта (Mth.getSeed → LegacyRandomSource) — вернуть индекс варианта в группе `total` весов по позиции. */
 MCMESH_API int64_t mcmesh_mth_get_seed(int32_t x, int32_t y, int32_t z);

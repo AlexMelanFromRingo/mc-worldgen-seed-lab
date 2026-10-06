@@ -204,6 +204,12 @@ def _bind(lib):
         lib.mcmesh_split_counts.restype = ctypes.c_int
         lib.mcmesh_ready.argtypes = [ctypes.POINTER(_Output), ctypes.c_int32, ctypes.POINTER(_ReadyC)]
         lib.mcmesh_ready.restype = ctypes.c_int
+    if hasattr(lib, 'mcmesh_ready_n') and hasattr(lib, 'mcmesh_split_counts_n'):     # группа из нескольких чанков (v0.1.17+)
+        PP = ctypes.POINTER(ctypes.POINTER(_Output))
+        lib.mcmesh_split_counts_n.argtypes = [PP, ctypes.c_int32, P]
+        lib.mcmesh_split_counts_n.restype = ctypes.c_int
+        lib.mcmesh_ready_n.argtypes = [PP, ctypes.c_int32, P, ctypes.c_int32, ctypes.c_int32, ctypes.POINTER(_ReadyC)]
+        lib.mcmesh_ready_n.restype = ctypes.c_int
     if hasattr(lib, 'mcmesh_weld'):          # необязательная функция (библиотеки старее v0.1.14 её не имеют — меш тогда строится без сварки)
         lib.mcmesh_weld.argtypes = [P, ctypes.c_int32, P, P, P, P, P]
         lib.mcmesh_weld.restype = ctypes.c_int
@@ -453,56 +459,88 @@ class Mesher:
         return self.mesh_arrays(cx, cz, nb, nbio, min_y, height, options)
 
     def can_ready(self):
-        return hasattr(self.lib, 'mcmesh_ready') and hasattr(self.lib, 'mcmesh_split_counts') and not os.environ.get('MCGEN_NO_WELD')
+        """Есть ли в библиотеке mcmesh_ready_n / mcmesh_split_counts_n (v0.1.17+; mesh_ready и mesh_group_ready) и не отключена ли сварка (MCGEN_NO_WELD)."""
+        return hasattr(self.lib, 'mcmesh_ready_n') and hasattr(self.lib, 'mcmesh_split_counts_n') and not os.environ.get('MCGEN_NO_WELD')
 
     def mesh_ready(self, cx, cz, blocks_by_chunk, biomes_by_chunk, min_y, height, split=False, options=None):
         """Меш чанка сразу в виде готовых к записи в Blender массивов (ReadyMesh): разделение на обычные/слитые грани, сварка вершин и приведение типов —
         одним вызовом ядра без GIL. Возвращает (основная часть | None, слитая часть | None) — None, если в части нет граней; без split основная часть — все грани.
         Нет mcmesh_ready в библиотеке — вызывайте mesh_chunk."""
-        c = blocks_by_chunk.get((cx, cz))
-        if c is None:
-            raise KeyError('нет блоков чанка (%d, %d)' % (cx, cz))
-        nb, nbio = [], []
-        for dz in (-1, 0, 1):
-            for dx in (-1, 0, 1):
-                nb.append(blocks_by_chunk.get((cx + dx, cz + dz)))
-                nbio.append(biomes_by_chunk.get((cx + dx, cz + dz)) if biomes_by_chunk else None)
-        I, O, keep = self._call_args(cx, cz, nb, nbio, min_y, height, options)
-        out = _Output()
-        rc = self.lib.mcmesh_chunk(ctypes.byref(self._T), ctypes.byref(I), ctypes.byref(O), ctypes.byref(out))
-        if rc != 0:
-            raise RuntimeError('mcmesh_chunk вернул %d' % rc)
+        return self.mesh_group_ready([(cx, cz)], None, blocks_by_chunk, biomes_by_chunk, min_y, height, split=split, options=options)
+
+    def mesh_group_ready(self, cks, offsets, blocks_by_chunk, biomes_by_chunk, min_y, height, split=False, chunk_shift=0, options=None, pool=None):
+        """То же для группы чанков cks (один меш Blender на группу): грани идут подряд в порядке cks, позиции сдвигаются на offsets[2i], offsets[2i+1]
+        (оси 0 и 1 вывода; None — без сдвига), код грани получает номер чанка (i << chunk_shift), сварка общая на всю группу. pool — пул потоков для меширования
+        чанков группы (None — по очереди в вызывающем потоке)."""
+        k = len(cks)
+
+        def run(ck):
+            cx, cz = ck
+            if blocks_by_chunk.get((cx, cz)) is None:
+                raise KeyError('нет блоков чанка (%d, %d)' % (cx, cz))
+            nb, nbio = [], []
+            for dz in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    nb.append(blocks_by_chunk.get((cx + dx, cz + dz)))
+                    nbio.append(biomes_by_chunk.get((cx + dx, cz + dz)) if biomes_by_chunk else None)
+            I, O, keep = self._call_args(cx, cz, nb, nbio, min_y, height, options)
+            out = _Output()
+            rc = self.lib.mcmesh_chunk(ctypes.byref(self._T), ctypes.byref(I), ctypes.byref(O), ctypes.byref(out))
+            if rc != 0:
+                raise RuntimeError('mcmesh_chunk вернул %d' % rc)
+            return out
+
+        outs = []
+        err = None
+        if pool is not None and k > 1:
+            futs = [pool.submit(run, ck) for ck in cks]
+            for f in futs:
+                try:
+                    outs.append(f.result())
+                except Exception as e:      # noqa: BLE001 — освободим всё, что успело построиться, и пробросим первую ошибку
+                    err = err or e
+        else:
+            for ck in cks:
+                try:
+                    outs.append(run(ck))
+                except Exception as e:      # noqa: BLE001
+                    err = e
+                    break
         try:
-            n = out.n_quads
-            if n == 0:
+            if err is not None:
+                raise err
+            if sum(o.n_quads for o in outs) == 0:
                 return None, None
+            ptrs = (ctypes.POINTER(_Output) * k)(*[ctypes.pointer(o) for o in outs])
             cnt = np.zeros(2, np.int32)
-            self.lib.mcmesh_split_counts(ctypes.byref(out), cnt.ctypes.data)
-            parts = ((0, int(cnt[0]), False), (1, int(cnt[1]), True)) if split else ((2, n, False),)
+            self.lib.mcmesh_split_counts_n(ptrs, k, cnt.ctypes.data)
+            total = int(cnt[0] + cnt[1])
+            off = None if offsets is None else np.ascontiguousarray(offsets, dtype=np.float32).reshape(-1)
+            parts = ((0, int(cnt[0]), False), (1, int(cnt[1]), True)) if split else ((2, total, False),)
             res = []
-            for part, k, with_rect in parts:
-                if k == 0:
+            for part, kk, with_rect in parts:
+                if kk == 0:
                     res.append(None)
                     continue
-                cv = np.empty(4 * k, np.int32)
-                vp = np.empty(12 * k, np.float32)
-                ev = np.empty(8 * k, np.int32)
-                ce = np.empty(4 * k, np.int32)
-                uv = np.empty(8 * k, np.float32)
-                col = np.empty(4 * k, np.float32)
-                mat = np.empty(k, np.int32)
-                code = np.empty(k, np.int32)
-                rect = np.empty(4 * k, np.float32) if with_rect else None
+                cv = np.empty(4 * kk, np.int32)
+                vp = np.empty(12 * kk, np.float32)
+                ev = np.empty(8 * kk, np.int32)
+                ce = np.empty(4 * kk, np.int32)
+                uv = np.empty(8 * kk, np.float32)
+                col = np.empty(4 * kk, np.float32)
+                mat = np.empty(kk, np.int32)
+                code = np.empty(kk, np.int32)
+                rect = np.empty(4 * kk, np.float32) if with_rect else None
                 R = _ReadyC()
-                R.n = k
+                R.n = kk
                 R.corner_vert, R.vert_pos, R.edge_verts, R.corner_edge = cv.ctypes.data, vp.ctypes.data, ev.ctypes.data, ce.ctypes.data
                 R.uv, R.col, R.mat, R.code = uv.ctypes.data, col.ctypes.data, mat.ctypes.data, code.ctypes.data
                 R.rect = rect.ctypes.data if rect is not None else None
-                rc = self.lib.mcmesh_ready(ctypes.byref(out), part, ctypes.byref(R))
+                rc = self.lib.mcmesh_ready_n(ptrs, k, off.ctypes.data if off is not None else None, int(chunk_shift), part, ctypes.byref(R))
                 if rc != 0:
-                    raise RuntimeError('mcmesh_ready вернул %d' % rc)
+                    raise RuntimeError('mcmesh_ready_n вернул %d' % rc)
                 r = ReadyMesh()
-                r.n = k
+                r.n = kk
                 r.welded = (cv, vp[:3 * R.nv], ev[:2 * R.ne], ce, R.nv, R.ne)
                 r.pos = None
                 r.uv, r.col, r.mat, r.code, r.rect = uv, col, mat, code, rect
@@ -511,8 +549,8 @@ class Mesher:
                 res.append(None)
             return res[0], res[1]
         finally:
-            self.lib.mcmesh_output_free(ctypes.byref(out))
-            del keep
+            for o in outs:
+                self.lib.mcmesh_output_free(ctypes.byref(o))
 
     def _call_args(self, cx, cz, nb, nbio, min_y, height, options):
         """Структуры входа/опций для mcmesh_chunk; keep держит массивы живыми на время вызова."""

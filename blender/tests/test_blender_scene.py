@@ -198,6 +198,41 @@ def main():
     k = sorted(sb2.groups.keys())[0]
     sb2.update_chunk(*sb2.groups[k].chunks[0])
     check('chunks_per_object=2: update_chunk сохраняет число граней', sum(len(g.mesh.polygons) for g in sb2.groups.values()) == total2)
+    # быстрый путь групп (mesh_group_ready) = запасной путь numpy (MCGEN_NO_WELD=1): те же грани, коды граней, позиции углов, цвета, материалы
+    def snap(sbx):
+        out = {}
+        for gk, gx in sbx.groups.items():
+            me = gx.mesh
+            nq = len(me.polygons)
+            cvi = np.empty(nq * 4, np.int32)
+            me.loops.foreach_get('vertex_index', cvi)
+            co = np.empty(len(me.vertices) * 3, np.float32)
+            me.vertices.foreach_get('co', co)
+            pos = co.reshape(-1, 3)[cvi].reshape(nq, 4, 3) + np.float32(0.0)
+            mf = np.empty(nq, np.int32)
+            me.attributes['mc_face'].data.foreach_get('value', mf)
+            mi = np.empty(nq, np.int32)
+            me.attributes['material_index'].data.foreach_get('value', mi)
+            out[gk] = (pos, mf, mi, list(gx.chunks), len(me.vertices))
+        return out
+    snap_fast = snap(sb2)
+    old_env = os.environ.get('MCGEN_NO_WELD')
+    os.environ['MCGEN_NO_WELD'] = '1'
+    try:
+        sb2n = scene_mod.SceneBuilder(vs2)
+        sb2n.build(blocks, bio, {'min_y': -64, 'height': 384, 'cx0': cx0, 'cz0': cz0, 'nx': n, 'nz': n}, None, common.biome_names())
+        snap_np = snap(sb2n)
+    finally:
+        if old_env is None:
+            os.environ.pop('MCGEN_NO_WELD', None)
+        else:
+            os.environ['MCGEN_NO_WELD'] = old_env
+    same = set(snap_fast) == set(snap_np) and all(
+        np.array_equal(snap_fast[k][0], snap_np[k][0]) and np.array_equal(snap_fast[k][1], snap_np[k][1]) and np.array_equal(snap_fast[k][2], snap_np[k][2]) and snap_fast[k][3] == snap_np[k][3]
+        for k in snap_fast)
+    check('группы 2×2: быстрый путь = путь numpy (позиции углов, mc_face, материалы, порядок чанков)', same)
+    check('группы 2×2: сварка общая — вершин не больше, чем у пути по чанкам', all(snap_fast[k][4] <= snap_np[k][4] for k in snap_fast), [(snap_fast[k][4], snap_np[k][4]) for k in list(snap_fast)[:3]])
+    sb2n.clear()
     # picking в группе
     ed2 = sb2.get_edit_session()
     edit_ops.attach(sb2)

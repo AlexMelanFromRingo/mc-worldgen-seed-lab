@@ -300,47 +300,77 @@ class SceneBuilder:
         done = 0
         nthreads = self.vs.threads_resolved()
         lod_groups = {gk for gk, v in by_group.items() if self._group_is_lod(gk, v)}
+        group_mode = N > 1 and self.mesher.can_ready()           # группы ≥ 2×2: одна задача на группу, меш группы готовит ядро без GIL
         work = []
         for gk in sorted(by_group):
             if gk in lod_groups:
                 continue
-            for ck in by_group[gk]:
-                work.append((gk, ck))
-        n_full = len(work)
+            if group_mode:
+                work.append((gk, by_group[gk]))
+            else:
+                for ck in by_group[gk]:
+                    work.append((gk, ck))
+        n_full = sum(len(w[1]) for w in work) if group_mode else len(work)
         n_lod = len(lod_groups)
         steps_total = max(1, n_full + n_lod)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) if nthreads > 1 else None
         self._gen = None
         try:
             pending = {}
-            window = nthreads * 3
+            if group_mode:
+                # одновременно в работе — не больше ≈ 1,2 млн граней сырых данных (по 5,5 тыс. на чанк): память растёт с размером группы
+                window = max(1, min(nthreads * 3, int(1200000 // (N * N * 5500))))
 
-            def submit(i):
-                gk, ck = work[i]
-                pending[i] = self._executor.submit(self._mesh_one, ck) if self._executor is not None else None
+                def submit_g(i):
+                    gk, cks = work[i]
+                    pending[i] = self._executor.submit(self._mesh_group, gk, cks) if self._executor is not None else None
 
-            for i in range(min(window, len(work))):
-                submit(i)
-            nxt = min(window, len(work))
-            gm = {}
-            gk_remaining = {gk: len(v) for gk, v in by_group.items()}
-            for i in range(len(work)):
-                gk, ck = work[i]
-                t0 = time.time()
-                fut = pending.pop(i)
-                md = fut.result() if fut is not None else self._mesh_one(ck)
-                t_mesh += time.time() - t0
-                if nxt < len(work):
-                    submit(nxt)
-                    nxt += 1
-                gm.setdefault(gk, []).append((ck, md))
-                gk_remaining[gk] -= 1
-                done += 1
-                if gk_remaining[gk] == 0:
+                for i in range(min(window, len(work))):
+                    submit_g(i)
+                nxt = min(window, len(work))
+                for i in range(len(work)):
+                    gk, cks = work[i]
+                    t0 = time.time()
+                    fut = pending.pop(i)
+                    res = fut.result() if fut is not None else self._mesh_group(gk, cks)
+                    t_mesh += time.time() - t0
+                    if nxt < len(work):
+                        submit_g(nxt)
+                        nxt += 1
                     t1 = time.time()
-                    self._make_group(gk, gm.pop(gk), col)
+                    self._make_group_ready(gk, cks, res, col)
                     t_fill += time.time() - t1
-                yield 0.02 + 0.93 * done / steps_total
+                    done += len(cks)
+                    yield 0.02 + 0.93 * done / steps_total
+            else:
+                window = nthreads * 3
+
+                def submit(i):
+                    gk, ck = work[i]
+                    pending[i] = self._executor.submit(self._mesh_one, ck) if self._executor is not None else None
+
+                for i in range(min(window, len(work))):
+                    submit(i)
+                nxt = min(window, len(work))
+                gm = {}
+                gk_remaining = {gk: len(v) for gk, v in by_group.items()}
+                for i in range(len(work)):
+                    gk, ck = work[i]
+                    t0 = time.time()
+                    fut = pending.pop(i)
+                    md = fut.result() if fut is not None else self._mesh_one(ck)
+                    t_mesh += time.time() - t0
+                    if nxt < len(work):
+                        submit(nxt)
+                        nxt += 1
+                    gm.setdefault(gk, []).append((ck, md))
+                    gk_remaining[gk] -= 1
+                    done += 1
+                    if gk_remaining[gk] == 0:
+                        t1 = time.time()
+                        self._make_group(gk, gm.pop(gk), col)
+                        t_fill += time.time() - t1
+                    yield 0.02 + 0.93 * done / steps_total
             t1 = time.time()
             for j, gk in enumerate(sorted(lod_groups)):
                 self._make_group_lod(gk, by_group[gk], col)
@@ -405,6 +435,25 @@ class SceneBuilder:
             return [self._mesh_one(ck) for ck in cks]
         with concurrent.futures.ThreadPoolExecutor(max_workers=nth) as ex:
             return list(ex.map(self._mesh_one, cks))
+
+    def _mesh_group(self, gk, cks, pool=None):
+        """Меш группы чанков сразу в виде готовых массивов (Mesher.mesh_group_ready): (основная часть | None, слитая часть | None). Номер чанка в коде грани — его
+        индекс в cks (resolve_face берёт g.chunks[индекс]); позиции сдвинуты на смещение чанка внутри группы."""
+        offs = []
+        for ck in cks:
+            ox, oy = self._group_offset(gk, ck)
+            offs.append(ox)
+            offs.append(oy)
+        return self.mesher.mesh_group_ready(cks, offs, self.blocks, self.biomes, self.min_y, self.height, split=bool(self.vs.merge_flat),
+                                            chunk_shift=CHUNK_SHIFT, pool=pool)
+
+    def _make_group_ready(self, gk, cks, res, col):
+        g = _Group(gk)
+        g.chunks = list(cks)
+        self._fill_group_parts(g, [(cks[0], res[0])], [(cks[0], res[1])], self._group_loc(gk), col)
+        self.groups[gk] = g
+        for ck in g.chunks:
+            self.chunk_group[ck] = gk
 
     # ------------------------------------------------------------------------------------------------------------------
     #                                                  Blender-меши
@@ -709,8 +758,17 @@ class SceneBuilder:
                     if ck not in g.chunks:
                         g.chunks.append(ck)
                         self.chunk_group[ck] = gk
-                ms = self._mesh_many(g.chunks)                  # меши остальных чанков группы не хранятся — пересобираем потоками
-                self._fill_group_parts(g, [(ck, m[0]) for ck, m in zip(g.chunks, ms)], [(ck, m[1]) for ck, m in zip(g.chunks, ms)], loc, col)
+                if self.mesher.can_ready():                    # меши остальных чанков группы не хранятся — пересобираем (чанки потоками, меш группы — ядром)
+                    nth = min(self.vs.threads_resolved(), len(g.chunks))
+                    if nth > 1:
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=nth) as ex:
+                            res = self._mesh_group(gk, g.chunks, pool=ex)
+                    else:
+                        res = self._mesh_group(gk, g.chunks)
+                    self._fill_group_parts(g, [(g.chunks[0], res[0])], [(g.chunks[0], res[1])], loc, col)
+                else:
+                    ms = self._mesh_many(g.chunks)
+                    self._fill_group_parts(g, [(ck, m[0]) for ck, m in zip(g.chunks, ms)], [(ck, m[1]) for ck, m in zip(g.chunks, ms)], loc, col)
         self.stats['last_update'] = {'chunks': len(keys), 'seconds': time.time() - t0}
         yield 1.0
 
