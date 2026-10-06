@@ -102,6 +102,98 @@ static int ore_do_place(FCtx *c, const OreCfg *o, double x0, double x1, double z
     return placed > 0;
 }
 
+
+/* OreFeature.doPlace 26.4-snapshot-2: сферы режутся по колонкам (x, z) -> [yMin, yMax] (объединение отрезков всех сфер колонки), клетки обходятся колонка за колонкой
+ * (x внешний, z, затем y по возрастанию) — порядок обхода влияет на вызовы nextFloat() (discard_chance_on_air_exposure); отсев сфер — по расстоянию вдоль оси. */
+static int ore_do_place_v264(FCtx *c, const OreCfg *o, double x0, double x1, double z0, double z1, double y0, double y1, int xs, int zs, int szxz) {
+    int placed = 0, size = o->size;
+    double *data = xmalloc(sizeof(double) * 4 * (size_t)(size ? size : 1));
+    FRnd *r = c->rnd;
+    const float PIF = 3.14159274f;
+    double max_r = 0.0;
+    for (int i = 0; i < size; i++) {
+        float step = (float)i / (float)size;
+        double xx = jm_lerp((double)step, x0, x1), yy = jm_lerp((double)step, y0, y1), zz = jm_lerp((double)step, z0, z1);
+        double ss = frnd_double(r) * (double)size / 16.0;
+        double rad = (((double)(fm_sin((double)(PIF * step)) + 1.0f)) * ss + 1.0) / 2.0;
+        data[i * 4] = xx; data[i * 4 + 1] = yy; data[i * 4 + 2] = zz; data[i * 4 + 3] = rad;
+        if (rad > max_r) max_r = rad;
+    }
+    double dx0 = x1 - x0, dy0 = y1 - y0, dz0 = z1 - z0;
+    double step_dist = sqrt(dx0 * dx0 + dy0 * dy0 + dz0 * dz0) / (double)size;
+    for (int i2 = 0; i2 < size - 1; i2++) {
+        if (data[i2 * 4 + 3] > 0.0) {
+            double radius = data[i2 * 4 + 3];
+            for (int j = i2 + 1; j < size; j++) {
+                double other = data[j * 4 + 3];
+                if (other > 0.0) {
+                    double dist = (double)(j - i2) * step_dist, dr = radius - other;
+                    if (dr * dr > dist * dist) {
+                        if (dr > 0.0) data[j * 4 + 3] = -1.0;
+                        else { data[i2 * 4 + 3] = -1.0; break; }
+                    }
+                    if (dist > max_r) break;
+                }
+            }
+        }
+    }
+    int lo_y = c->min_y, hi_y = c->min_y + c->height - 1;        /* level.getMinY()/getMaxY() */
+    int grid_max_x = xs + szxz - 1, grid_max_z = zs + szxz - 1;
+    size_t ncol = (size_t)szxz * szxz;
+    int *col_min = xmalloc(sizeof(int) * (ncol ? ncol : 1)), *col_max = xmalloc(sizeof(int) * (ncol ? ncol : 1));
+    for (size_t i = 0; i < ncol; i++) { col_min[i] = 0x7FFFFFFF; col_max[i] = (int)0x80000000; }
+    int tminx = szxz, tmaxx = -1, tminz = szxz, tmaxz = -1;
+    for (int i = 0; i < size; i++) {
+        double rad = data[i * 4 + 3];
+        if (rad < 0.0) continue;
+        double rsq = rad * rad, xx = data[i * 4], yy = data[i * 4 + 1], zz = data[i * 4 + 2];
+        int xmin = jm_floor_d(xx - rad); if (xmin < xs) xmin = xs;
+        int zmin = jm_floor_d(zz - rad); if (zmin < zs) zmin = zs;
+        int xmax = jm_floor_d(xx + rad); if (xmax < xmin) xmax = xmin; if (xmax > grid_max_x) xmax = grid_max_x;
+        int zmax = jm_floor_d(zz + rad); if (zmax < zmin) zmax = zmin; if (zmax > grid_max_z) zmax = grid_max_z;
+        if (xmin - xs < tminx) tminx = xmin - xs;
+        if (xmax - xs > tmaxx) tmaxx = xmax - xs;
+        if (zmin - zs < tminz) tminz = zmin - zs;
+        if (zmax - zs > tmaxz) tmaxz = zmax - zs;
+        for (int x = xmin; x <= xmax; x++) {
+            double dx = ((double)x + 0.5) - xx, rem_x = rsq - dx * dx;
+            if (rem_x > 0.0) {
+                int row = (x - xs) * szxz - zs;
+                for (int z = zmin; z <= zmax; z++) {
+                    double dz = ((double)z + 0.5) - zz, rem = rem_x - dz * dz;
+                    if (rem > 0.0) {
+                        double half = sqrt(rem);
+                        int ylo = jm_floor_d((yy - 0.5) - half) + 1; if (ylo < lo_y) ylo = lo_y;
+                        int yhi = jm_d2i(ceil((yy - 0.5) + half)) - 1; if (yhi > hi_y) yhi = hi_y;
+                        if (ylo <= yhi) {
+                            int idx = row + z;
+                            if (ylo < col_min[idx]) col_min[idx] = ylo;
+                            if (yhi > col_max[idx]) col_max[idx] = yhi;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for (int gx = tminx; gx <= tmaxx; gx++) {
+        int x = xs + gx;
+        for (int gz = tminz; gz <= tmaxz; gz++) {
+            int idx = gx * szxz + gz, ymin = col_min[idx];
+            if (ymin == 0x7FFFFFFF) continue;
+            int ymax = col_max[idx], z = zs + gz;
+            if (!fc_ensure_can_write(c, x, z)) continue;
+            for (int y = ymin; y <= ymax; y++) {
+                int st = fc_get(c, x, y, z);
+                for (int k = 0; k < o->n; k++) {
+                    if (can_place_ore(c, o, k, st, x, y, z)) { fc_set_raw(c, x, y, z, o->state[k]); placed++; break; }
+                }
+            }
+        }
+    }
+    free(col_min); free(col_max); free(data);
+    return placed > 0;
+}
+
 static int ore_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     const OreCfg *o = cfg; FRnd *r = c->rnd;
     const float PIF = 3.14159274f;
@@ -115,6 +207,11 @@ static int ore_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     int cs = jm_d2i(ceil((double)spread));
     int xs = ox - cs - max_radius, ys = oy - 2 - max_radius, zs = oz - cs - max_radius;
     int szxz = 2 * (cs + max_radius), szy = 2 * (2 + max_radius);
+    if (c->g->version >= V26_4) {         /* level.anyHeightMatches(OCEAN_FLOOR_WG, xStart, zStart, xStart + sizeXZ − 1, zStart + sizeXZ − 1, yStart, MAX) */
+        for (int xp = xs; xp < xs + szxz; xp++) for (int zp = zs; zp < zs + szxz; zp++)
+            if (ys <= fc_height(c, HM_OCEAN_FLOOR_WG, xp, zp)) return ore_do_place_v264(c, o, x0, x1, z0, z1, y0, y1, xs, zs, szxz);
+        return 0;
+    }
     for (int xp = xs; xp <= xs + szxz; xp++) for (int zp = zs; zp <= zs + szxz; zp++)
         if (ys <= fc_height(c, HM_OCEAN_FLOOR_WG, xp, zp)) return ore_do_place(c, o, x0, x1, z0, z1, y0, y1, xs, ys, zs, szxz, szy);
     return 0;

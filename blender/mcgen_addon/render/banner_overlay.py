@@ -1,13 +1,15 @@
-"""Узоры баннеров построек: слои поверх полотна (bpy).
+"""Содержимое блок-сущностей построек, которого нет в состоянии блока: слои поверх воксельного меша (bpy).
 
-Игра рисует баннер моделью сущности: полотно базового цвета, а поверх него — по слою на каждый узор (текстура entity/banner/<узор>.png той же
-раскладки 64×64, цвет красителя узора). Данные узоров лежат не в блоке, а в блок-сущности (NBT шаблона постройки): libmcgen отдаёт их через
-`McRegion.block_entities()` (баннеры мельниц, аванпостов, особняков, башен Края и т. д.). Воксельный меш рисует базовое полотно (entity_models._banner);
-здесь для каждой группы чанков строится ОДИН дополнительный объект: четырёхугольники слоёв на лицевой и тыльной гранях полотна, с материалом
-на узор (текстура × цвет грани `Col`, как у остальных материалов мира) и смещением слоя наружу на доли миллиметра (иначе слои мерцают друг в друге).
+* Баннер: игра рисует модель сущности — полотно базового цвета, а поверх него по слою на каждый узор (текстура entity/banner/<узор>.png той же
+  раскладки 64×64, цвет красителя узора).
+* Декоративный горшок: боковина без черепка рисуется воксельным мешем (decorated_pot_side), боковина с черепком — слоем entity/decorated_pot/<имя>_pottery_pattern.png.
+Данные лежат не в блоке, а в блок-сущности (NBT шаблона постройки): libmcgen отдаёт их через `McRegion.block_entities()` (баннеры мельниц, аванпостов, особняков,
+башен Края; горшки залов испытаний). Воксельный меш рисует основу (entity_models._banner / _decorated_pot);
+здесь для каждой группы чанков строится ОДИН дополнительный объект: четырёхугольники слоёв, с материалом
+на текстуру (текстура × цвет грани `Col`, как у остальных материалов мира) и смещением слоя наружу на доли миллиметра (иначе слои мерцают друг в друге).
 
 Объекты помечены `mc_overlay` (не `mc_group`: это не части воксельных групп), удаляются при очистке сцены и пересборке. Чистая геометрия — в
-assets/entity_models.banner_cloth_faces.
+assets/entity_models (banner_cloth_faces, pot_sherd_faces).
 """
 import os
 import re
@@ -76,16 +78,16 @@ def visible_entries(entries, region, names, view, live_blocks=None):
     return out
 
 
-def _material(pattern, assets_dir, shading, pixel_style):
-    """Материал «текстура узора × цвет грани» (кэш по имени узора); None — если текстуры нет."""
+def _material(kind, pattern, assets_dir, shading, pixel_style):
+    """Материал «текстура слоя × цвет грани» (кэш по виду и имени); kind — каталог текстур сущностей (banner, decorated_pot); None — если текстуры нет."""
     short = pattern.split(':', 1)[-1]
-    name = 'MC_banner_' + short
+    name = 'MC_%s_%s' % (kind, short)
     mat = bpy.data.materials.get(name)
     if mat is not None:
         return mat
-    path = os.path.join(assets_dir or '', 'assets', 'minecraft', 'textures', 'entity', 'banner', short + '.png')
+    path = os.path.join(assets_dir or '', 'assets', 'minecraft', 'textures', 'entity', kind, short + '.png')
     if not os.path.isfile(path):
-        path = os.path.join(assets_dir or '', 'textures', 'entity', 'banner', short + '.png')     # каталог ресурсов без префикса assets/minecraft
+        path = os.path.join(assets_dir or '', 'textures', 'entity', kind, short + '.png')     # каталог ресурсов без префикса assets/minecraft
         if not os.path.isfile(path):
             return None
     img = bpy.data.images.get(name)
@@ -102,6 +104,22 @@ def _material(pattern, assets_dir, shading, pixel_style):
 def _dye_srgb(color):
     c = entity_models.DYE_RGB.get(color.split(':', 1)[-1], 16383998)
     return ((c >> 16) & 255, (c >> 8) & 255, c & 255)
+
+
+def _layers(e, props):
+    """Слои записи: [(каталог текстур, имя текстуры, цвет грани (r, g, b), грани [(вершины, uv, нормаль)])] в порядке наложения."""
+    block = e['block'].split(':', 1)[-1]
+    out = []
+    if block.endswith('_banner'):
+        faces = entity_models.banner_cloth_faces(block, props)
+        for color, pattern in e.get('patterns', []):
+            out.append(('banner', pattern, _dye_srgb(color), faces))
+    elif block == 'decorated_pot':
+        for side in entity_models.POT_SIDE_NAMES:
+            pat = entity_models.sherd_pattern(e.get('sherds', {}).get(side, 'minecraft:brick'))
+            if pat:
+                out.append(('decorated_pot', pat, (255, 255, 255), entity_models.pot_sherd_faces(props, side)))
+    return out
 
 
 def rebuild(sb, region, names, entries, assets_dir, view=None):
@@ -128,15 +146,13 @@ def rebuild(sb, region, names, entries, assets_dir, view=None):
         mats, mat_index = [], {}
         verts, faces, uvs, cols, fmat = [], [], [], [], []
         for e, props in items:
-            faces_geo = entity_models.banner_cloth_faces(e['block'].split(':', 1)[-1], props)
-            for k, (color, pattern) in enumerate(e['patterns']):
-                mat = _material(pattern, assets_dir, shading, pixel_style)
+            for k, (kind, pattern, rgb, faces_geo) in enumerate(_layers(e, props)):
+                mat = _material(kind, pattern, assets_dir, shading, pixel_style)
                 if mat is None:
                     continue
                 if mat.name not in mat_index:
                     mat_index[mat.name] = len(mats)
                     mats.append(mat)
-                rgb = _dye_srgb(color)
                 for pos, uv, nrm in faces_geo:
                     base = len(verts)
                     off = LAYER_EPS * (k + 1)

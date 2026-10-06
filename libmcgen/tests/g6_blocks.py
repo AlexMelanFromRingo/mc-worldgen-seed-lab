@@ -64,7 +64,11 @@ def main():
             base = os.path.basename(w); dim = base.split('-s')[0]; seed = base.split('-s', 1)[1].rsplit('-c', 1)[0]
             if seeds and seed not in seeds:
                 continue
+            if not os.path.exists(f'{w}/manifest.json'):          # мир не дозаписан (прерванная генерация) — пропуск
+                continue
             mf = json.load(open(f'{w}/manifest.json')); ac = mf['area_chunks']; m = 2
+            if not mf.get('ok', True):
+                continue
             cx0, cz0, nx, nz = ac[0] - m, ac[1] - m, ac[2] - ac[0] + 1 + 2 * m, ac[3] - ac[1] + 1 + 2 * m
             out = f'{TMP}/{name}-{base}.mcr'
             t0 = time.time()

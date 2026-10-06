@@ -45,7 +45,7 @@ static int can_replace_nr(StCtx *c, const RPData *d, int st) {      /* canBlockB
     return b != air && b != obs && !(fcr && fcr[b]) && (d->placement == VP_IN_NETHER || b != lava);
 }
 static void place_nr(StCtx *c, const RPData *d, int x, int y, int z) {  /* placeNetherrackOrMagma */
-    if (!can_replace_nr(c, d, fc_get(c->fc, x, y, z))) return;
+    if (c->sw->bs->g->version >= V26_3 && !can_replace_nr(c, d, fc_get(c->fc, x, y, z))) return;      /* повторная проверка заменяемости — с 26.3; в 26.1/26.2 капли (addNetherrackDripColumn) заменяют и воздух/обсидиан */
     if (!d->cold && rs_float(c->rs) < 0.07f) fc_set(c->fc, x, y, z, sp_st(c, "minecraft:magma_block"), 3);
     else fc_set(c->fc, x, y, z, sp_st(c, "minecraft:netherrack"), 3);
 }

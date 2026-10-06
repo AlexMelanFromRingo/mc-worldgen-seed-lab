@@ -106,7 +106,8 @@ def main():
             c = {'dim': e['dim'], 'seed': e['seed'], 'cx': e['cx'], 'cz': e['cz'], 'radius': e['radius'], 'label': e['feature'].split(':')[1]}
             jobs.append((f'feature:{e["feature"]}', c))
     elif a.plan:
-        plan = json.load(open(f'{ROOT}/tools/gt/structures_plan.json'))['plan']
+        pf = f'{ROOT}/tools/gt/structures_plan.json' if a.version == '26.3' else f'{ROOT}/tools/gt/structures_plan_{a.version}.json'      # у других версий свои позиции стартов (structure_plan.py --version V --out …)
+        plan = json.load(open(pf))['plan']
         only = set(a.sets.split(',')) if a.sets else None
         jobs = []
         for e in plan:

@@ -1289,6 +1289,23 @@ class RealLibraryTests(unittest.TestCase):
         r3 = self.region(self.gen.world('minecraft:overworld', 'normal', 5), 0, 0, 2, 2, lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN, 0)
         self.assertEqual(r3.block_entities(), [])
 
+    def test_trial_chambers_pot_sherds(self):
+        """Декоративные горшки залов испытаний: черепки из NBT шаблонов (sherds) попадают в block_entities(), записи совпадают с блоками региона."""
+        w = self.gen.world('minecraft:overworld', 'normal', 12345)
+        mask = lib.MC_STAGE_BIOMES | lib.MC_STAGE_TERRAIN | lib.MC_STAGE_SURFACE | lib.MC_STAGE_CARVERS | lib.MC_STAGE_STRUCTURES
+        r = self.region(w, -139, -307, 12, 12, mask, 0)
+        names = self.gen.block_names()
+        pots = [e for e in r.block_entities() if e['block'] == 'minecraft:decorated_pot']
+        self.assertGreaterEqual(len(pots), 5, pots)
+        seen = set()
+        for e in pots:
+            self.assertTrue(e['sherds'] and set(e['sherds']) <= {'back', 'left', 'right', 'front'}, e)
+            seen |= set(e['sherds'].values())
+            sid = int(r.blocks(e['x'] >> 4, e['z'] >> 4)[e['y'] - r.info.min_y, e['z'] & 15, e['x'] & 15])
+            self.assertTrue(names[sid].startswith('minecraft:decorated_pot['), names[sid])
+        self.assertTrue(seen <= {'minecraft:scrape_pottery_sherd', 'minecraft:guster_pottery_sherd', 'minecraft:flow_pottery_sherd'}, seen)
+        self.assertGreaterEqual(len(seen), 2)
+
     def test_structure_starts_contract(self):
         w = self.gen.world('minecraft:overworld', 'normal', 12345)
         st = w.structure_starts(-64, -64, 128, 128)

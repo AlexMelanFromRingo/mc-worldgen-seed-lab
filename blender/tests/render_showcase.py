@@ -70,6 +70,15 @@ SHEETS = {
          S('dragon_wall_head', facing='south', powered='false'), S('dragon_wall_head', facing='west', powered='false'), S('magenta_wall_banner', facing='west'),
          S('white_wall_banner', facing='north'), S('gray_banner', rotation='0')],
     ],
+    'g': [   # декоративные горшки (боковины без черепков; узоры — слоями, см. render/banner_overlay.py) и статуи медного голема (позы, окисление)
+        [S('decorated_pot', facing='north', cracked='false', waterlogged='false'), S('decorated_pot', facing='east', cracked='false', waterlogged='false'),
+         S('decorated_pot', facing='south', cracked='false', waterlogged='false'), S('decorated_pot', facing='west', cracked='false', waterlogged='false')],
+        [S('copper_golem_statue', facing='north', copper_golem_pose='standing', waterlogged='false'), S('copper_golem_statue', facing='east', copper_golem_pose='standing', waterlogged='false'),
+         S('copper_golem_statue', facing='south', copper_golem_pose='standing', waterlogged='false'), S('copper_golem_statue', facing='west', copper_golem_pose='standing', waterlogged='false')],
+        [S('copper_golem_statue', facing='south', copper_golem_pose='sitting', waterlogged='false'), S('exposed_copper_golem_statue', facing='south', copper_golem_pose='running', waterlogged='false'),
+         S('weathered_copper_golem_statue', facing='south', copper_golem_pose='star', waterlogged='false'), S('oxidized_copper_golem_statue', facing='south', copper_golem_pose='standing', waterlogged='false'),
+         S('waxed_oxidized_copper_golem_statue', facing='south', copper_golem_pose='sitting', waterlogged='false')],
+    ],
     'f': [   # драконьи головы (Конец): напольные и настенные
         [S('dragon_head', rotation='0', powered='false'), S('dragon_head', rotation='4', powered='false'), S('dragon_wall_head', facing='north', powered='false'),
          S('dragon_wall_head', facing='east', powered='false'), S('dragon_wall_head', facing='south', powered='false')],

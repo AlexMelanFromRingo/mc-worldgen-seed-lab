@@ -7,7 +7,7 @@ import math
 
 from .models import DIR_VEC, Quad, _closest_dir
 
-__all__ = ['entity_quads', 'is_entity_block', 'DYE_RGB', 'banner_color', 'banner_cloth_faces']
+__all__ = ['entity_quads', 'is_entity_block', 'DYE_RGB', 'banner_color', 'banner_cloth_faces', 'pot_sherd_faces', 'sherd_pattern', 'POT_SIDE_NAMES']
 
 DYE_RGB = {
     'white': 16383998, 'orange': 16351261, 'magenta': 13061821, 'light_blue': 3847130, 'yellow': 16701501, 'lime': 8439583, 'pink': 15961002,
@@ -286,6 +286,186 @@ def _bell(block, props):
     return q
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+#                       части моделей с вложенными позами (ModelPart: смещение + повороты ZYX, дети)
+# ----------------------------------------------------------------------------------------------------------------------
+def _rot_zyx(rx, ry, rz):
+    """Поворот части: Quaternionf.rotationZYX(zRot, yRot, xRot) (углы в радианах), как в ModelPart.translateAndRotate."""
+    return _mul(_rotz(math.degrees(rz)), _mul(_roty(math.degrees(ry)), _rotx(math.degrees(rx))))
+
+
+def _part_mat(parent, pose):
+    """Матрица части: родитель · перенос на смещение (пиксели / 16) · поворот; pose = (x, y, z, xRot, yRot, zRot)."""
+    return _mul(parent, _mul(_trans(pose[0] / 16.0, pose[1] / 16.0, pose[2] / 16.0), _rot_zyx(pose[3], pose[4], pose[5])))
+
+
+def _grown(polys, origin, size, grow):
+    """CubeDeformation: коробка раздвигается на grow во все стороны (раскладка текстуры остаётся по исходным размерам)."""
+    if not grow:
+        return polys
+    lo = tuple(origin)
+    hi = tuple(o + s for o, s in zip(origin, size))
+
+    def mv(v):
+        return tuple(c - grow if c == lo[i] else (c + grow if c == hi[i] else c) for i, c in enumerate(v))
+    return [(tuple(mv(v) for v in verts), uv) for verts, uv in polys]
+
+
+def _quads_parts(parts, parent, tex, texw, texh):
+    out = []
+    for pose, cubes, children in parts:
+        m = _part_mat(parent, pose)
+        for origin, size, uv, grow in cubes:
+            out += _quads(_grown(_cube_polygons(origin, size, uv), origin, size, grow), (0, 0, 0), m, tex, texw, texh)
+        out += _quads_parts(children, m, tex, texw, texh)
+    return out
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+#                                            декоративный горшок
+# ----------------------------------------------------------------------------------------------------------------------
+# DecoratedPotRenderer (байткод клиента 26.3): слой «base» 32×32 — горлышко (две коробки, расширение 0,2 и −0,1, поза (0, 37, 16) с поворотом X на π),
+# крышка-плоскость y = 16 (texOffs −14, 13) и дно-плоскость y = 0; слой «sides» 16×16 — четыре боковины 14×16 (коробка только с гранью NORTH, texOffs 1, 0).
+# Боковина без черепка — decorated_pot_side, с черепком — entity/decorated_pot/<имя>_pottery_pattern (слой поверх: render/banner_overlay.py).
+_POT_BASE = 'minecraft:entity/decorated_pot/decorated_pot_base'
+_POT_SIDE = 'minecraft:entity/decorated_pot/decorated_pot_side'
+_POT_SIDES = (            # (боковина, поза части)
+    ('back', (15, 16, 1, 0, 0, math.pi)),
+    ('left', (1, 16, 1, 0, -math.pi / 2, math.pi)),
+    ('right', (15, 16, 15, 0, math.pi / 2, math.pi)),
+    ('front', (1, 16, 15, math.pi, 0, 0)),
+)
+POT_SIDE_NAMES = tuple(n for n, _p in _POT_SIDES)
+
+
+def _pot_facing_mat(props):
+    """DecoratedPotRenderer.createModelTransformation: поворот вокруг центра блока на (180 − toYRot(facing))."""
+    yrot = _FACING_YROT.get(props.get('facing', 'north'), 180)
+    return _mul(_trans(0.5, 0.5, 0.5), _mul(_roty(180 - yrot), _trans(-0.5, -0.5, -0.5)))
+
+
+def _decorated_pot(block, props):
+    m0 = _pot_facing_mat(props)
+    q = []
+    neck = _part_mat(m0, (0, 37, 16, math.pi, 0, 0))
+    for origin, size, uv, grow in (((4, 17, 4), (8, 3, 8), (0, 0), 0.2), ((5, 20, 5), (6, 1, 6), (0, 5), -0.1)):
+        q += _quads(_grown(_cube_polygons(origin, size, uv), origin, size, grow), (0, 0, 0), neck, _POT_BASE, 32, 32)
+    q += _quads(_cube_polygons((0, 0, 0), (14, 0, 14), (-14, 13), ('up',)), (0, 0, 0), _part_mat(m0, (1, 16, 1, 0, 0, 0)), _POT_BASE, 32, 32)
+    q += _quads(_cube_polygons((0, 0, 0), (14, 0, 14), (-14, 13), ('down',)), (0, 0, 0), _part_mat(m0, (1, 0, 1, 0, 0, 0)), _POT_BASE, 32, 32)
+    for _name, pose in _POT_SIDES:
+        q += _quads(_cube_polygons((0, 0, 0), (14, 16, 0), (1, 0), ('north',)), (0, 0, 0), _part_mat(m0, pose), _POT_SIDE, 16, 16)
+    return q
+
+
+def sherd_pattern(item_id):
+    """Предмет-черепок -> имя текстуры узора (без расширения) или None: minecraft:scrape_pottery_sherd -> scrape_pottery_pattern; кирпич (и всё прочее) — пустая боковина."""
+    name = item_id.split(':', 1)[-1]
+    if not name.endswith('_pottery_sherd'):
+        return None
+    return name[:-len('_pottery_sherd')] + '_pottery_pattern'
+
+
+def pot_sherd_faces(props, side):
+    """Лицевая грань боковины горшка (side: back/left/right/front), на которую накладывается узор черепка:
+    [(вершины[4] в долях блока, uv[4] в долях текстуры 16×16 с v СВЕРХУ, нормаль наружу)]."""
+    pose = dict(_POT_SIDES)[side]
+    m = _part_mat(_pot_facing_mat(props), pose)
+    nrm = (m[0][2] * -1.0, m[1][2] * -1.0, m[2][2] * -1.0)                       # нормаль грани NORTH коробки (0, 0, −1)
+    out = []
+    for verts, uv in _cube_polygons((0, 0, 0), (14, 16, 0), (1, 0), ('north',)):
+        pos = tuple(_apply(m, (v[0] / 16.0, v[1] / 16.0, v[2] / 16.0)) for v in verts)
+        out.append((pos, tuple((u / 16.0, v / 16.0) for u, v in uv), nrm))
+    return out
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+#                                          статуя медного голема
+# ----------------------------------------------------------------------------------------------------------------------
+# CopperGolemModel.create{Body,RunningPose,SittingPose,StarPose}Layer (байткод клиента 26.3, разобран интерпретатором): дерево частей
+# (поза, коробки (начало, размер, texOffs, расширение), дети). CopperGolemStatueModel.setupAnim: root.y = 0, root.zRot = π (модель «вверх ногами» -> y вверх);
+# CopperGolemStatueBlockRenderer: перенос (0,5; 0; 0,5) и поворот Y на −toYRot(facing.opposite). Текстура 64×64 — по степени окисления; глаза не рисуются.
+_GOLEM_POSES = {
+    'standing': (
+        ((0, -5, 0, 0, 0, 0), (((-4, -6, -3), (8, 6, 6), (0, 15), 0), ), (
+            ((0, -6, 0, 0, 0, 0), (((-4, -5, -5), (8, 5, 10), (0, 0), 0.015), ((-1, -2, -6), (2, 3, 2), (56, 0), 0), ((-1, -9, -1), (2, 4, 2), (37, 8), -0.015), ((-2, -13, -2), (4, 4, 4), (37, 0), -0.015), ), ()),
+            ((-4, -6, 0, 0, 0, 0), (((-3, -1, -2), (3, 10, 4), (36, 16), 0), ), ()),
+            ((4, -6, 0, 0, 0, 0), (((0, -1, -2), (3, 10, 4), (50, 16), 0), ), ()),
+        )),
+        ((0, -5, 0, 0, 0, 0), (((-4, 0, -2), (4, 5, 4), (0, 27), 0), ), ()),
+        ((0, -5, 0, 0, 0, 0), (((0, 0, -2), (4, 5, 4), (16, 27), 0), ), ()),
+    ),
+    'running': (
+        ((-1.064, -5, 0, 0, 0, 0), (), (
+            ((1.1, 0.1, 0.7, 0.1204, -0.0064, -0.0779), (((-4.02, -6.116, -3.5), (8, 6, 6), (0, 15), 0), ), ()),
+            ((0.7, -5.6, -1.8, 0, 0, 0), (((-4, -5.1, -5), (8, 5, 10), (0, 0), 0), ((-1.02, -2.1, -6), (2, 3, 2), (56, 0), 0), ((-1.02, -9.1, -1), (2, 4, 2), (37, 8), -0.015), ((-2, -13.1, -2), (4, 4, 4), (37, 0), -0.015), ), ()),
+            ((-4, -6, 0, 0, 0, 0), (), (
+                ((0.7, -0.248, -1.62, 1.0036, 0, 0), (((-3.052, -1.11, -2.036), (3, 10, 4), (36, 16), 0), ), ()),
+            )),
+            ((4, -6, 0, 0, 0, 0), (), (
+                ((0.732, 0, 0, -0.8715, -0.0535, -0.0449), (((0.032, -1.1, -2), (3, 10, 4), (50, 16), 0), ), ()),
+            )),
+        )),
+        ((-3.064, -5, 0, 0, 0, 0), (), (
+            ((1.048, 0, -0.9, -0.8727, 0, 0), (((-1.856, -0.1, -1.09), (4, 5, 4), (0, 27), 0), ), ()),
+        )),
+        ((0.936, -5, 0, 0, 0, 0), (), (
+            ((1, 0, 0, 0.7854, 0, 0), (((-2.088, -0.1, -2), (4, 5, 4), (16, 27), 0), ), ()),
+        )),
+    ),
+    'sitting': (
+        ((0, -3, 2.325, 0, 0, 0), (((-3, -4, -4.525), (6, 1, 6), (3, 19), 0), ((-4, -3, -3.525), (8, 6, 6), (0, 15), 0), ), (
+            ((0, -1, -4.325, 0, 0, -3.1416), (((-4, -3, -2.2), (8, 6, 3), (3, 18), 0), ), ()),
+            ((0, -6, -0.2, 0, 0, 0), (((-1, -7, -3.3), (2, 4, 2), (37, 8), -0.015), ((-2, -11, -4.3), (4, 4, 4), (37, 0), -0.015), ((-4, -3, -7.325), (8, 5, 10), (0, 0), 0), ((-1, 0, -8.325), (2, 3, 2), (56, 0), 0), ), ()),
+            ((-4, -5.6, -1.8, 0.4363, 0, 0), (), (
+                ((0, 0.0893, 0.1198, -1.0472, 0, 0), (((-3.075, -0.9733, -1.9966), (3, 10, 4), (36, 16), 0), ), ()),
+            )),
+            ((4, -5.6, -1.7, 0.4363, 0, 0), (), (
+                ((0, -0.0015, -0.0808, -1.0472, 0, 0), (((0.075, -1.0443, -1.8997), (3, 10, 4), (50, 16), 0), ), ()),
+            )),
+        )),
+        ((-2.1, -2.1, -2.075, 0, 0, 0), (), (
+            ((0.05, -1.9, 1.075, -1.5708, 0, 0), (((-2, 0.975, 0), (4, 5, 4), (0, 27), 0), ), ()),
+        )),
+        ((2, -2, -2.075, 0, 0, 0), (), (
+            ((0.05, -2, 1.075, -1.5708, 0, 0), (((-2, 0.975, 0), (4, 5, 4), (16, 27), 0), ), ()),
+        )),
+    ),
+    'star': (
+        ((0, -5, 0, 0, 0, 0), (((-4, -6, -3), (8, 6, 6), (0, 15), 0), ), (
+            ((0, -6, 0, 0, 0, 0), (((-4, -5, -5), (8, 5, 10), (0, 0), 0), ((-1, -2, -6), (2, 3, 2), (56, 0), 0), ((-1, -9, -1), (2, 4, 2), (37, 8), -0.015), ((-2, -13, -2), (4, 4, 4), (37, 0), -0.015), ), ()),
+            ((-4, -6, 0, 0, 0, 0), (), (
+                ((1, 1, 0, 0, 0, 1.9199), (((-1.5, -5, -2), (3, 10, 4), (36, 16), 0), ), ()),
+            )),
+            ((4, -6, 0, 0, 0, 0), (), (
+                ((-1, 1, 0, 0, 0, -1.9199), (((-1.5, -5, -2), (3, 10, 4), (50, 16), 0), ), ()),
+            )),
+        )),
+        ((-3, -5, 0, 0, 0, 0), (), (
+            ((0.35, 2, 0.01, 0, 0, 0.2618), (((-2, -2.5, -2), (4, 5, 4), (0, 27), 0), ), ()),
+        )),
+        ((1, -5, 0, 0, 0, 0), (), (
+            ((1.65, 2, 0, 0, 0, -0.2618), (((-2, -2.5, -2), (4, 5, 4), (16, 27), 0), ), ()),
+        )),
+    ),
+}
+_GOLEM_TEX = {'': 'copper_golem', 'exposed': 'copper_golem_exposed', 'weathered': 'copper_golem_weathered', 'oxidized': 'copper_golem_oxidized'}
+_GOLEM_OPPOSITE = {'north': 'south', 'south': 'north', 'east': 'west', 'west': 'east'}
+
+
+def _is_golem_statue(block):
+    return block.endswith('copper_golem_statue')
+
+
+def _golem_statue(block, props):
+    base = block[6:] if block.startswith('waxed_') else block
+    level = base[:-len('_copper_golem_statue')] if base != 'copper_golem_statue' else ''
+    tex = 'minecraft:entity/copper_golem/' + _GOLEM_TEX.get(level, 'copper_golem')
+    parts = _GOLEM_POSES.get(props.get('copper_golem_pose', 'standing'), _GOLEM_POSES['standing'])
+    opp = _GOLEM_OPPOSITE.get(props.get('facing', 'north'), 'south')
+    root = _mul(_trans(0.5, 0.0, 0.5), _mul(_roty(-_FACING_YROT[opp]), _rotz(180.0)))          # корень: поворот Z на π
+    return _quads_parts(parts, root, tex, 64, 64)
+
+
 def _end_portal(block, props):
     pos = ((0.0, 0.75, 0.0), (0.0, 0.75, 1.0), (1.0, 0.75, 1.0), (1.0, 0.75, 0.0))
     return [Quad(pos, ((0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)), 'minecraft:block/black_concrete', False, -1, -1, 1, 1, 0)]
@@ -295,8 +475,8 @@ def is_entity_block(block):
     """Короткое имя блока (без minecraft:) -> есть ли заглушка."""
     if block in _CHEST_TEX or (block.startswith('waxed_') and block[6:] in _CHEST_TEX):
         return True
-    return block.endswith('shulker_box') or block.endswith('_banner') or block in ('bell', 'end_portal') or block.replace('_wall_', '_') in _SKULL_TEX or \
-        block in ('dragon_head', 'dragon_wall_head')
+    return block.endswith('shulker_box') or block.endswith('_banner') or block in ('bell', 'end_portal', 'decorated_pot') or block.replace('_wall_', '_') in _SKULL_TEX or \
+        block in ('dragon_head', 'dragon_wall_head') or _is_golem_statue(block)
 
 
 def entity_quads(block, props):
@@ -313,6 +493,10 @@ def entity_quads(block, props):
         return _end_portal(block, props)
     if block in ('dragon_head', 'dragon_wall_head'):
         return _dragon_head(block, props)
+    if block == 'decorated_pot':
+        return _decorated_pot(block, props)
+    if _is_golem_statue(block):
+        return _golem_statue(block, props)
     if block.replace('_wall_', '_') in _SKULL_TEX:
         return _skull(block, props)
     return []

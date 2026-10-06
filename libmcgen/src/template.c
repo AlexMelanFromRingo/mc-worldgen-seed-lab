@@ -75,7 +75,7 @@ static const char *stairs_mirror_shape(const char *shape, int mir, int *flip) {
 }
 
 /* Какие блоки поворачиваются/отражаются на самом деле: BlockBehaviour.rotate/mirror по умолчанию возвращают состояние как есть, а
-   переопределяют их только перечисленные классы (javap по классам клиента 26.3; подклассы наследуют). Например, у AnvilBlock переопределён лишь
+   переопределяют их только перечисленные классы (javap по классам игры 26.1–26.4: наборы совпадают, кроме переименования RedStoneWireBlock → RedstoneWireBlock в 26.3; подклассы наследуют). Например, у AnvilBlock переопределён лишь
    rotate: наковальня при отражении остаётся прежней, хотя у неё есть facing. Без данных о классах (эвристические флаги) — поведение «всё по свойствам». */
 static const char *const MIRROR_CLASSES[] = {
     "AbstractFurnaceBlock", "AmethystClusterBlock", "AttachedStemBlock", "BannerBlock", "BarrelBlock", "BaseCoralWallFanBlock", "BeehiveBlock",
@@ -83,7 +83,7 @@ static const char *const MIRROR_CLASSES[] = {
     "CopperGolemStatueBlock", "CrafterBlock", "CrossCollisionBlock", "DecoratedPotBlock", "DetectorRailBlock", "DispenserBlock", "DoorBlock",
     "EndPortalFrameBlock", "EnderChestBlock", "FlowerBedBlock", "GrindstoneBlock", "HopperBlock", "HorizontalDirectionalBlock", "HugeMushroomBlock",
     "JigsawBlock", "LadderBlock", "LeafLitterBlock", "LecternBlock", "MossyCarpetBlock", "MovingPistonBlock", "MultifaceBlock", "ObserverBlock",
-    "PistonBaseBlock", "PistonHeadBlock", "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RodBlock", "ShelfBlock",
+    "PistonBaseBlock", "PistonHeadBlock", "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RedStoneWireBlock", "RodBlock", "ShelfBlock",
     "ShulkerBoxBlock", "SkullBlock", "SmallDripleafBlock", "StairBlock", "StandingSignBlock", "StonecutterBlock", "TripWireBlock", "TripWireHookBlock",
     "VaultBlock", "VineBlock", "WallBannerBlock", "WallBlock", "WallHangingSignBlock", "WallSignBlock", "WallSkullBlock", "WallTorchBlock", NULL };
 
@@ -94,7 +94,7 @@ static const char *const ROTATE_CLASSES[] = {
     "DispenserBlock", "DoorBlock", "EndPortalFrameBlock", "EnderChestBlock", "FlowerBedBlock", "GrindstoneBlock", "HopperBlock",
     "HorizontalDirectionalBlock", "HugeMushroomBlock", "InfestedRotatedPillarBlock", "JigsawBlock", "LadderBlock", "LeafLitterBlock", "LecternBlock",
     "MossyCarpetBlock", "MovingPistonBlock", "MultifaceBlock", "NetherPortalBlock", "ObserverBlock", "PistonBaseBlock", "PistonHeadBlock",
-    "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RodBlock", "RotatedPillarBlock", "ShelfBlock", "ShulkerBoxBlock",
+    "PoweredRailBlock", "RailBlock", "RedstoneWallTorchBlock", "RedstoneWireBlock", "RedStoneWireBlock", "RodBlock", "RotatedPillarBlock", "ShelfBlock", "ShulkerBoxBlock",
     "SkullBlock", "SmallDripleafBlock", "StairBlock", "StandingSignBlock", "StonecutterBlock", "TripWireBlock", "TripWireHookBlock", "VaultBlock",
     "VineBlock", "WallBannerBlock", "WallBlock", "WallHangingSignBlock", "WallSignBlock", "WallSkullBlock", "WallTorchBlock", NULL };
 
@@ -431,27 +431,54 @@ static const u8 *randomizable_blocks(McWorld *w) {
     return r;
 }
 
-/* Баннер с узорами: BannerBlockEntity.patterns (26.x: [{color:"black", pattern:"minecraft:triangle_top"}, …]); запись {"block":…,"patterns":[[цвет, узор], …]} для отрисовки узоров.
- * Старый формат Patterns:[{Color:int, Pattern:"ts"}] в шаблонах 26.1–26.4 не встречается. Блоки без узоров записываются тоже (список пуст): цвет — в самом блоке. */
-static void record_banner(McWorld *w, int st, const TInfo *b) {
+/* Блок-сущности построек, чьё содержимое меняет внешний вид (не хранится в состоянии блока): записи уходят в mcgen_region_block_entities.
+ *  - баннер с узорами: BannerBlockEntity.patterns (26.x: [{color:"black", pattern:"minecraft:triangle_top"}, …]) -> {"block":…,"patterns":[[цвет, узор], …]};
+ *    старый формат Patterns:[{Color:int, Pattern:"ts"}] в шаблонах 26.1–26.4 не встречается; баннеры без узоров не записываются (цвет — в самом блоке);
+ *  - декоративный горшок: DecoratedPotBlockEntity.sherds (26.x: {back,front,left,right:{id:"minecraft:…_pottery_sherd"|"minecraft:brick"}}; в старых версиях —
+ *    список из четырёх строк в порядке back, left, right, front) -> {"block":…,"sherds":{"back":id,…}} только для сторон с черепком (кирпич — пустая сторона). */
+static int json_safe(const char *s) { return s && !strchr(s, '"') && !strchr(s, '\\'); }
+static void record_block_entity(McWorld *w, int st, const TInfo *b) {
     const char *nm = w->g->state_names[st];
-    const char *us = strstr(nm, "_banner");
-    if (!us) return;
-    const Nbt *pl = nbt_get(b->nbt, "patterns");
-    if (!pl || pl->type != NBT_LIST || pl->n <= 0) return;
-    StrBuf sb = {0};
     size_t bl = 0; while (nm[bl] && nm[bl] != '[') bl++;
-    sb_printf(&sb, "{\"block\":\"%.*s\",\"patterns\":[", (int)bl, nm);
-    int first = 1;
-    for (int i = 0; i < pl->n; i++) {
-        const Nbt *e = nbt_at(pl, i);
-        const char *c = nbt_str(nbt_get(e, "color"), NULL), *p = nbt_str(nbt_get(e, "pattern"), NULL);
-        if (!c || !p || strchr(c, '"') || strchr(p, '"') || strchr(c, '\\') || strchr(p, '\\')) continue;
-        if (!first) sb_putc(&sb, ',');
-        first = 0;
-        sb_printf(&sb, "[\"%s\",\"%s\"]", c, p);
-    }
-    sb_puts(&sb, "]}");
+    StrBuf sb = {0};
+    if (strstr(nm, "_banner")) {
+        const Nbt *pl = nbt_get(b->nbt, "patterns");
+        if (!pl || pl->type != NBT_LIST || pl->n <= 0) return;
+        sb_printf(&sb, "{\"block\":\"%.*s\",\"patterns\":[", (int)bl, nm);
+        int first = 1;
+        for (int i = 0; i < pl->n; i++) {
+            const Nbt *e = nbt_at(pl, i);
+            const char *c = nbt_str(nbt_get(e, "color"), NULL), *p = nbt_str(nbt_get(e, "pattern"), NULL);
+            if (!json_safe(c) || !json_safe(p)) continue;
+            if (!first) sb_putc(&sb, ',');
+            first = 0;
+            sb_printf(&sb, "[\"%s\",\"%s\"]", c, p);
+        }
+        sb_puts(&sb, "]}");
+    } else if (bl == 23 && !strncmp(nm, "minecraft:decorated_pot", 23)) {
+        const Nbt *sh = nbt_get(b->nbt, "sherds");
+        if (!sh) return;
+        static const char *SIDES[4] = { "back", "left", "right", "front" };
+        const char *ids[4] = { NULL, NULL, NULL, NULL };
+        for (int i = 0; i < 4; i++) {
+            const Nbt *e = NULL;
+            if (sh->type == NBT_COMPOUND) e = nbt_get(sh, SIDES[i]);
+            else if (sh->type == NBT_LIST && i < sh->n) e = nbt_at(sh, i);
+            if (!e) continue;
+            const char *id = e->type == NBT_COMPOUND ? nbt_str(nbt_get(e, "id"), NULL) : nbt_str(e, NULL);
+            if (json_safe(id) && strcmp(id, "minecraft:brick") && strcmp(id, "brick")) ids[i] = id;
+        }
+        if (!ids[0] && !ids[1] && !ids[2] && !ids[3]) return;
+        sb_printf(&sb, "{\"block\":\"%.*s\",\"sherds\":{", (int)bl, nm);
+        int first = 1;
+        for (int i = 0; i < 4; i++) {
+            if (!ids[i]) continue;
+            if (!first) sb_putc(&sb, ',');
+            first = 0;
+            sb_printf(&sb, "\"%s\":\"%s\"", SIDES[i], ids[i]);
+        }
+        sb_puts(&sb, "}}");
+    } else return;
     world_bent_add(w, b->x, b->y, b->z, sb_take(&sb));
 }
 
@@ -476,7 +503,7 @@ int template_place(FCtx *fc, McWorld *w, const Template *t, int x, int y, int z,
         if (s->waterlog) prev = bs->fluid[fc_get(fc, b->x, b->y, b->z)];
         int st = bsx_rotate(bs, bsx_mirror(bs, b->state, s->mir), s->rot);
         if (!fc_set(fc, b->x, b->y, b->z, st, flags)) continue;
-        if (b->nbt) record_banner(w, st, b);
+        if (b->nbt) record_block_entity(w, st, b);
         if (placed) { placed[3 * nplaced] = b->x; placed[3 * nplaced + 1] = b->y; placed[3 * nplaced + 2] = b->z; nplaced++; }
         if (rand_blk && b->nbt && rand_blk[w->g->state_block[st]]) (void)rs_long(s->rnd);       /* blockInfo.nbt.putLong("LootTableSeed", random.nextLong()) */
         if (s->waterlog) {

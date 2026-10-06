@@ -3,7 +3,8 @@
  "seeds": [
   12345,
   8675309,
-  -7048155917072976836
+  -7048155917072976836,
+  424242
  ],
  "picked": {
   "12345": {
@@ -149,6 +150,52 @@
      "river:596",
      "plains:43",
      "forest:1"
+    ]
+   }
+  },
+  "424242": {
+   "ocean": {
+    "cx": 201,
+    "cz": 23,
+    "frac": 0.851,
+    "top_biomes": [
+     "cold_ocean:5051",
+     "deep_cold_ocean:957",
+     "plains:439",
+     "river:324",
+     "beach:285"
+    ]
+   },
+   "mountains": {
+    "cx": 75,
+    "cz": 96,
+    "frac": 0.803,
+    "top_biomes": [
+     "grove:4351",
+     "snowy_slopes:1316",
+     "snowy_taiga:815",
+     "snowy_plains:401",
+     "stony_shore:85",
+     "frozen_ocean:81"
+    ]
+   },
+   "desert": {
+    "cx": -166,
+    "cz": 191,
+    "frac": 0.995,
+    "top_biomes": [
+     "desert:7021",
+     "river:35"
+    ]
+   },
+   "jungle": {
+    "cx": -72,
+    "cz": 159,
+    "frac": 0.975,
+    "top_biomes": [
+     "jungle:6847",
+     "river:177",
+     "bamboo_jungle:32"
     ]
    }
   }
@@ -389,6 +436,86 @@
   {
    "dim": "end",
    "seed": -7048155917072976836,
+   "cx": -40,
+   "cz": -90,
+   "radius": 10,
+   "label": "outer_north"
+  },
+  {
+   "dim": "overworld",
+   "seed": 424242,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "spawn"
+  },
+  {
+   "dim": "overworld",
+   "seed": 424242,
+   "cx": 201,
+   "cz": 23,
+   "radius": 10,
+   "label": "ocean"
+  },
+  {
+   "dim": "overworld",
+   "seed": 424242,
+   "cx": 75,
+   "cz": 96,
+   "radius": 10,
+   "label": "mountains"
+  },
+  {
+   "dim": "overworld",
+   "seed": 424242,
+   "cx": -166,
+   "cz": 191,
+   "radius": 10,
+   "label": "desert"
+  },
+  {
+   "dim": "overworld",
+   "seed": 424242,
+   "cx": -72,
+   "cz": 159,
+   "radius": 10,
+   "label": "jungle"
+  },
+  {
+   "dim": "nether",
+   "seed": 424242,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "center"
+  },
+  {
+   "dim": "nether",
+   "seed": 424242,
+   "cx": 60,
+   "cz": -60,
+   "radius": 10,
+   "label": "offset"
+  },
+  {
+   "dim": "end",
+   "seed": 424242,
+   "cx": 0,
+   "cz": 0,
+   "radius": 10,
+   "label": "main_island"
+  },
+  {
+   "dim": "end",
+   "seed": 424242,
+   "cx": 90,
+   "cz": 0,
+   "radius": 10,
+   "label": "outer_east"
+  },
+  {
+   "dim": "end",
+   "seed": 424242,
    "cx": -40,
    "cz": -90,
    "radius": 10,

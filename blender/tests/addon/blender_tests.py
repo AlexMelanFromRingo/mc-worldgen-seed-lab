@@ -763,6 +763,27 @@ class T04_Operators(unittest.TestCase):
         bpy.ops.mcgen.clear()
         self.assertFalse([o for o in bpy.data.objects if 'mc_overlay' in o.keys()], 'очистка должна убирать слои узоров')
 
+    @unittest.skipUnless(REAL, 'нужна настоящая библиотека: черепки горшков берутся из NBT шаблонов построек')
+    def test_pot_sherd_overlay_in_trial_chambers(self):
+        """Горшки залов испытаний: боковины с черепками рисуются слоями (текстуры entity/decorated_pot/*_pottery_pattern.png), остальное — воксельным мешем."""
+        res = pack.resolve('26.3')
+        if not (res['assets_ok'] and res['pack_ok']):
+            self.skipTest('нет подготовленных ресурсов 26.3 в кэше')
+        props.get_prefs().sink = 'AUTO'
+        s = S()
+        s.dimension, s.seed, s.unit = 'minecraft:overworld', '12345', 'CHUNKS'
+        s.origin_x, s.origin_z, s.size_x, s.size_z = -139, -307, 12, 12
+        self._layers(terrain=True, surface=True, caves=True, structures=True)
+        run_job('generate')
+        self.assertEqual(s.stats.sink, 'render.scene')
+        ov = [o for o in bpy.data.objects if 'mc_overlay' in o.keys()]
+        self.assertTrue(ov, 'слои черепков не созданы')
+        mats = {m.name for o in ov for m in o.data.materials}
+        self.assertTrue(mats and all(m.startswith('MC_decorated_pot_') and m.endswith('_pottery_pattern') for m in mats), mats)
+        self.assertGreaterEqual(sum(len(o.data.polygons) for o in ov), 5)
+        bpy.ops.mcgen.clear()
+        self.assertFalse([o for o in bpy.data.objects if 'mc_overlay' in o.keys()])
+
     @unittest.skipUnless(REAL, 'нужна настоящая библиотека: слои меняют содержимое чанков')
     def test_update_after_enabling_features_and_structures(self):
         s = S()

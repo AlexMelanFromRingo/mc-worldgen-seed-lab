@@ -215,6 +215,65 @@ class TestEntity(unittest.TestCase):
         # те же координаты y/z (грань на том же полотне), x — две плоскости толщиной 1 px × 2/3
         self.assertAlmostEqual(abs(p0[0][0] - p1[0][0]), 1.0 / 16.0 * 2.0 / 3.0, places=4)
 
+    def test_decorated_pot_geometry(self):
+        """DecoratedPotRenderer: горлышко из двух коробок, плоскости крышки и дна, 4 боковины; горлышко выступает над блоком (до y = 20 px), боковины на 1…15 px."""
+        from mcgen_addon.assets import entity_models as em
+        q = em.entity_quads('decorated_pot', {'facing': 'north'})
+        self.assertEqual(len(q), 12 + 1 + 1 + 4)
+        self.assertTrue(em.is_entity_block('decorated_pot'))
+        self.assertEqual({x.tex for x in q}, {'minecraft:entity/decorated_pot/decorated_pot_base', 'minecraft:entity/decorated_pot/decorated_pot_side'})
+        ys = [p[1] for x in q for p in x.pos]
+        self.assertAlmostEqual(max(ys), (20 + 0.2 - 0.1 * 0) / 16.0, delta=0.02)        # верх горлышка: 20 px (+ расширение 0,2 у нижней коробки)
+        sides = [x for x in q if x.tex.endswith('decorated_pot_side')]
+        xs = [p[0] for x in sides for p in x.pos]
+        zs = [p[2] for x in sides for p in x.pos]
+        self.assertAlmostEqual(min(xs), 1 / 16.0, places=4)
+        self.assertAlmostEqual(max(xs), 15 / 16.0, places=4)
+        self.assertAlmostEqual(min(zs), 1 / 16.0, places=4)
+        self.assertAlmostEqual(max(zs), 15 / 16.0, places=4)
+        # лицевая сторона (front) смотрит на юг при facing=north и поворачивается вместе с блоком
+        def normal_of(side, facing):
+            (_pos, _uv, n), = em.pot_sherd_faces({'facing': facing}, side)
+            return tuple(round(c) for c in n)
+        self.assertEqual(normal_of('front', 'north'), (0, 0, 1))
+        self.assertEqual(normal_of('back', 'north'), (0, 0, -1))
+        self.assertEqual(normal_of('left', 'north'), (-1, 0, 0))
+        self.assertEqual(normal_of('right', 'north'), (1, 0, 0))
+        self.assertEqual(normal_of('front', 'east'), (-1, 0, 0))             # поворот на (180 − toYRot) = −90°
+        self.assertEqual(em.sherd_pattern('minecraft:scrape_pottery_sherd'), 'scrape_pottery_pattern')
+        self.assertIsNone(em.sherd_pattern('minecraft:brick'))
+        for side in em.POT_SIDE_NAMES:
+            (pos, uv, _n), = em.pot_sherd_faces({'facing': 'south'}, side)
+            self.assertTrue(all(0.0 <= c <= 1.0 for u in uv for c in u))
+            self.assertTrue(all(-0.001 <= c <= 1.001 for p in pos for c in p))
+
+    def test_copper_golem_statue_geometry(self):
+        """Статуя медного голема: 4 позы из CopperGolemModel (число коробок: стоя 9, бег 9, сидя 11, звезда 9), текстура по степени окисления, поворот по facing, ноги на полу."""
+        from mcgen_addon.assets import entity_models as em
+        n = {pose: len(em.entity_quads('copper_golem_statue', {'facing': 'north', 'copper_golem_pose': pose})) for pose in ('standing', 'running', 'sitting', 'star')}
+        self.assertEqual(n, {'standing': 54, 'running': 54, 'sitting': 66, 'star': 54})
+        self.assertTrue(em.is_entity_block('waxed_oxidized_copper_golem_statue'))
+        for name, tex in (('copper_golem_statue', 'copper_golem'), ('exposed_copper_golem_statue', 'copper_golem_exposed'),
+                          ('waxed_weathered_copper_golem_statue', 'copper_golem_weathered'), ('oxidized_copper_golem_statue', 'copper_golem_oxidized')):
+            self.assertEqual({x.tex for x in em.entity_quads(name, {'facing': 'south', 'copper_golem_pose': 'standing'})}, {'minecraft:entity/copper_golem/' + tex})
+        qs = em.entity_quads('copper_golem_statue', {'facing': 'north', 'copper_golem_pose': 'standing'})
+        ys = [p[1] for x in qs for p in x.pos]
+        self.assertAlmostEqual(min(ys), 0.0, delta=0.01)                       # ноги стоят на полу блока
+        self.assertGreater(max(ys), 1.0)                                       # антенна выше блока: корпус 5 + 6 + голова 5 + антенна 13 px ≈ 29 px
+        self.assertTrue(all(0.0 <= c <= 1.0 for x in qs for uv in x.uv for c in uv))
+        # нос (коробка 2×3×2 перед головой) смотрит в сторону facing
+        def nose_dir(facing):
+            qs = em.entity_quads('copper_golem_statue', {'facing': facing, 'copper_golem_pose': 'standing'})
+            head = qs[6:30]                                                    # корпус 6 граней, голова 4 коробки по 6 граней
+            nose = head[6:12]
+            cx = sum(p[0] for x in nose for p in x.pos) / 24.0 - 0.5
+            cz = sum(p[2] for x in nose for p in x.pos) / 24.0 - 0.5
+            return (round(cx * 10), round(cz * 10))
+        self.assertLess(nose_dir('north')[1], 0)
+        self.assertGreater(nose_dir('south')[1], 0)
+        self.assertGreater(nose_dir('east')[0], 0)
+        self.assertLess(nose_dir('west')[0], 0)
+
     def test_chest_facing_rotates_lock(self):
         from mcgen_addon.assets import entity_models as em
         def lock_center(f):

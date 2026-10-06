@@ -24,6 +24,7 @@ struct BSProv {
     int nstates; int *states2;          /* states / low_states */
     int nhigh; int *high; int deflt;    /* high_states, default_state */
     int vmin, vmax;                     /* dual_noise: variety */
+    int old_rot;                        /* rotated: RotatedBlockProvider 26.1/26.2 (Axis.getRandom, только axis) */
 };
 
 static const char *norm_type(const char *t, char *buf, size_t n) {
@@ -124,6 +125,7 @@ BSProv *fp_bsprov(FParse *p, const Js *v) {
     else if (!strcmp(nt, "rotated")) {
         b->kind = SP_ROTATED; b->src = fp_bsprov(p, js_get(v, "state")); if (!b->src) return NULL;
         const char *d = js_str(js_get(v, "direction"), NULL); b->dir = d ? dir_from_name(d) : -1;
+        b->old_rot = !p->newf;
     }
     else if (!strcmp(nt, "noise") || !strcmp(nt, "noise_threshold") || !strcmp(nt, "dual_noise")) {
         b->kind = !strcmp(nt, "noise") ? SP_NOISE : !strcmp(nt, "dual_noise") ? SP_DUAL : SP_NOISE_THRESH;
@@ -198,6 +200,11 @@ int bsprov_state(FCtx *c, const BSProv *b, int x, int y, int z) {
         return bs_with(c->bs, st, b->prop, num) >= 0 ? bs_with(c->bs, st, b->prop, num) : st;
     }
     case SP_ROTATED: {
+        if (b->old_rot) {            /* 26.1/26.2: RotatedBlockProvider.getState = Axis.getRandom(random) (Util.getRandom(X, Y, Z)); trySetValue(AXIS) */
+            static const char *AX3[3] = { "x", "y", "z" };
+            int ax = frnd_int_bound(c->rnd, 3);
+            return bs_try_with(c->bs, bsprov_state(c, b->src, x, y, z), "axis", AX3[ax]);
+        }
         int dir = b->dir >= 0 ? b->dir : frnd_int_bound(c->rnd, 6);    /* Direction.getRandom: Util.getRandom(values, random) */
         static const char *N[6] = { "down", "up", "north", "south", "west", "east" };
         static const char *AX[6] = { "y", "y", "z", "z", "x", "x" };

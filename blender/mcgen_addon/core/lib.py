@@ -511,7 +511,8 @@ class McRegion:
         return _numpy_view(self, a, C.c_int16, 256, (16, 16))
 
     def block_entities(self):
-        """Блок-сущности построек в области (баннеры с узорами): [{'x','y','z','block':'minecraft:..._banner','patterns':[(цвет, 'minecraft:узор'), …]}]. Пусто, если библиотека старая."""
+        """Блок-сущности построек в области: баннеры с узорами {'x','y','z','block':'minecraft:..._banner','patterns':[(цвет, 'minecraft:узор'), …]} и декоративные горшки
+        с черепками {'x','y','z','block':'minecraft:decorated_pot','sherds':{'back'|'left'|'right'|'front': 'minecraft:…_pottery_sherd'}}. Пусто, если библиотека старая."""
         fn = self._lib.mcgen_region_block_entities
         if fn is None:
             return []
@@ -523,6 +524,7 @@ class McRegion:
             return []
         for e in out:
             e['patterns'] = [tuple(p) for p in e.get('patterns', [])]
+            e.setdefault('sherds', {})
         return out
 
     def memory_bytes(self):
