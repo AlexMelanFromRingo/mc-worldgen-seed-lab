@@ -218,18 +218,26 @@ static void worker(void *arg) {
  * лежащие у границы региона (могут растечься внутрь), тоже обрабатываются. Порядок — по чанкам (cz, затем cx). */
 typedef struct HaloChunk { int cx, cz; uint16_t *blocks; PPMarks marks; struct HaloChunk *next; } HaloChunk;
 typedef struct { McWorld *w; McRegion *r; HaloChunk *halo[256]; TerrainCtx *t; int fail; char err[256]; SurfCtx *sc; SCtx *bx; } View;
-/* SURFACE для гало-чанка: биомы чанка стадией BIOMES (пакетно, как у чанков региона), затем поверхность */
-static int halo_surface(View *v, int cx, int cz, uint16_t *blocks, char *e, size_t el) {
-    McWorld *w = v->w;
-    if (!v->sc) v->sc = surface_ctx_new(w);
-    if (!v->bx && w->nc) v->bx = sctx_new(w->nc, 1);
-    uint8_t *hb = xmalloc((size_t)(w->height / 4) * 16);
-    if (v->bx) sctx_reset_caches(v->bx);
-    world_chunk_biomes(w, v->bx, cx, cz, hb);
-    int rc = surface_apply_chunk_ex(w, v->sc, cx, cz, blocks, hb, terrain_marks_rw(v->t), v->t, (v->r->stages & MC_STAGE_CARVERS) != 0, e, el);
-    free(hb);
-    return rc;
+/* Гало-чанк целиком (TERRAIN → SURFACE → CARVERS на переданных контекстах потока): блоки + пометки. 0 — успех, иначе текст ошибки в e */
+static int halo_generate(McWorld *w, McRegion *r, TerrainCtx *t, SurfCtx **sc, SCtx **bx, int cx, int cz, HaloChunk *h, char *e, size_t el) {
+    h->blocks = xmalloc(sizeof(uint16_t) * (size_t)r->info.height * 256);
+    if (terrain_fill_chunk(w, t, cx, cz, h->blocks, e, el)) return 1;
+    if (r->stages & MC_STAGE_SURFACE) {
+        /* SURFACE для гало-чанка: биомы чанка стадией BIOMES (пакетно, как у чанков региона), затем поверхность */
+        if (!*sc) *sc = surface_ctx_new(w);
+        if (!*bx && w->nc) *bx = sctx_new(w->nc, 1);
+        uint8_t *hb = xmalloc((size_t)(w->height / 4) * 16);
+        if (*bx) sctx_reset_caches(*bx);
+        world_chunk_biomes(w, *bx, cx, cz, hb);
+        int rc = surface_apply_chunk_ex(w, *sc, cx, cz, h->blocks, hb, terrain_marks_rw(t), t, (r->stages & MC_STAGE_CARVERS) != 0, e, el);
+        free(hb);
+        if (rc) return 1;
+    }
+    if ((r->stages & MC_STAGE_CARVERS) && !((r->stages & MC_STAGE_SURFACE) && surface_carves_inside(w)) && carvers_apply_chunk(w, t, cx, cz, h->blocks, terrain_marks_rw(t), e, el)) return 1;
+    ppmarks_copy(&h->marks, terrain_marks(t));
+    return 0;
 }
+static void halo_insert(View *v, HaloChunk *h) { int b = ((h->cx * 31 + h->cz) & 255); h->next = v->halo[b]; v->halo[b] = h; }
 static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     McRegion *r = v->r;
     int i = chunk_index(r, cx, cz);
@@ -237,14 +245,11 @@ static uint16_t *view_chunk(View *v, int cx, int cz, PPMarks **marks) {
     int b = ((cx * 31 + cz) & 255);
     for (HaloChunk *h = v->halo[b]; h; h = h->next) if (h->cx == cx && h->cz == cz) { if (marks) *marks = &h->marks; return h->blocks; }
     HaloChunk *h = xcalloc(1, sizeof *h);
-    h->cx = cx; h->cz = cz; h->blocks = xmalloc(sizeof(uint16_t) * (size_t)r->info.height * 256);
+    h->cx = cx; h->cz = cz;
     if (!v->t) v->t = terrain_ctx_new(v->w);
     char e[256] = {0};
-    if (terrain_fill_chunk(v->w, v->t, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
-    else if ((r->stages & MC_STAGE_SURFACE) && halo_surface(v, cx, cz, h->blocks, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
-    else if ((r->stages & MC_STAGE_CARVERS) && !((r->stages & MC_STAGE_SURFACE) && surface_carves_inside(v->w)) && carvers_apply_chunk(v->w, v->t, cx, cz, h->blocks, terrain_marks_rw(v->t), e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
-    ppmarks_copy(&h->marks, terrain_marks(v->t));
-    h->next = v->halo[b]; v->halo[b] = h;
+    if (halo_generate(v->w, r, v->t, &v->sc, &v->bx, cx, cz, h, e, sizeof e)) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", e); }
+    halo_insert(v, h);
     if (marks) *marks = &h->marks;
     return h->blocks;
 }
@@ -262,17 +267,72 @@ static void view_set(void *ud, int x, int y, int z, int st) {
     uint16_t *b = view_chunk(v, x >> 4, z >> 4, NULL);
     b[((size_t)ly * 16 + (z & 15)) * 16 + (x & 15)] = (uint16_t)st;
 }
+/* Кольцо гало (чанки на расстоянии 1 от региона) нужно растеканию жидкостей целиком — раньше оно генерировалось лениво одним потоком (для области 8×8 это 36 чанков
+ * полного конвейера против 64 у региона: ≈ 75 % времени всей генерации). Теперь кольцо считается заранее всеми потоками; результат тот же (чанк детерминирован). */
+typedef struct { View *v; int *cx, *cz; int n, next, done, cancel, fail; McMutex *lock; McProgressFn cb; void *ud; char err[256]; } HaloJob;
+static void halo_worker(void *arg) {
+    HaloJob *j = arg; View *v = j->v; McWorld *w = v->w;
+    TerrainCtx *t = terrain_ctx_new(w); SurfCtx *sc = NULL; SCtx *bx = NULL;
+    for (;;) {
+        mutex_lock(j->lock);
+        int k = (j->cancel || j->fail) ? j->n : j->next++;
+        mutex_unlock(j->lock);
+        if (k >= j->n) break;
+        HaloChunk *h = xcalloc(1, sizeof *h); h->cx = j->cx[k]; h->cz = j->cz[k];
+        char e[256] = {0};
+        int bad = halo_generate(w, v->r, t, &sc, &bx, h->cx, h->cz, h, e, sizeof e);
+        mutex_lock(j->lock);
+        if (bad) { if (!j->fail) { j->fail = 1; snprintf(j->err, sizeof j->err, "%s", e); } free(h->blocks); free(h); }
+        else {
+            halo_insert(v, h);
+            j->done++;
+            if (j->cb) { char what[64]; snprintf(what, sizeof what, "fluids halo %d/%d", j->done, j->n); if (j->cb(j->ud, 0.95 + 0.01 * j->done / j->n, what)) j->cancel = 1; }
+        }
+        mutex_unlock(j->lock);
+    }
+    if (t) terrain_ctx_free(t);
+    if (sc) surface_ctx_free(sc);
+    if (bx) sctx_free(bx);
+}
+static int halo_pregenerate(View *v, int threads, McProgressFn cb, void *ud) {
+    McRegion *r = v->r;
+    int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz;
+    int cap = 2 * (nx + nz) + 8, n = 0;
+    int *lx = xmalloc((size_t)cap * sizeof(int)), *lz = xmalloc((size_t)cap * sizeof(int));
+    for (int cz = cz0 - 1; cz <= cz0 + nz; cz++) for (int cx = cx0 - 1; cx <= cx0 + nx; cx++) {
+        if (cx >= cx0 && cx < cx0 + nx && cz >= cz0 && cz < cz0 + nz) continue;
+        if (n < cap) { lx[n] = cx; lz[n] = cz; n++; }
+    }
+    HaloJob j; memset(&j, 0, sizeof j);
+    j.v = v; j.cx = lx; j.cz = lz; j.n = n; j.lock = mutex_new(); j.cb = cb; j.ud = ud;
+    int nt = threads > 0 ? threads : cpu_count();
+    if (nt > n) nt = n;
+    if (nt <= 1) halo_worker(&j);
+    else {
+        McThread **th = xcalloc((size_t)nt, sizeof(McThread *));
+        for (int i = 0; i < nt; i++) th[i] = thread_start(halo_worker, &j);
+        for (int i = 0; i < nt; i++) thread_join(th[i]);
+        free(th);
+    }
+    mutex_free(j.lock); free(lx); free(lz);
+    if (j.fail) { v->fail = 1; snprintf(v->err, sizeof v->err, "%s", j.err); }
+    return j.cancel ? 1 : 0;
+}
 /* pp_margin < 0 — бесконечный мир: обрабатываются все чанки региона и пометки гало у границы (в игре все чанки рано или
  * поздно становятся «тикающими»); pp_margin = K >= 0 — только чанки на расстоянии >= K от края региона, без гало.
  * Так воспроизводится загруженная игрой область: postProcessGeneration вызывается в ChunkMap.prepareTickingChunk, т. е.
  * только для чанков уровня BLOCK_TICKING (все 8 соседей — FULL); внешнее кольцо FULL-чанков его не проходит. */
-static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgressFn cb, void *ud, char *err, size_t errlen) {
+static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, int threads, McProgressFn cb, void *ud, char *err, size_t errlen) {
     View v; memset(&v, 0, sizeof v); v.w = w; v.r = r;
     FluidWorld fw = { w->g, &v, view_get, view_set, w->preset->fast_lava, 1, 0 };
     fw.min_y = w->min_y; fw.height = w->height; fw.has_sky = w->dim_kind != 1; fw.world = w;
     fw.post_flags = ((r->stages & MC_STAGE_FEATURES) ? 1 : 0) | (w->struct_on ? 2 : 0);
     if (fw.post_flags) fw.shape_update = structure_shape_update;          /* пометки: грибы без света (FEATURES), заборы/факелы/лестницы построек */
     int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz, cancel = 0;
+    if (pp_margin < 0 && !getenv("MCGEN_HALO_LAZY")) {                 /* MCGEN_HALO_LAZY=1 — прежнее ленивое создание гало одним потоком (для сверки) */
+        if (halo_pregenerate(&v, threads, cb, ud)) cancel = 1;
+        if (cancel || v.fail) goto cleanup;
+    }
     /* воспроизведение записанного порядка постобработки настоящего сервера (tools/gt/jfr_order.py --fluid-txt):
      * MCGEN_FLUID_ORDER=<файл> — строки «cx cz» в порядке, в котором чанки стали «тикающими» (все 8 соседей FULL); только при pp_margin >= 0 */
     int ordered = 0;
@@ -326,6 +386,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
             }
         }
     }
+cleanup:
     for (int b = 0; b < 256; b++) { HaloChunk *h = v.halo[b]; while (h) { HaloChunk *nx2 = h->next; free(h->blocks); ppmarks_free(&h->marks); free(h); h = nx2; } }
     if (v.t) terrain_ctx_free(v.t);
     if (v.sc) surface_ctx_free(v.sc);
@@ -333,6 +394,31 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, McProgress
     if (v.fail) { set_err(err, errlen, "%s", v.err); return -1; }
     if (cancel) { set_err(err, errlen, "отменено"); return 1; }
     return 0;
+}
+
+/* Карты высот всех чанков региона: чанки независимы — считаются всеми потоками (раньше цикл шёл одним потоком: на области 2048×2048 это секунды) */
+typedef struct { McWorld *w; McRegion *r; size_t n; size_t next; McMutex *lock; } HmJob;
+static void hm_worker(void *arg) {
+    HmJob *j = arg; McWorld *w = j->w; McRegion *r = j->r; size_t H = (size_t)w->height;
+    for (;;) {
+        mutex_lock(j->lock); size_t i0 = j->next; j->next += 16; mutex_unlock(j->lock);
+        if (i0 >= j->n) break;
+        size_t i1 = i0 + 16 < j->n ? i0 + 16 : j->n;
+        for (size_t i = i0; i < i1; i++) compute_heightmaps(w->g, w->g->state_cls, r->blocks + H * 256 * i, w->min_y, (int)H, r->hm + i * 1024);
+    }
+}
+static void heightmaps_all(McWorld *w, McRegion *r, int threads) {
+    HmJob j; j.w = w; j.r = r; j.n = (size_t)r->info.nx * r->info.nz; j.next = 0; j.lock = mutex_new();
+    int nt = threads > 0 ? threads : cpu_count();
+    if ((size_t)nt > (j.n + 15) / 16) nt = (int)((j.n + 15) / 16);
+    if (nt <= 1) hm_worker(&j);
+    else {
+        McThread **th = xcalloc((size_t)nt, sizeof(McThread *));
+        for (int i = 0; i < nt; i++) th[i] = thread_start(hm_worker, &j);
+        for (int i = 0; i < nt; i++) thread_join(th[i]);
+        free(th);
+    }
+    mutex_free(j.lock);
 }
 
 static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t stages, int threads, int pp_margin,
@@ -389,10 +475,10 @@ static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t 
             if (frc) { mcgen_region_free(r); return frc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
         }
         /* fluid_flow = 0: «чистое» заполнение шумом (как чанк со статусом ниже full) — без растекания */
-        int prc = w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0 ? region_postprocess(w, r, pp_margin, cb, ud, err, errlen) : 0;
+        int prc = w->tweak[MCGEN_TWEAK_FLUID_FLOW] != 0.0 ? region_postprocess(w, r, pp_margin, threads, cb, ud, err, errlen) : 0;
         if (prc) { mcgen_region_free(r); return prc > 0 ? MCGEN_E_CANCEL : MCGEN_E_INTERNAL; }
         if (cb) cb(ud, 0.99, "heightmaps");
-        for (size_t i = 0; i < n; i++) compute_heightmaps(w->g, w->g->state_cls, r->blocks + (size_t)H * 256 * i, w->min_y, (int)H, r->hm + i * 1024);
+        heightmaps_all(w, r, threads);
     }
     if (cb) cb(ud, 1.0, "done");
     *out = r;

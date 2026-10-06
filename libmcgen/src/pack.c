@@ -78,23 +78,38 @@ int gen_state_id(const McGen *g, const char *name) {
         char *base = xstrndup(name, (size_t)(strchr(name, '[') - name));
         intptr_t def = (intptr_t)sm_get(&g->state_ids, base);
         if (def) {
-            /* перебор состояний того же блока с совпадением указанных свойств */
-            size_t bl = strlen(base);
+            /* как BlockStateParser.parseForBlock: СОСТОЯНИЕ ПО УМОЛЧАНИЮ блока, в котором перезаписаны указанные свойства (неуказанные остаются по умолчанию:
+             * waterlogged=false, half/type=bottom …). Раньше выбиралось первое по номеру состояние с совпадающими указанными парами — неуказанные свойства
+             * получали ПЕРВЫЕ значения (waterlogged=true, half/type=top): полублоки и ступени строек «заливались водой». */
+            const char *dn = g->state_names[def - 1];
+            const char *lb = strchr(dn, '[');
             const char *want = strchr(name, '[') + 1;
-            for (int id = 0; id < g->nstates && !v; id++) {
-                const char *sn = g->state_names[id];
-                if (strncmp(sn, base, bl) || (sn[bl] != '[' && sn[bl] != 0)) continue;
-                int ok = 1;
-                const char *p = want;
-                while (*p && *p != ']' && ok) {
+            if (lb) {
+                int nwant = 0, nused = 0;
+                for (const char *q = want; *q && *q != ']'; ) { const char *e = q; while (*e && *e != ',' && *e != ']') e++; nwant++; q = *e == ',' ? e + 1 : e; }
+                StrBuf b = {0};
+                sb_puts(&b, base); sb_putc(&b, '[');
+                int firstp = 1;
+                for (const char *p = lb + 1; *p && *p != ']'; ) {
                     const char *e = p; while (*e && *e != ',' && *e != ']') e++;
-                    char *kv = xstrndup(p, (size_t)(e - p));
-                    char *pat1 = xsprintf("[%s,", kv), *pat2 = xsprintf(",%s,", kv), *pat3 = xsprintf(",%s]", kv), *pat4 = xsprintf("[%s]", kv);
-                    if (!strstr(sn, pat1) && !strstr(sn, pat2) && !strstr(sn, pat3) && !strstr(sn, pat4)) ok = 0;
-                    free(kv); free(pat1); free(pat2); free(pat3); free(pat4);
+                    const char *eq = memchr(p, '=', (size_t)(e - p));
+                    size_t kl = eq ? (size_t)(eq - p) : (size_t)(e - p);
+                    const char *val = eq ? eq + 1 : e; size_t vl = (size_t)(e - val);
+                    for (const char *q = want; *q && *q != ']'; ) {                  /* значение из имени, если свойство указано */
+                        const char *qe = q; while (*qe && *qe != ',' && *qe != ']') qe++;
+                        const char *qeq = memchr(q, '=', (size_t)(qe - q));
+                        if (qeq && (size_t)(qeq - q) == kl && !strncmp(q, p, kl)) { val = qeq + 1; vl = (size_t)(qe - val); nused++; break; }
+                        q = *qe == ',' ? qe + 1 : qe;
+                    }
+                    if (!firstp) sb_putc(&b, ',');
+                    firstp = 0;
+                    sb_printf(&b, "%.*s=%.*s", (int)kl, p, (int)vl, val);
                     p = *e == ',' ? e + 1 : e;
                 }
-                if (ok) v = id + 1;
+                sb_putc(&b, ']');
+                char *full2 = sb_take(&b);
+                if (nused == nwant) v = (intptr_t)sm_get(&g->state_ids, full2);      /* все указанные свойства существуют у блока и значения допустимы */
+                free(full2);
             }
         }
         free(base);
