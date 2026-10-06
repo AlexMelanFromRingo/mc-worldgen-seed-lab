@@ -19,6 +19,21 @@ public class Agent {
                 final boolean chk = "net/minecraft/world/level/chunk/LevelChunk".equals(name) || ((System.getProperty("dbg.protoset") != null || System.getProperty("dbg.rm") != null) && "net/minecraft/world/level/chunk/ProtoChunk".equals(name));
                 final boolean mrk = "net/minecraft/world/level/chunk/ProtoChunk".equals(name);
                 final boolean tre = "net/minecraft/world/level/levelgen/feature/TreeFeature".equals(name) || "net/minecraft/world/level/levelgen/feature/OreFeature".equals(name);
+                final boolean sec = "net/minecraft/world/level/chunk/LevelChunkSection".equals(name) && System.getProperty("dbg.treeat") != null;
+                if (sec) {       // записи ВЕЛИЧИНЫ секции (жилы пишут напрямую в секции, мимо WorldGenRegion): только пока включена трасса дерева/жилы
+                    try {
+                        ClassFile cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(l).orElse(ClassHierarchyResolver.defaultResolver())));
+                        return cf.transformClass(cf.parse(bytes), ClassTransform.transformingMethodBodies(
+                            mm -> mm.methodName().equalsString("setBlockState") && mm.methodTypeSymbol().parameterCount() == 5,
+                            new CodeTransform() {
+                                boolean done = false;
+                                @Override public void accept(CodeBuilder b, CodeElement e) {
+                                    if (!done) { done = true; b.aload(0).iload(1).iload(2).iload(3).aload(4).invokestatic(ClassDesc.of("Dbg"), "secSet", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_Object)); }
+                                    b.with(e);
+                                }
+                            }));
+                    } catch (Throwable t) { t.printStackTrace(); return null; }
+                }
                 final boolean hmp = "net/minecraft/world/level/levelgen/Heightmap".equals(name) && System.getProperty("dbg.prime") != null;
                 if (hmp) {
                     try {
@@ -73,13 +88,18 @@ public class Agent {
                         return cf.transformClass(cm, t);
                     }
                     if (tre) return cf.transformClass(cm, ClassTransform.transformingMethodBodies(
-                        mm -> mm.methodName().equalsString("place") && mm.methodTypeSymbol().parameterCount() == 1,
+                        mm -> mm.methodName().equalsString("place") && (mm.methodTypeSymbol().parameterCount() == 1 || mm.methodTypeSymbol().parameterCount() == 4),
                         new CodeTransform() {
                             boolean done = false;
                             @Override public void accept(CodeBuilder b, CodeElement e) {
                                 if (!done) {
                                     done = true;
-                                    b.aload(1).invokestatic(ClassDesc.of("Dbg"), "tree",
+                                    // 26.1/26.2: place(FeaturePlaceContext); 26.3+: place(WorldGenLevel, ChunkGenerator, RandomSource, BlockPos)
+                                    boolean four = false;
+                                    for (MethodModel mm2 : cm.methods()) if (mm2.methodName().equalsString("place") && mm2.methodTypeSymbol().parameterCount() == 4) four = true;
+                                    if (four) b.aload(1).aload(3).aload(4).invokestatic(ClassDesc.of("Dbg"), "tree4",
+                                        MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_Object, ConstantDescs.CD_Object));
+                                    else b.aload(1).invokestatic(ClassDesc.of("Dbg"), "tree",
                                         MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object));
                                 }
                                 if (e instanceof ReturnInstruction ri && ri.opcode() == Opcode.IRETURN) {

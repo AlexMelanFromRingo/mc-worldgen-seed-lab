@@ -411,7 +411,8 @@ static int facing_dir(const BsTab *bs, int st) {
     if (!bs_get_prop(bs, st, "facing", &v) || !v) return -1;
     return !strcmp(v, "north") ? DIR_NORTH : !strcmp(v, "south") ? DIR_SOUTH : !strcmp(v, "west") ? DIR_WEST : !strcmp(v, "east") ? DIR_EAST : -1;
 }
-typedef struct UpdCls { int vine, cocoa, shelf; const u8 *supports_cocoa; } UpdCls;
+typedef struct UpdCls { int vine, cocoa, shelf, moss; const u8 *supports_cocoa; } UpdCls;
+int veg_mossy_update_shape(FCtx *c, int st, int x, int y, int z);       /* feature_veg.c */
 static int upd_shape(FCtx *c, const UpdCls *u, int st, int x, int y, int z, int d) {
     int b = blk_of(c, st);
     if (b == u->vine) {
@@ -424,6 +425,7 @@ static int upd_shape(FCtx *c, const UpdCls *u, int st, int x, int y, int z, int 
         if (d == f && !u->supports_cocoa[blk_of(c, fc_get(c, x + DIR_DX[f], y, z + DIR_DZ[f]))]) return c->st_air;
         return st;
     }
+    if (b == u->moss && b >= 0) { (void)d; return veg_mossy_update_shape(c, st, x, y, z); }
     if (b == u->shelf) {
         int f = facing_dir(c->bs, st);
         if (f >= 0 && d == opp(f)) {
@@ -441,7 +443,7 @@ static const UpdCls *upd_classes(FCtx *c) {
     if (cache.g != c->g) {
         cache.g = c->g;
         cache.u.vine = bs_block_index(c->bs, "minecraft:vine"); cache.u.cocoa = bs_block_index(c->bs, "minecraft:cocoa");
-        cache.u.shelf = bs_block_index(c->bs, "minecraft:shelf_mushroom");
+        cache.u.shelf = bs_block_index(c->bs, "minecraft:shelf_mushroom"); cache.u.moss = bs_block_index(c->bs, "minecraft:pale_moss_carpet");
         cache.u.supports_cocoa = gen_block_tag(c->g, "minecraft:supports_cocoa");
     }
     return &cache.u;

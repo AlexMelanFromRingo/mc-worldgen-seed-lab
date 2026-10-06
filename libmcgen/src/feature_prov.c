@@ -240,14 +240,25 @@ int heightprov_sample(const HeightProv *h, FCtx *c) {
 }
 
 /* ====================================================================== Mth.sin / Mth.cos (таблица игры) */
-static float g_sin_tab[65536]; static int g_sin_ready;
+static float g_sin_tab[65536], g_sin_tab4[65536]; static int g_sin_ready;
 void fm_init(void) {
     if (g_sin_ready) return;
     for (int i = 0; i < 65536; i++) g_sin_tab[i] = (float)sin((double)i / 10430.378350470453);
+    memcpy(g_sin_tab4, g_sin_tab, sizeof g_sin_tab);       /* 26.4: узлы квадрантов заданы точно (sin[0] = 0, sin[16384] = 1, sin[32768] = 0, sin[49152] = −1) */
+    g_sin_tab4[0] = 0.0f; g_sin_tab4[16384] = 1.0f; g_sin_tab4[32768] = 0.0f; g_sin_tab4[49152] = -1.0f;
     g_sin_ready = 1;
 }
-float fm_sin(double v) { return g_sin_tab[(int)(jm_d2l(v * 10430.378350470453) & 65535LL)]; }
-float fm_cos(double v) { return g_sin_tab[(int)(jm_d2l(v * 10430.378350470453 + 16384.0) & 65535LL)]; }
+/* v4 — 26.4+: Mth.sin/cos округляют индекс таблицы (+0.5) и нечётно продолжаются на i < 0 (как в carver.c) */
+float fm_sin_v(int v4, double v) {
+    if (!v4) return g_sin_tab[(int)(jm_d2l(v * 10430.378350470453) & 65535LL)];
+    return v >= 0.0 ? g_sin_tab4[(int)(jm_d2l(v * 10430.378350470453 + 0.5) & 65535LL)] : -g_sin_tab4[(int)(jm_d2l(-v * 10430.378350470453 + 0.5) & 65535LL)];
+}
+float fm_cos_v(int v4, double v) {
+    if (!v4) return g_sin_tab[(int)(jm_d2l(v * 10430.378350470453 + 16384.0) & 65535LL)];
+    return v >= 0.0 ? g_sin_tab4[(int)(jm_d2l(v * 10430.378350470453 + 16384.0 + 0.5) & 65535LL)] : g_sin_tab4[(int)(jm_d2l(-v * 10430.378350470453 + 16384.0 + 0.5) & 65535LL)];
+}
+float fm_sin(double v) { return fm_sin_v(0, v); }
+float fm_cos(double v) { return fm_cos_v(0, v); }
 
 /* ====================================================================== Biome.BIOME_INFO_NOISE */
 static GNoise g_info_noise; static int g_info_ready;

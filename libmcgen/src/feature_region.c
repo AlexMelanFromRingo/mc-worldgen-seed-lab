@@ -108,6 +108,7 @@ int fc_set(FCtx *c, int x, int y, int z, int st, int flags) {
 }
 void fc_set_raw(FCtx *c, int x, int y, int z, int st) {
     FChunk *ch = fc_chunk(c, x, z);
+    if (fc_trace_writes) fprintf(stderr, "TW %d %d %d %s f=0%s\n", x, y, z, mcgen_block_state_name(c->g, st), ch ? "" : " (вне окна)");
     if (!ch || fc_outside(c, y)) return;
     ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)] = (u16)st;
 }

@@ -49,7 +49,7 @@ static int ore_do_place(FCtx *c, const OreCfg *o, double x0, double x1, double z
         float step = (float)i / (float)size;
         double xx = jm_lerp((double)step, x0, x1), yy = jm_lerp((double)step, y0, y1), zz = jm_lerp((double)step, z0, z1);
         double ss = frnd_double(r) * (double)size / 16.0;
-        double rad = (((double)(fm_sin((double)(PIF * step)) + 1.0f)) * ss + 1.0) / 2.0;
+        double rad = (((double)(fm_sin_v(c->g->version >= V26_4, (double)(PIF * step)) + 1.0f)) * ss + 1.0) / 2.0;
         data[i * 4] = xx; data[i * 4 + 1] = yy; data[i * 4 + 2] = zz; data[i * 4 + 3] = rad;
     }
     for (int i1 = 0; i1 < size - 1; i1++) {
@@ -115,7 +115,7 @@ static int ore_do_place_v264(FCtx *c, const OreCfg *o, double x0, double x1, dou
         float step = (float)i / (float)size;
         double xx = jm_lerp((double)step, x0, x1), yy = jm_lerp((double)step, y0, y1), zz = jm_lerp((double)step, z0, z1);
         double ss = frnd_double(r) * (double)size / 16.0;
-        double rad = (((double)(fm_sin((double)(PIF * step)) + 1.0f)) * ss + 1.0) / 2.0;
+        double rad = (((double)(fm_sin_v(c->g->version >= V26_4, (double)(PIF * step)) + 1.0f)) * ss + 1.0) / 2.0;
         data[i * 4] = xx; data[i * 4 + 1] = yy; data[i * 4 + 2] = zz; data[i * 4 + 3] = rad;
         if (rad > max_r) max_r = rad;
     }
@@ -195,9 +195,13 @@ static int ore_do_place_v264(FCtx *c, const OreCfg *o, double x0, double x1, dou
 }
 
 static int ore_place_impl(FCtx *c, const void *cfg, int ox, int oy, int oz);
+extern _Thread_local int fc_trace_writes;
 static int ore_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     static int tr = -1; if (tr < 0) tr = getenv("MCGEN_ORE_TRACE") != NULL;       /* отладка: сверка попыток жилы с настоящим сервером (tools/gt/agent, хук OreFeature.place) */
+    { const char *at = getenv("MCGEN_TREE_TRACE_AT"); char key[48]; snprintf(key, sizeof key, "%d,%d,%d", ox, oy, oz);
+      if (at && strstr(at, key)) { fc_trace_writes = 1; fprintf(stderr, "TS %d %d %d rnd=%llx\n", ox, oy, oz, (unsigned long long)c->rnd->x.lo); } }
     int res = ore_place_impl(c, cfg, ox, oy, oz);
+    fc_trace_writes = 0;
     if (tr) {
         char wg[64] = "";
         if (oy >= 40 && oy <= 110) { long sum = 0; int mx = -9999; for (int dx = -9; dx <= 9; dx++) for (int dz = -9; dz <= 9; dz++) { int h = fc_height(c, HM_OCEAN_FLOOR_WG, ox + dx, oz + dz); sum += h; if (h > mx) mx = h; } snprintf(wg, sizeof wg, " wg=%ld/%d", sum, mx);

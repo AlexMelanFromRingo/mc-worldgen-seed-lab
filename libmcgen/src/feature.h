@@ -181,6 +181,8 @@ int vanchor_resolve(const VAnchor *a, const FCtx *c);
 /* Mth.sin/cos: таблица игры (fm_init вызывается из feature_register_all) */
 void fm_init(void);
 float fm_sin(double v);
+float fm_sin_v(int v4, double v);       /* Mth.sin: v4 = 26.4+ (округление индекса, нечётность) */
+float fm_cos_v(int v4, double v);
 float fm_cos(double v);
 /* Biome.BIOME_INFO_NOISE.get(x, z) (SimplexNoise seed 2345): float (26.3+) или double (26.1/26.2: PerlinSimplexNoise) */
 double biome_info_noise(const McGen *g, double x, double z);

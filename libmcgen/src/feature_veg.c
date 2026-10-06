@@ -676,6 +676,26 @@ static void moss_place_at(FCtx *c, int x, int y, int z, int upd) {
         fc_set(c, x, y, z, upd_bottom, upd);
     }
 }
+/* MossyCarpetBlock.updateShape (updateShapeAtEdge деревьев: ствол рядом с ковром даёт сторону low): canSurvive → иначе воздух; getUpdatedState(state, level, pos, false); нет граней → воздух.
+ * Возвращает новое состояние (st, если не изменилось). */
+int veg_mossy_update_shape(FCtx *c, int st, int x, int y, int z) {
+    const BsTab *bs = c->bs;
+    int blk = c->g->state_block[st];
+    const char *bv = NULL; bs_get_prop(bs, st, "bottom", &bv);
+    int is_base = bv && !strcmp(bv, "true");
+    int below = fc_get(c, x, y - 1, z);
+    int survive;
+    if (is_base) survive = !(bs->flags[below] & BSF_AIR);
+    else { const char *bb = NULL; survive = c->g->state_block[below] == blk && bs_get_prop(bs, below, "bottom", &bb) && bb && !strcmp(bb, "true"); }
+    if (!survive) return c->st_air;
+    int ns = moss_updated(c, blk, st, x, y, z, 0);
+    if (!is_base) {
+        int any = 0; static const int HZ4[4] = { DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST };
+        for (int i = 0; i < 4 && !any; i++) { const char *v = NULL; moss_wall(bs, ns, HZ4[i], &v); if (v && strcmp(v, "none")) any = 1; }
+        if (!any) return c->st_air;
+    }
+    return ns;
+}
 /* вызывается из simple_block (feature_misc.c) для MossyCarpetBlock; ставит блок и возвращает 1 */
 int veg_mossy_carpet_place(FCtx *c, int x, int y, int z) { moss_place_at(c, x, y, z, 2); return 1; }
 

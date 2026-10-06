@@ -187,8 +187,8 @@ static void trunk_mega_jungle(TreeRun *tr, int h, int ox, int oy, int oz, AttLis
         float angle = frnd_float(r) * (float)(M_PI * 2.0);
         int bx = 0, bz = 0;
         for (int b = 0; b < 5; b++) {
-            bx = (int)(1.5f + fm_cos(angle) * (float)b);
-            bz = (int)(1.5f + fm_sin(angle) * (float)b);
+            bx = (int)(1.5f + fm_cos_v(tr->c->g->version >= V26_4, angle) * (float)b);
+            bz = (int)(1.5f + fm_sin_v(tr->c->g->version >= V26_4, angle) * (float)b);
             place_log(tr, ox + bx, oy + bh - 3 + b / 2, oz + bz, -1);
         }
         att_push(out, ox + bx, oy + bh, oz + bz, -2, 0, 1, 1);

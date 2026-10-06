@@ -57,14 +57,20 @@ public class Dbg {
     /** TreeFeature.place: каждая попытка дерева — центр региона, начало, карты высот OCEAN_FLOOR / WORLD_SURFACE в клетке начала, блок под ней */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void tree(Object ctx) {
+        try { treeCore(call(ctx, "level"), call(ctx, "origin"), call(ctx, "random")); } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
+    }
+    public static void tree4(Object level, Object random, Object pos) {
+        try { treeCore(level, pos, random); } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
+    }
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void treeCore(Object level, Object pos, Object random) {
         try {
-            Object level = call(ctx, "level"), pos = call(ctx, "origin");
             int x = (Integer) call(pos, "getX"), y = (Integer) call(pos, "getY"), z = (Integer) call(pos, "getZ");
             Class<?> ht = Class.forName("net.minecraft.world.level.levelgen.Heightmap$Types", true, level.getClass().getClassLoader());
             int of = (Integer) call(level, "getHeight", Enum.valueOf((Class) ht, "OCEAN_FLOOR"), x, z);
             int ws = (Integer) call(level, "getHeight", Enum.valueOf((Class) ht, "WORLD_SURFACE"), x, z);
             Object center = call(level, "getCenter");
-            RND.set(call(ctx, "random"));
+            RND.set(random);
             TRACE.set(TREEAT.contains(x + "," + y + "," + z) ? Boolean.TRUE : null);
             if (TRACE.get() != null) synchronized (Dbg.class) { w().println("TS " + x + " " + y + " " + z + " rnd=" + rndLo(RND.get())); }
             String wgs = "";
@@ -93,6 +99,10 @@ public class Dbg {
             for (int i = 3; i < Math.min(st.length, 8); i++) sb.append(st[i].getClassName().replaceAll(".*\\.", "")).append('.').append(st[i].getMethodName()).append(' ');
             synchronized (Dbg.class) { w().println("P " + call(pos, "x") + " " + call(pos, "z") + " " + types + " " + call(chunk, "getPersistedStatus") + " <- " + sb); }
         } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
+    }
+    public static void secSet(Object section, int x, int y, int z, Object state) {
+        if (TRACE.get() == null) return;
+        synchronized (Dbg.class) { w().println("SW " + x + " " + y + " " + z + " " + state); }
     }
     static final ThreadLocal<String> LAST = new ThreadLocal<>();
     static final ThreadLocal<Object> RND = new ThreadLocal<>();

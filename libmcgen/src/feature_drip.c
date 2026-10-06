@@ -284,7 +284,7 @@ static int ld_circle_embedded(const FCtx *c, const SpelEnv *e, int cx, int cy, i
     if (ld_empty_water_lava(c, e, cx, cy, cz)) return 0;
     float inc = 6.0F / (float)r;
     for (float a = 0.0F; a < (float)(3.141592653589793 * 2); a += inc) {
-        int dx = (int)(fm_cos((double)a) * (float)r), dz = (int)(fm_sin((double)a) * (float)r);
+        int v4 = c->g->version >= V26_4, dx = (int)(fm_cos_v(v4, (double)a) * (float)r), dz = (int)(fm_sin_v(v4, (double)a) * (float)r);
         if (ld_empty_water_lava(c, e, cx + dx, cy, cz + dz)) return 0;
     }
     return 1;
@@ -344,7 +344,7 @@ static int large_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
         w.has = 1; w.origin_y = oy; w.max_off = s->old ? 0x3fffffff : 16 - radius;      /* 26.1: смещение ветром не ограничено */
         float speed = floatprov_sample(s->wind_speed, r);
         float dir = frnd_float(r) * (3.1415927F - 0.0F) + 0.0F;      /* Mth.randomBetween(random, 0, (float)Math.PI) */
-        w.wx = (double)(fm_cos((double)dir) * speed); w.wz = (double)(fm_sin((double)dir) * speed);
+        w.wx = (double)(fm_cos_v(c->g->version >= V26_4, (double)dir) * speed); w.wz = (double)(fm_sin_v(c->g->version >= V26_4, (double)dir) * speed);
     }
     int st_ok = ld_move_back(c, e, &st, &w);
     int sg_ok = ld_move_back(c, e, &sg, &w);
