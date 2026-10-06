@@ -162,6 +162,7 @@ int biome_params_build(McGen *g, char *err, size_t errlen);   /* OverworldBiomeB
 void biome_params_free(McGen *g);
 int world_biome_noise(const McWorld *w, int qx, int qy, int qz);   /* «сырой» биом клетки (как BiomeSource.getNoiseBiome) */
 int world_biome_cell(const McWorld *w, int qx, int qy, int qz);    /* биом клетки, как его хранит чанк (ничьи R-дерева по порядку заполнения, y зажат) */
+int world_biome_noise_hist(const McWorld *w, int qx, int qy, int qz, int *last);   /* то же с историей поиска R-дерева (*last — лист предыдущего запроса, −1 — нет) */
 int world_biome_from_climate(const McWorld *w, const float v[6]);   /* temperature…weirdness → биом */
 /* биомы чанка (26.3: пакетно через sampleVolume, как doCreateBiomes); out: (height/4)*16 */
 void world_chunk_biomes(const McWorld *w, SCtx *x, int cx, int cz, uint8_t *out);

@@ -34,6 +34,21 @@ public class Agent {
                             }));
                     } catch (Throwable t) { t.printStackTrace(); return null; }
                 }
+                final boolean mat = "net/minecraft/world/level/levelgen/material/MaterialSystem".equals(name) && System.getProperty("dbg.top") != null;
+                if (mat) {       // 26.3+: topMaterial после карвера — какой биом возвращает biomeGetter (BiomeManager над несохранённым резолвером)
+                    try {
+                        ClassFile cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(l).orElse(ClassHierarchyResolver.defaultResolver())));
+                        return cf.transformClass(cf.parse(bytes), ClassTransform.transformingMethodBodies(
+                            mm -> mm.methodName().equalsString("topMaterial") && mm.methodTypeSymbol().parameterCount() == 8,
+                            new CodeTransform() {
+                                boolean done = false;
+                                @Override public void accept(CodeBuilder b, CodeElement e) {
+                                    if (!done) { done = true; b.aload(4).aload(7).aload(2).invokestatic(ClassDesc.of("Dbg"), "top", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_Object, ConstantDescs.CD_Object)); }
+                                    b.with(e);
+                                }
+                            }));
+                    } catch (Throwable t) { t.printStackTrace(); return null; }
+                }
                 final boolean hmp = "net/minecraft/world/level/levelgen/Heightmap".equals(name) && System.getProperty("dbg.prime") != null;
                 if (hmp) {
                     try {

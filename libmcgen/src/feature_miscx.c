@@ -262,25 +262,7 @@ void feature_register_misc_all(void) {
 }
 
 /* ====================================================================== пузырьковые столбцы (пост-обработка чанка)
- * LiquidBlock.onPlace/tick → BubbleColumnBlock.updateColumn: над блоком магмы (тег enables_bubble_column_drag_down) / песка душ (…push_up) источник воды `water[level=0]` превращается
- * в bubble_column[drag=true/false] вверх по столбцу, пока выше — вода-источник или уже пузырьки. В эталоне 26.3 это верно для ВСЕХ столбцов над магмой (измерено на `underwater_magma`:
- * ни одной воды прямо над магмой, 41 столбец пузырьков, высота столба 1–18). Вызывается из region.c после fluidpp_chunk для чанков, прошедших пост-обработку (только при стадии FEATURES). */
-void features_post_chunk(void *fwp, McWorld *w, int cx, int cz) {
-    FluidWorld *fw = fwp; const McGen *g = w->g; const BsTab *bs = bs_get(g);
-    int magma = bs_block_index(bs, "minecraft:magma_block"), sand = bs_block_index(bs, "minecraft:soul_sand"), bub = bs_block_index(bs, "minecraft:bubble_column");
-    if (bub < 0 || (magma < 0 && sand < 0)) return;
-    int drag = bs_with(bs, bs_default(bs, bub), "drag", "true"), push = bs_with(bs, bs_default(bs, bub), "drag", "false");
-    int water = g->st_water, ymax = w->min_y + w->height - 1;
-    for (int z = cz * 16; z < cz * 16 + 16; z++) for (int x = cx * 16; x < cx * 16 + 16; x++) {
-        for (int y = w->min_y; y < ymax; y++) {
-            int blk = g->state_block[fw->get(fw->ud, x, y, z)];
-            if (blk != magma && blk != sand) continue;
-            int col = blk == magma ? drag : push;
-            for (int yy = y + 1; yy <= ymax; yy++) {
-                int st = fw->get(fw->ud, x, yy, z);
-                if (st != water && g->state_block[st] != bub) break;           /* canOccupy: источник воды или пузыри */
-                fw->set(fw->ud, x, yy, z, col);
-            }
-        }
-    }
-}
+ * Раньше здесь была эвристика «над каждой магмой/песком душ — столб пузырьков»; настоящая пост-обработка (LevelChunk.postProcessGeneration: помеченная клетка над магмой,
+ * LiquidBlock.tick по СТАРОМУ состоянию клетки — structure_post.c: liquid_block_tick) даёт то же и точнее: клетку, где к моменту обработки стоял морской злак, игра не превращает в столб
+ * (сид 1337, 26.3: столб из 13 клеток над магмой был лишним). Функция оставлена как пустая точка вызова из region.c. */
+void features_post_chunk(void *fwp, McWorld *w, int cx, int cz) { (void)fwp; (void)w; (void)cx; (void)cz; }

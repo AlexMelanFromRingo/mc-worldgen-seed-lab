@@ -391,6 +391,7 @@ struct SurfCtx {
     int bx, by, bz, gradx, gradz, sdepth, above, below, wh, minsl, minsl_ok, biome, biome_ok, cur;
     double sec; int sec_ok;
     int top_mode;                      /* topMaterial: preliminary surface — объём 1×1×1 */
+    int top_last, top_cx, top_cz, top_init;      /* topMaterial: лист R-дерева предыдущего запроса биома (ThreadLocal lastResult) в пределах карва чанка (top_cx, top_cz) */
     const u8 *cmask; int cmmin, cmh;   /* 26.4: маска карверов чанка (NULL — нет) */
     /* кэш биомов клеток */
     u64 ck[CELLC]; u8 cv[CELLC];
@@ -436,6 +437,9 @@ static int cell_biome(SurfCtx *c, int qx, int qy, int qz) {
     const McWorld *w = c->w;
     int qmin = w->min_y >> 2, qh = w->height >> 2;
     int cy = qy < qmin ? qmin : (qy > qmin + qh - 1 ? qmin + qh - 1 : qy);
+    /* topMaterial карвера: biomeGetter — BiomeManager над несохранённым резолвером (точечный путь климата, без записи в чанк); поиск R-дерева
+     * наследует лист предыдущего запроса потока, поэтому в «ничьих» результат зависит от порядка запросов — кэш клеток здесь не используем */
+    if (c->top_mode && !c->bio) return world_biome_noise_hist(w, qx, qy, qz, &c->top_last);
     if (c->bio && (qx >> 2) == c->cx && (qz >> 2) == c->cz) return c->bio[((cy - qmin) * 4 + (qz & 3)) * 4 + (qx & 3)];
     u64 key = ((u64)((u32)qx & 0xFFFFFFFu) << 36) | ((u64)((u32)qz & 0xFFFFFFFu) << 8) | (u64)(cy - qmin + 1);
     u64 h = (key * 0x9E3779B97F4A7C15ULL) >> 52;      /* 12 бит */
@@ -891,6 +895,7 @@ int mcgen_surface_top_material(McWorld *w, TerrainCtx *t, int cx, int cz, const 
     c->cx = cx; c->cz = cz; c->blk = (uint16_t *)blocks; c->bio = NULL; c->marks = NULL;
     c->minY = w->min_y; c->maxY = w->min_y + w->height - 1;
     c->prelim_ok = 0; c->top_mode = 1;
+    if (c->top_cx != cx || c->top_cz != cz || !c->top_init) { c->top_cx = cx; c->top_cz = cz; c->top_init = 1; c->top_last = -1; }
     int lx = x & 15, lz = z & 15;
     int fe = col_first(c, lz * 16 + (lx + 1 < 15 ? lx + 1 : 15)), fw = col_first(c, lz * 16 + (lx - 1 > 0 ? lx - 1 : 0));
     int fs = col_first(c, (lz + 1 < 15 ? lz + 1 : 15) * 16 + lx), fn = col_first(c, (lz - 1 > 0 ? lz - 1 : 0) * 16 + lx);
@@ -898,5 +903,6 @@ int mcgen_surface_top_material(McWorld *w, TerrainCtx *t, int cx, int cz, const 
     update_xz(c, x, z, fe - fw, fs - fn);
     update_y(c, 1, 1, under_fluid ? y + 1 : INT_MIN, y);
     c->cur = get_block(c, lz * 16 + lx, y);
-    return eval_rule(c, S->root);
+    int res = eval_rule(c, S->root);
+    return res;
 }

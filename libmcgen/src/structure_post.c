@@ -84,13 +84,19 @@ static int update_shape_interest(const BsTab *bs, int st) {         /* блок�
     if (kb != bs || !tab) {
         free(tab); tab = xcalloc((size_t)bs->nblocks, 1); kb = bs;
         static const char *CL[] = { "CropBlock", "SnowyBlock", "SpreadingSnowyBlock", "StairBlock", "FenceBlock", "IronBarsBlock", "WallTorchBlock", "LadderBlock", "TorchBlock",
-                                    "WallBlock", "DoorBlock", "ChestBlock", "WallBannerBlock", "DoublePlantBlock", "VegetationBlock", "MultifaceBlock", "VineBlock", "CocoaBlock", NULL };
+                                    "WallBlock", "DoorBlock", "ChestBlock", "WallBannerBlock", "DoublePlantBlock", "VegetationBlock", "MultifaceBlock", "VineBlock", "CocoaBlock", "PointedDripstoneBlock", "SpeleothemBlock", NULL };
         for (int b = 0; b < bs->nblocks; b++) {
             if (bs->blk[b].count <= 0) continue;
             for (int i = 0; CL[i]; i++) if (bs_is_a(bs, bs->blk[b].first, CL[i])) { tab[b] = 1; break; }
         }
     }
     return tab[bs->g->state_block[st]];
+}
+/* сталактит/сталагмит (PointedDripstoneBlock; с 26.2 — SpeleothemBlock) с направлением кончика d */
+static int spel_dir(const BsTab *bs, int st, int d) {
+    if (!bs_is_a(bs, st, "PointedDripstoneBlock") && !bs_is_a(bs, st, "SpeleothemBlock")) return 0;
+    const char *v = NULL;
+    return bs_get_prop(bs, st, "vertical_direction", &v) && v && !strcmp(v, d == DIR_UP ? "up" : "down");
 }
 static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, int z, int dir, int nst) {
     const McGen *g = bs->g;
@@ -202,6 +208,32 @@ static int update_shape(const BsTab *bs, const SGet *wg, int st, int x, int y, i
         if (r < 0) return st;
         for (int i = 0; i < 6; i++) { const char *v = NULL; if (bs_get_prop(bs, r, FN[i], &v) && v && !strcmp(v, "true")) return r; }
         return g->st_air;
+    }
+    if (bs_is_a(bs, st, "PointedDripstoneBlock") || bs_is_a(bs, st, "SpeleothemBlock")) {
+        /* SpeleothemBlock.updateShape (26.1: PointedDripstoneBlock): только по вертикали; опоры нет — игра ставит отложенный тик (состояние не меняется);
+         * иначе толщина пересчитывается (calculateSpeleothemThickness) — после замены соседа водой «tip_merge» без пары становится «tip» */
+        if (dir != DIR_UP && dir != DIR_DOWN) return st;
+        const char *vd = NULL; if (!bs_get_prop(bs, st, "vertical_direction", &vd) || !vd) return st;
+        int tip = !strcmp(vd, "up") ? DIR_UP : DIR_DOWN, base = dir_opp(tip);
+        int behind = wg->get(wg->ud, x + DIR_DX[base], y + DIR_DY[base], z + DIR_DZ[base]);
+        if (dir == base) {                                      /* BlockBehaviour.canSurvive: за спиной прочная грань либо тот же сталактит/сталагмит */
+            int ok = sturdy_face(bs, behind, tip) || (spel_dir(bs, behind, tip) && g->state_block[behind] == g->state_block[st]);
+            if (!ok) return st;
+        }
+        const char *th = NULL; bs_get_prop(bs, st, "thickness", &th);
+        int merge = th && !strcmp(th, "tip_merge");
+        int front = wg->get(wg->ud, x + DIR_DX[tip], y + DIR_DY[tip], z + DIR_DZ[tip]);
+        const char *nt = "tip";
+        if (spel_dir(bs, front, base) && g->state_block[front] == g->state_block[st]) {
+            const char *ft = NULL; bs_get_prop(bs, front, "thickness", &ft);
+            nt = (merge || (ft && !strcmp(ft, "tip_merge"))) ? "tip_merge" : "tip";
+        } else if (spel_dir(bs, front, tip)) {
+            const char *ft = NULL; bs_get_prop(bs, front, "thickness", &ft);
+            if (ft && (!strcmp(ft, "tip") || !strcmp(ft, "tip_merge"))) nt = "frustum";
+            else nt = spel_dir(bs, behind, tip) ? "middle" : "base";
+        }
+        int r = bs_with(bs, st, "thickness", nt);
+        return r < 0 ? st : r;
     }
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         const char *half = ""; bs_get_prop(bs, st, "half", &half);
@@ -332,7 +364,7 @@ void structure_neighbors_update(void *fwp, int x, int y, int z) {
 void structure_shape_update(void *fwp, int x, int y, int z) {
     FluidWorld *fw = fwp;
     const BsTab *bs = bs_get(fw->g);
-    int st = fw->get(fw->ud, x, y, z);
+    int st = fw->pp_state;      /* blockState, считанный ДО fluidState.tick (так в LevelChunk.postProcessGeneration): жидкость, затёкшая в клетку растения, не делает её LiquidBlock */
     if (bs->flags[st] & BSF_LIQUID) { liquid_block_tick(fw, bs, st, x, y, z); return; }   /* LiquidBlock: blockState.tick вместо обновления формы */
     SGet wg = { fw, fw_get, 0, NULL };
     /* контекст FCtx пост-обработки: canSurvive растений (feature_bpred.c / feature_veg.c) читает мир через FluidWorld; свет — настоящий (c.post) */

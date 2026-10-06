@@ -17,14 +17,14 @@
 #include "feature.h"
 
 /* ====================================================================== java.util.HashSet<BlockPos> */
-typedef struct JNode { int x, y, z, hash, next; } JNode;
+typedef struct JNode { int x, y, z, hash, next, prev, parent, left, right; unsigned char red, istree; } JNode;   /* prev/parent/left/right/red — TreeNode, istree — узел в дереве-корзине */
 typedef struct JSet {
     JNode *nodes; int nn, cap;      /* пул узлов (nn — выдано, free — список освобождённых) */
     int free;                       /* индекс головы списка свободных узлов или -1 */
     int *tab; int tsize, tcap;      /* таблица корзин: индекс первого узла цепочки или -1 */
     int size, thr;
     int lo;                         /* нижняя граница индекса первой непустой корзины (ускорение итератора) */
-    long treeified;                 /* счётчик цепочек ≥ 9 при таблице ≥ 64 (дерево-корзины HashMap не воспроизведены) */
+    long treeified;                 /* сколько раз цепочка ≥ 9 при таблице ≥ 64 превратилась в дерево-корзину (HashMap.treeifyBin) */
 } JSet;
 typedef struct BPos { int x, y, z; } BPos;
 typedef struct BList { BPos *a; int n, cap; } BList;

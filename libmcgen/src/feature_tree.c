@@ -5,85 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* ====================================================================== java.util.HashSet<BlockPos> (по алгоритму HashMap, JDK 21) */
-static inline int jhash(int x, int y, int z) {
-    unsigned h = (unsigned)(((unsigned)y + (unsigned)z * 31u) * 31u + (unsigned)x);
-    return (int)(h ^ (h >> 16));      /* HashMap.hash(): h ^ (h >>> 16) от BlockPos.hashCode() */
-}
-void jset_init(JSet *s) { memset(s, 0, sizeof *s); s->free = -1; jset_clear(s); }
-void jset_clear(JSet *s) {
-    if (!s->tab) { s->tcap = 16; s->tab = xmalloc(sizeof(int) * 16); }
-    s->tsize = 16; s->thr = 12; s->size = 0; s->nn = 0; s->free = -1; s->lo = 16;
-    for (int i = 0; i < 16; i++) s->tab[i] = -1;
-}
-void jset_free(JSet *s) { free(s->nodes); free(s->tab); memset(s, 0, sizeof *s); }
-static int jnew(JSet *s, int x, int y, int z, int hash) {
-    int i;
-    if (s->free >= 0) { i = s->free; s->free = s->nodes[i].next; }
-    else {
-        if (s->nn == s->cap) { s->cap = s->cap ? s->cap * 2 : 256; s->nodes = realloc(s->nodes, sizeof(JNode) * (size_t)s->cap); if (!s->nodes) abort(); }
-        i = s->nn++;
-    }
-    JNode *n = &s->nodes[i]; n->x = x; n->y = y; n->z = z; n->hash = hash; n->next = -1;
-    return i;
-}
-static void jresize(JSet *s) {
-    int oc = s->tsize, nc = oc * 2;
-    if (nc > s->tcap) { s->tcap = nc; s->tab = realloc(s->tab, sizeof(int) * (size_t)nc); if (!s->tab) abort(); }
-    for (int j = 0; j < oc; j++) {
-        int lh = -1, lt = -1, hh = -1, ht = -1;
-        for (int e = s->tab[j]; e >= 0;) {
-            int nx = s->nodes[e].next; s->nodes[e].next = -1;
-            if ((s->nodes[e].hash & oc) == 0) { if (lt < 0) lh = e; else s->nodes[lt].next = e; lt = e; }
-            else { if (ht < 0) hh = e; else s->nodes[ht].next = e; ht = e; }
-            e = nx;
-        }
-        s->tab[j] = lh; s->tab[j + oc] = hh;
-    }
-    s->tsize = nc; s->thr *= 2; s->lo = 0;
-}
-int jset_add(JSet *s, int x, int y, int z) {
-    int hash = jhash(x, y, z), idx = hash & (s->tsize - 1);
-    int p = s->tab[idx];
-    if (p < 0) { int n = jnew(s, x, y, z, hash); s->tab[idx] = n; }
-    else {
-        int len = 0;
-        for (int e = p;; e = s->nodes[e].next) {
-            const JNode *n = &s->nodes[e];
-            if (n->hash == hash && n->x == x && n->y == y && n->z == z) return 0;
-            len++;
-            if (n->next < 0) { p = e; break; }
-        }
-        int nn = jnew(s, x, y, z, hash);
-        s->nodes[p].next = nn;
-        if (len >= 8) {                    /* binCount >= TREEIFY_THRESHOLD − 1 → treeifyBin */
-            if (s->tsize < 64) jresize(s);
-            else s->treeified++;
-        }
-    }
-    if (idx < s->lo) s->lo = idx;
-    if (++s->size > s->thr) jresize(s);
-    return 1;
-}
-int jset_contains(const JSet *s, int x, int y, int z) {
-    int hash = jhash(x, y, z);
-    for (int e = s->tab[hash & (s->tsize - 1)]; e >= 0; e = s->nodes[e].next) {
-        const JNode *n = &s->nodes[e];
-        if (n->hash == hash && n->x == x && n->y == y && n->z == z) return 1;
-    }
-    return 0;
-}
-int jset_pop_first(JSet *s, BPos *out) {
-    if (s->size == 0) return 0;
-    int b = s->lo;
-    while (b < s->tsize && s->tab[b] < 0) b++;
-    if (b >= s->tsize) { s->size = 0; return 0; }
-    s->lo = b;
-    int e = s->tab[b]; JNode *n = &s->nodes[e];
-    out->x = n->x; out->y = n->y; out->z = n->z;
-    s->tab[b] = n->next; n->next = s->free; s->free = e; s->size--;
-    return 1;
-}
 void blist_reset(BList *l) { l->n = 0; }
 void blist_push(BList *l, int x, int y, int z) {
     if (l->n == l->cap) { l->cap = l->cap ? l->cap * 2 : 256; l->a = realloc(l->a, sizeof(BPos) * (size_t)l->cap); if (!l->a) abort(); }
@@ -229,10 +150,10 @@ done:
 
 static int tree_trace(void) { static int v = -1; if (v < 0) v = getenv("MCGEN_TREE_TRACE") != NULL; return v; }
 extern _Thread_local int fc_trace_writes;
-static int tree_trace_at(int x, int y, int z) {         /* MCGEN_TREE_TRACE_AT="x,y,z;x,y,z": печать всех записей деревьев с этим началом */
+static int tree_trace_at(int x, int y, int z) {         /* MCGEN_TREE_TRACE_AT="x,y,z;x,y,z" (или "*" — все деревья): печать всех записей деревьев с этим началом */
     const char *e = getenv("MCGEN_TREE_TRACE_AT");
     char key[48]; snprintf(key, sizeof key, "%d,%d,%d", x, y, z);
-    return e && strstr(e, key) != NULL;
+    return e && (e[0] == '*' || strstr(e, key) != NULL);
 }
 
 /* ====================================================================== TreeFeature.place */
@@ -304,7 +225,7 @@ static int tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     }
     extern _Thread_local const char *fc_cur_feat;
     if (tree_trace()) fprintf(stderr, "TREE chunk(%d,%d) at (%d,%d,%d) ok=%d res=%d trunks=%d foliage=%d decor=%d why=%d treeified=%ld rnd=%llx F=%s\n", c->ccx, c->ccz, ox, oy, oz, ok, res, ts->trunks.size,
-                              ts->foliage.size, ts->decor.size, g_why, ts->trunks.treeified + ts->foliage.treeified + ts->decor.treeified + ts->roots.treeified, (unsigned long long)c->rnd->x.lo, fc_cur_feat ? fc_cur_feat : "?");
+                              ts->foliage.size, ts->decor.size, g_why, ts->trunks.treeified + ts->foliage.treeified + ts->decor.treeified + ts->roots.treeified + ts->check[0].treeified + ts->check[1].treeified + ts->check[2].treeified + ts->check[3].treeified + ts->check[4].treeified + ts->check[5].treeified + ts->check[6].treeified, (unsigned long long)c->rnd->x.lo, fc_cur_feat ? fc_cur_feat : "?");
     fc_trace_writes = 0;
     ts_release(ts);
     return res;

@@ -98,7 +98,7 @@ int fc_set(FCtx *c, int x, int y, int z, int st, int flags) {
     u16 *b = &ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)];
     { static int tx, ty, tz, tr = -1;           /* отладка: MCGEN_TRACE_POS="x,y,z" — кто и что пишет в эту ячейку (вместе с MCGEN_TRACE_ATT даёт порядок) */
       if (tr < 0) { const char *e = getenv("MCGEN_TRACE_POS"); tr = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
-      if (tr && x == tx && y == ty && z == tz) fprintf(stderr, "SET chunk(%d,%d) (%d,%d,%d): %s -> %s flags=%d\n", c->ccx, c->ccz, x, y, z, mcgen_block_state_name(c->g, *b), mcgen_block_state_name(c->g, st), flags); }
+      if (tr && x == tx && y == ty && z == tz) { extern _Thread_local const char *fc_cur_feat; fprintf(stderr, "SET chunk(%d,%d) (%d,%d,%d): %s -> %s flags=%d F=%s\n", c->ccx, c->ccz, x, y, z, mcgen_block_state_name(c->g, *b), mcgen_block_state_name(c->g, st), flags, fc_cur_feat ? fc_cur_feat : "?"); } }
     *b = (u16)st;
     hm_update(c, ch, x & 15, y, z & 15, st);
     if ((flags & 16) == 0) {
@@ -110,6 +110,9 @@ int fc_set(FCtx *c, int x, int y, int z, int st, int flags) {
 void fc_set_raw(FCtx *c, int x, int y, int z, int st) {
     FChunk *ch = fc_chunk(c, x, z);
     if (fc_trace_writes) fprintf(stderr, "TW %d %d %d %s f=0%s\n", x, y, z, mcgen_block_state_name(c->g, st), ch ? "" : " (вне окна)");
+    { static int tx, ty, tz, tr = -1;           /* MCGEN_TRACE_POS: и прямые записи (жилы, диски) */
+      if (tr < 0) { const char *e = getenv("MCGEN_TRACE_POS"); tr = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
+      if (tr && x == tx && y == ty && z == tz && ch && !fc_outside(c, y)) { extern _Thread_local const char *fc_cur_feat; fprintf(stderr, "SETRAW chunk(%d,%d) (%d,%d,%d): %s -> %s F=%s\n", c->ccx, c->ccz, x, y, z, mcgen_block_state_name(c->g, ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)]), mcgen_block_state_name(c->g, st), fc_cur_feat ? fc_cur_feat : "?"); } }
     if (!ch || fc_outside(c, y)) return;
     ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)] = (u16)st;
 }

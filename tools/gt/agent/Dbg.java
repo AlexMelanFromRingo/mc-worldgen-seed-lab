@@ -54,6 +54,36 @@ public class Dbg {
             synchronized (Dbg.class) { w().println("S " + cx + " " + cz + " " + x + " " + y + " " + z + " | " + state + " | flags=" + flags + " | " + feat); }
         } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
     }
+    static final Set<String> TOPAT = new HashSet<>(Arrays.asList(System.getProperty("dbg.top", "").isEmpty() ? new String[0] : System.getProperty("dbg.top").split(";")));
+    /** MaterialSystem.topMaterial (26.3+): биом, который отдаёт biomeGetter карвера, на y-3..y+3 (колонки x,z из -Ddbg.top="x,z;x,z") */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void top(Object getter, Object pos, Object rs) {
+        try {
+            int x = (Integer) call(pos, "getX"), y = (Integer) call(pos, "getY"), z = (Integer) call(pos, "getZ");
+            if (!TOPAT.contains(x + "," + z)) return;
+            StringBuilder sb = new StringBuilder("TOP " + x + " " + y + " " + z + " |");
+            java.util.function.Function f = (java.util.function.Function) getter;
+            for (int dy = -3; dy <= 3; dy++) {
+                Object bp = call(pos, "offset", 0, dy, 0);
+                String s = String.valueOf(f.apply(bp));
+                int i = s.lastIndexOf(':'); int j = s.indexOf(']', i);
+                sb.append(' ').append(y + dy).append(':').append(i > 0 && j > i ? s.substring(i + 1, j) : s);
+            }
+            synchronized (Dbg.class) { w().println(sb); }
+            String q = System.getProperty("dbg.topq");
+            if (q != null && !TOPQ_DONE.getAndSet(true)) {      // климат точечным путём (SamplerContext.EMPTY_UNCACHED) в заданных квартах "qx,qy,qz;..."
+                Class<?> sc = Class.forName("net.minecraft.world.level.levelgen.densityfunction.SamplerContext", true, rs.getClass().getClassLoader());
+                Object ctx = sc.getField("EMPTY_UNCACHED").get(null);
+                Object smp = call(rs, "createClimateSampler", ctx);
+                for (String c : q.split(";")) {
+                    String[] a = c.split(",");
+                    Object tp = call(smp, "sample", Integer.parseInt(a[0]), Integer.parseInt(a[1]), Integer.parseInt(a[2]));
+                    synchronized (Dbg.class) { w().println("TQ " + c + " " + tp); }
+                }
+            }
+        } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); t.printStackTrace(w()); } }
+    }
+    static final java.util.concurrent.atomic.AtomicBoolean TOPQ_DONE = new java.util.concurrent.atomic.AtomicBoolean();
     /** TreeFeature.place: каждая попытка дерева — центр региона, начало, карты высот OCEAN_FLOOR / WORLD_SURFACE в клетке начала, блок под ней */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void tree(Object ctx) {
@@ -71,7 +101,7 @@ public class Dbg {
             int ws = (Integer) call(level, "getHeight", Enum.valueOf((Class) ht, "WORLD_SURFACE"), x, z);
             Object center = call(level, "getCenter");
             RND.set(random);
-            TRACE.set(TREEAT.contains(x + "," + y + "," + z) ? Boolean.TRUE : null);
+            TRACE.set(TREEAT.contains("*") || TREEAT.contains(x + "," + y + "," + z) ? Boolean.TRUE : null);
             if (TRACE.get() != null) synchronized (Dbg.class) { w().println("TS " + x + " " + y + " " + z + " rnd=" + rndLo(RND.get())); }
             String wgs = "";
             if (WGBOX && y >= 40 && y <= 110) {

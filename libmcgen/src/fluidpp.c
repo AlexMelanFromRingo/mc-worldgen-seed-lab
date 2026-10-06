@@ -381,7 +381,13 @@ void fluidpp_chunk(FluidWorld *w, const PPMarks *m, int cx, int cz, int min_y) {
     for (int s = 0; s < m->nsec; s++) for (int i = 0; i < m->n[s]; i++) {
         u16 p = m->pos[s][i];
         int x = cx * 16 + (p & 15), y = min_y + s * 16 + ((p >> 4) & 15), z = cz * 16 + ((p >> 8) & 15);
+        w->pp_state = w->get(w->ud, x, y, z);
+        static int trp = -1, tx, ty, tz;
+        if (trp < 0) { const char *e = getenv("MCGEN_PP_TRACE"); trp = (e && sscanf(e, "%d,%d,%d", &tx, &ty, &tz) == 3) ? 1 : 0; }
+        if (trp && x == tx && y == ty && z == tz) fprintf(stderr, "PP chunk(%d,%d) (%d,%d,%d) до: %s\n", cx, cz, x, y, z, mcgen_block_state_name(w->g, w->pp_state));
         fluidpp_tick(w, x, y, z);
+        if (trp && x == tx && y == ty && z == tz) fprintf(stderr, "PP  после тика: %s\n", mcgen_block_state_name(w->g, w->get(w->ud, x, y, z)));
         if (w->shape_update) w->shape_update(w, x, y, z);
+        if (trp && x == tx && y == ty && z == tz) fprintf(stderr, "PP  после формы: %s\n", mcgen_block_state_name(w->g, w->get(w->ud, x, y, z)));
     }
 }
