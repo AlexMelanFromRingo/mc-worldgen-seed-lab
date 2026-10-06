@@ -20,6 +20,8 @@ static int simple_place(FCtx *c, const void *cfg, int x, int y, int z) {
     if (bs_is_a(bs, st, "DoublePlantBlock")) {
         int above = fc_get(c, x, y + 1, z);
         if (!fc_is_air(c, above)) {
+            /* 26.1/26.2: level.isEmptyBlock(origin.above()) — только воздух; 26.3+: и воздух, и «та же жидкость + canBeReplaced» (SimpleBlockFeature) */
+            if (!c->g->newf) return 0;
             /* !Objects.equals(stateToPlace.getFluidState(), aboveState.getFluidState()) || !aboveState.canBeReplaced() */
             if (bs->fluid[st] != bs->fluid[above] || !(bs->flags[above] & BSF_REPLACEABLE)) return 0;
         }

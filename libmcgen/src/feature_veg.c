@@ -760,12 +760,19 @@ int veg_survive(FCtx *c, int st, int x, int y, int z, int *res) {
         return 1;
     }
     case VK_MUSHROOM:
+        /* 26.4-snapshot-2: MushroomBlock больше не переопределяет canSurvive (VegetationBlock: только mayPlaceOn = isSolidRender); свет читает лишь canSpreadTo (рост от случайных тиков) */
+        if (c->g->version >= V26_4) { *res = (bs->flags[below] & BSF_SOLID_RENDER) != 0; return 1; }
         if (veg_in_tag(c, veg_tag(c, "minecraft:overrides_mushroom_light_requirement"), below)) { *res = 1; return 1; }
         /* getRawBrightness(pos, 0) на стадии FEATURES: свет читается из движка «как есть» (fc_sky_light, feature_region.c): 0 в секциях, зарегистрированных световым потоком, 15 в остальных
          * (чанки без данных). Nether (has_skylight=false): skyEngine == null → яркость 0 < 13; Overworld/End — небесный свет по модели. */
         if (c->post) *res = light_raw_final(bs, c->ext_get, c->ext_ud, c->min_y, c->height, c->w->dim_kind != 1, x, y, z) < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;   /* LevelChunk.postProcessGeneration: свет настоящий (небо и блочный) */
         else if (c->w->dim_kind == 1) *res = (bs->flags[below] & BSF_SOLID_RENDER) != 0;            /* FEATURES, Nether: неба нет, блочный свет ещё не посчитан */
-        else *res = fc_sky_light(c, x, y, z) < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;
+        else {
+            int lt = fc_sky_light(c, x, y, z);
+            *res = lt < 13 && (bs->flags[below] & BSF_SOLID_RENDER) != 0;
+            static int tr = -1; if (tr < 0) tr = getenv("MCGEN_MUSH_TRACE") != NULL;        /* отладка: сверка света грибов с агентом (строки C) */
+            if (tr) fprintf(stderr, "MSH chunk(%d,%d) (%d,%d,%d) light=%d solid=%d res=%d\n", c->ccx, c->ccz, x, y, z, lt, (bs->flags[below] & BSF_SOLID_RENDER) != 0, *res);
+        }
         return 1;
     case VK_FIRE: *res = veg_sturdy(c, below, DIR_UP); return 1;
     case VK_SOUL_FIRE: *res = veg_in_tag(c, veg_tag(c, "minecraft:soul_fire_base_blocks"), below); return 1;

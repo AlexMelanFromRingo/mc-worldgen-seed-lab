@@ -20,6 +20,7 @@ typedef struct FluidWorld {
     int water_conversion;     /* gamerule waterSourceConversion (по умолчанию да) */
     int lava_conversion;      /* gamerule lavaSourceConversion (по умолчанию нет) */
     void (*shape_update)(void *fw, int x, int y, int z);   /* необязательно: Block.updateFromNeighbourShapes для помеченного не-жидкого блока (region.c: post_shape_update) */
+    void (*neighbors_update)(void *fw, int x, int y, int z);   /* необязательно: Level.setBlock(…, 3) — updateShape у 6 соседей изменившейся клетки (растения без опоры, двойные растения; region.c) */
     int min_y, height, has_sky;   /* мир: нижняя граница, высота, есть ли небесный свет (для света при updateShape: грибы) */
     int post_flags;               /* 1 — стадия FEATURES (растения/грибы), 2 — постройки */
     void *world;                  /* McWorld* (для контекста FCtx пост-обработки: измерение, высоты) */

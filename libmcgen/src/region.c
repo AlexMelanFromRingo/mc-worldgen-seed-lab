@@ -9,6 +9,7 @@
 #include "gpu_bridge.h"
 void structures_begin_region(McWorld *w);   /* structure.c */
 void structure_shape_update(void *fw, int x, int y, int z);   /* structure_post.c */
+void structure_neighbors_update(void *fw, int x, int y, int z);
 void features_post_chunk(void *fw, McWorld *w, int cx, int cz);  /* feature_miscx.c: пузырьковые столбцы над магмой/песком душ */
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
@@ -328,7 +329,7 @@ static int region_postprocess(McWorld *w, McRegion *r, int pp_margin, int thread
     FluidWorld fw = { w->g, &v, view_get, view_set, w->preset->fast_lava, 1, 0 };
     fw.min_y = w->min_y; fw.height = w->height; fw.has_sky = w->dim_kind != 1; fw.world = w;
     fw.post_flags = ((r->stages & MC_STAGE_FEATURES) ? 1 : 0) | (w->struct_on ? 2 : 0);
-    if (fw.post_flags) fw.shape_update = structure_shape_update;          /* пометки: грибы без света (FEATURES), заборы/факелы/лестницы построек */
+    if (fw.post_flags) { fw.shape_update = structure_shape_update; fw.neighbors_update = structure_neighbors_update; }          /* пометки: грибы без света (FEATURES), заборы/факелы/лестницы построек */
     int cx0 = r->info.cx0, cz0 = r->info.cz0, nx = r->info.nx, nz = r->info.nz, cancel = 0;
     if (pp_margin < 0 && !getenv("MCGEN_HALO_LAZY")) {                 /* MCGEN_HALO_LAZY=1 — прежнее ленивое создание гало одним потоком (для сверки) */
         if (halo_pregenerate(&v, threads, cb, ud)) cancel = 1;

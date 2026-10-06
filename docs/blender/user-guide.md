@@ -38,10 +38,10 @@
 
 | Платформа | Файл |
 |---|---|
-| Windows x64 | `mcgen-0.1.11-windows-x64.zip` |
-| Linux x64 | `mcgen-0.1.11-linux-x64.zip` |
-| macOS (Apple Silicon) | `mcgen-0.1.11-macos-arm64.zip` |
-| macOS (Intel) | `mcgen-0.1.11-macos-x64.zip` |
+| Windows x64 | `mcgen-0.1.12-windows-x64.zip` |
+| Linux x64 | `mcgen-0.1.12-linux-x64.zip` |
+| macOS (Apple Silicon) | `mcgen-0.1.12-macos-arm64.zip` |
+| macOS (Intel) | `mcgen-0.1.12-macos-x64.zip` |
 
 Файлы собирает `python3 tools/build_extension.py` (каталог `blender/dist/`; библиотеки под все четыре платформы строятся кросс-компилятором zig: `python3 libmcgen/build.py`). В zip лежат только наш код и библиотека `libmcgen` — **ни одного файла Mojang** в нём нет.
 
@@ -50,7 +50,7 @@
 3. Blender покажет запрашиваемые разрешения — **Files** (читать ваши jar игры и держать кэш распакованных данных) и **Network** (необязательно: скачивание jar у Mojang). Подтвердите.
 4. Расширение «MC Worldgen» включается сразу; проверить можно в **Preferences ▸ Add-ons**.
 
-Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.11-linux-x64.zip`.
+Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.12-linux-x64.zip`.
 
 Где искать интерфейс: **Properties editor ▸ вкладка Scene ▸ панель «MC World»** и та же панель в **боковой панели 3D-вида (клавиша `N`) ▸ вкладка «MC World»**. Вкладки в редакторе свойств Python добавлять не позволяет, поэтому «вкладка» — верхняя панель Scene с подпанелями, как у Render. Язык интерфейса — английский; при выборе русского языка Blender (**Preferences ▸ Interface ▸ Language**) аддон переводится целиком (включая подписи и описания всех ползунков).
 
@@ -207,8 +207,9 @@ java -Xmx4g -XX:StartFlightRecording=filename=~/rec/schedule.jfr,settings=~/rec/
 python3 tools/gt/record_schedule.py convert ~/rec/schedule.jfr --dim overworld --out world.mcsched      # нужен JDK 17+ (инструмент jfr)
 ```
 
-На записанных прогонах так получается 0 расхождений из 16,6 млн блоков (Overworld, Nether). Расписание относится к одному прогону одного мира и одному измерению; запись не содержит ничего личного
-(позиции чанков, статусы, время шагов). В `mcgen-cli`: `--schedule world.mcsched`; в C: `mcgen_world_set_schedule()`.
+На записанных прогонах так получается 0 расхождений из 16,6 млн блоков (Overworld, Nether; 26.1–26.4, области вокруг точки появления тоже). Расписание относится к одному прогону одного мира и одному измерению; запись не содержит ничего личного
+(позиции чанков, статусы, время шагов, чтения чанков с диска). Кроме порядка шагов в расписание входят **события чанков**: «чанк перезагружен с диска» (у 26.1/26.2 такой чанк теряет карты высот `*_WG`) и «чанк стал FULL»; для них в `chunkgen.jfc`
+включено событие `minecraft.ChunkRegionRead` — записи, сделанные старым `chunkgen.jfc`, остаются рабочими, но без этих событий область вокруг точки появления на 26.1/26.2 может не совпасть (см. [`nondeterminism.md`](nondeterminism.md) §2.4). В `mcgen-cli`: `--schedule world.mcsched`; в C: `mcgen_world_set_schedule()`.
 
 ### 4.6. World Tweaks (настройки мира)
 

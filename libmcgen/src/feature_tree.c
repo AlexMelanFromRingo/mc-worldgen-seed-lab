@@ -302,8 +302,9 @@ static int tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
         }
         if (any) { update_leaves(&tr, ts, mnx, mny, mnz, mxx - mnx + 1, mxy - mny + 1, mxz - mnz + 1); res = 1; }
     }
-    if (tree_trace()) fprintf(stderr, "TREE chunk(%d,%d) at (%d,%d,%d) ok=%d res=%d trunks=%d foliage=%d decor=%d why=%d treeified=%ld rnd=%llx\n", c->ccx, c->ccz, ox, oy, oz, ok, res, ts->trunks.size,
-                              ts->foliage.size, ts->decor.size, g_why, ts->trunks.treeified + ts->foliage.treeified + ts->decor.treeified + ts->roots.treeified, (unsigned long long)c->rnd->x.lo);
+    extern _Thread_local const char *fc_cur_feat;
+    if (tree_trace()) fprintf(stderr, "TREE chunk(%d,%d) at (%d,%d,%d) ok=%d res=%d trunks=%d foliage=%d decor=%d why=%d treeified=%ld rnd=%llx F=%s\n", c->ccx, c->ccz, ox, oy, oz, ok, res, ts->trunks.size,
+                              ts->foliage.size, ts->decor.size, g_why, ts->trunks.treeified + ts->foliage.treeified + ts->decor.treeified + ts->roots.treeified, (unsigned long long)c->rnd->x.lo, fc_cur_feat ? fc_cur_feat : "?");
     fc_trace_writes = 0;
     ts_release(ts);
     return res;

@@ -70,6 +70,7 @@ static void hm_update(const FCtx *c, FChunk *ch, int lx, int y, int lz, int st) 
 int fc_height(FCtx *c, int type, int x, int z) {
     FChunk *ch = fc_chunk(c, x, z);
     if (!ch) return c->min_y;
+    if (ch->full) { if (type == HM_OCEAN_FLOOR_WG) type = HM_OCEAN_FLOOR; else if (type == HM_WORLD_SURFACE_WG) type = HM_WORLD_SURFACE; }   /* FULL-чанк: ImposterProtoChunk.fixType */
     if (!(ch->hm_has & (1 << type))) fchunk_prime_type(c->bs, ch, type, c->min_y, c->height);
     return ch->hm[type][(z & 15) * 16 + (x & 15)];
 }
@@ -125,6 +126,52 @@ static double fiddled_distance(i64 seed, int x, int y, int z, double dx, double 
     return (dz + fz) * (dz + fz) + (dy + fy) * (dy + fy) + (dx + fx) * (dx + fx);
 }
 
+/* 26.4: секции чанка хранят биомы ПОБЛОЧНО (CachedChunkBiomeResolver: BiomeManager-масштабирование по клеткам 4×4×4 + «размытое» расстояние), а набор биомов окна декорации берётся из палитр секций.
+ * Поэтому биом клетки соседнего чанка (граница ±1 клетка) может попасть в набор чанка, хотя в клетках самого чанка его нет (на сервере это даёт, например, лишнюю фичу гор).
+ * Маска считается по блокам; группы 4×4×4 блоков с одинаковыми 8 клетками-кандидатами пропускаются. */
+static int bm_cell(const FCtx *c, const FChunk *own, int qx, int qy, int qz) {
+    int cx = qx >> 2, cz = qz >> 2;
+    int qmin = c->min_y >> 2, qmax = qmin + (c->height >> 2) - 1;
+    int cq = qy < qmin ? qmin : (qy > qmax ? qmax : qy);
+    const FChunk *ch = own;
+    if (cx != own->cx || cz != own->cz) {
+        int gx = cx - c->gx0, gz = cz - c->gz0;
+        if (gx >= 0 && gx < c->gnx && gz >= 0 && gz < c->gnz && c->grid[gz * c->gnx + gx]) ch = c->grid[gz * c->gnx + gx];
+        else { qx = own->cx * 4 + (qx < own->cx * 4 ? 0 : 3); qz = own->cz * 4 + (qz < own->cz * 4 ? 0 : 3); }   /* вне окна: ближайшая клетка собственного чанка */
+    }
+    return ch->biomes[(size_t)(cq - qmin) * 16 + (qz & 3) * 4 + (qx & 3)];
+}
+void fchunk_block_biome_mask(const FCtx *c, FChunk *ch) {
+    u8 m[32]; memset(m, 0, sizeof m);
+    int qmin = c->min_y >> 2, qmax = qmin + (c->height >> 2) - 1;
+    int x0 = ch->cx * 16, z0 = ch->cz * 16, ytop = c->min_y + c->height - 1;
+    for (int pz = ch->cz * 4 - 1; pz <= ch->cz * 4 + 3; pz++)
+    for (int px = ch->cx * 4 - 1; px <= ch->cx * 4 + 3; px++)
+    for (int py = qmin - 1; py <= qmax; py++) {
+        int cand[8], uniform = 1;
+        for (int i = 0; i < 8; i++) {
+            cand[i] = bm_cell(c, ch, (i & 4) ? px + 1 : px, (i & 2) ? py + 1 : py, (i & 1) ? pz + 1 : pz);
+            if (cand[i] != cand[0]) uniform = 0;
+        }
+        if (uniform) { m[cand[0] >> 3] |= (u8)(1 << (cand[0] & 7)); continue; }
+        for (int ax = px * 4; ax < px * 4 + 4; ax++) { int x = ax + 2; if (x < x0 || x > x0 + 15) continue;
+        for (int az = pz * 4; az < pz * 4 + 4; az++) { int z = az + 2; if (z < z0 || z > z0 + 15) continue;
+        for (int ay = py * 4; ay < py * 4 + 4; ay++) { int y = ay + 2; if (y < c->min_y || y > ytop) continue;
+            double fx = (ax & 3) / 4.0, fy = (ay & 3) / 4.0, fz = (az & 3) / 4.0;
+            int mi = 0; double md = INFINITY;
+            for (int i = 0; i < 8; i++) {
+                int xe = (i & 4) == 0, ye = (i & 2) == 0, ze = (i & 1) == 0;
+                double d = fiddled_distance(c->w->biome_zoom_seed, xe ? px : px + 1, ye ? py : py + 1, ze ? pz : pz + 1,
+                                            xe ? fx : fx - 1.0, ye ? fy : fy - 1.0, ze ? fz : fz - 1.0);
+                if (md > d) { mi = i; md = d; }
+            }
+            int b = cand[mi];              /* кодирование mi как у cand: бит 4 — x+1, 2 — y+1, 1 — z+1 */
+            m[b >> 3] |= (u8)(1 << (b & 7));
+        } } }
+    }
+    memcpy(ch->bio_mask, m, sizeof m);
+}
+
 int fc_biome_cell(const FCtx *c, int qx, int qy, int qz) {
     int cx = qx >> 2, cz = qz >> 2;
     if (cx < c->ccx - 1 || cx > c->ccx + 1 || cz < c->ccz - 1 || cz > c->ccz + 1) return c->plains;
@@ -135,6 +182,9 @@ int fc_biome_cell(const FCtx *c, int qx, int qy, int qz) {
 }
 
 int fc_biome(const FCtx *c, int x, int y, int z) {
+    /* 26.4: ChunkAccess.getBiome(x, y, z) сначала зажимает y в [minY, maxY] и читает поблочную палитру секции; до 26.4 BiomeManager масштабировал по исходному y (клетки зажимались позже) —
+     * для y выше мира (жилы изумруда до y = 480) выбор клетки по «размытому» расстоянию различается */
+    if (c->g->version >= V26_4) { int top = c->min_y + c->height - 1; if (y > top) y = top; else if (y < c->min_y) y = c->min_y; }
     int ax = x - 2, ay = y - 2, az = z - 2;
     int px = ax >> 2, py = ay >> 2, pz = az >> 2;
     double fx = (ax & 3) / 4.0, fy = (ay & 3) / 4.0, fz = (az & 3) / 4.0;

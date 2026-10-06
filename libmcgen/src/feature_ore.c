@@ -207,7 +207,8 @@ static int ore_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
         if (oy >= 40 && oy <= 110) { long sum = 0; int mx = -9999; for (int dx = -9; dx <= 9; dx++) for (int dz = -9; dz <= 9; dz++) { int h = fc_height(c, HM_OCEAN_FLOOR_WG, ox + dx, oz + dz); sum += h; if (h > mx) mx = h; } snprintf(wg, sizeof wg, " wg=%ld/%d", sum, mx);
             const char *at = getenv("MCGEN_ORE_WGAT"); char key[48]; snprintf(key, sizeof key, "%d,%d,%d", ox, oy, oz);
             if (at && strstr(at, key)) { fprintf(stderr, "WGBOX %d %d %d:", ox, oy, oz); for (int dz = -9; dz <= 9; dz++) for (int dx = -9; dx <= 9; dx++) fprintf(stderr, " %d", fc_height(c, HM_OCEAN_FLOOR_WG, ox + dx, oz + dz)); fprintf(stderr, "\n"); } }
-        fprintf(stderr, "ORE chunk(%d,%d) at (%d,%d,%d) res=%d rnd=%llx%s\n", c->ccx, c->ccz, ox, oy, oz, res, (unsigned long long)c->rnd->x.lo, wg);
+        extern _Thread_local const char *fc_cur_feat;
+        fprintf(stderr, "ORE chunk(%d,%d) at (%d,%d,%d) res=%d rnd=%llx%s F=%s\n", c->ccx, c->ccz, ox, oy, oz, res, (unsigned long long)c->rnd->x.lo, wg, fc_cur_feat ? fc_cur_feat : "?");
     }
     return res;
 }

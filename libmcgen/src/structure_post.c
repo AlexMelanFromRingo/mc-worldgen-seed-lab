@@ -287,6 +287,47 @@ static void liquid_block_tick(FluidWorld *fw, const BsTab *bs, int st, int x, in
     }
 }
 
+/* Level.setBlock(pos, state, 3) в пост-обработке (жидкость заменила блок): BlockStateBase.updateNeighbourShapes — у 6 соседей (W, E, N, S, D, U) updateShape от изменившейся клетки;
+ * изменённый сосед пишется с флагами без обновления соседей (flags & -34), а его замена воздухом идёт через destroyBlock (флаги 3) и тянет следующий круг (лимит рекурсии). */
+static void neighbors_update_rec(FluidWorld *fw, const BsTab *bs, const SGet *wg, int x, int y, int z, int limit) {
+    static const int ORDER[6] = { DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_DOWN, DIR_UP };
+    if (limit <= 0) return;
+    const McGen *g = bs->g;
+    for (int i = 0; i < 6; i++) {
+        int d = ORDER[i];
+        int nx = x + DIR_DX[d], ny = y + DIR_DY[d], nz = z + DIR_DZ[d];
+        int cur = fw->get(fw->ud, x, y, z);                        /* изменившаяся клетка (могла поменяться из-за предыдущего соседа) */
+        int nst = fw->get(fw->ud, nx, ny, nz);
+        if (bs->flags[nst] & BSF_LIQUID) continue;
+        int r = update_shape(bs, wg, nst, nx, ny, nz, dir_opp(d), cur);
+        if (r < 0 || r == nst) continue;
+        if (bs->flags[r] & BSF_AIR) {                               /* Block.updateOrDestroy → destroyBlock: на месте блока — его жидкость (waterlogged → вода), флаги 3 */
+            int fl = bs->fluid[nst]; int ty = BS_FL_TYPE(fl);
+            int repl = g->st_air;
+            if (ty == FL_WATER || ty == FL_FLOWING_WATER) repl = gen_state_id(g, "minecraft:water[level=0]");
+            fw->set(fw->ud, nx, ny, nz, repl);
+            neighbors_update_rec(fw, bs, wg, nx, ny, nz, limit - 1);
+        } else fw->set(fw->ud, nx, ny, nz, r);
+    }
+}
+void structure_neighbors_update(void *fwp, int x, int y, int z) {
+    FluidWorld *fw = fwp;
+    const BsTab *bs = bs_get(fw->g);
+    SGet wg = { fw, fw_get, 0, NULL };
+    static _Thread_local FCtx fcx; static _Thread_local const void *fcw;
+    if ((fw->post_flags & 1) && fw->world) {
+        if (fcw != fw->world) {
+            McWorld *mw = fw->world; memset(&fcx, 0, sizeof fcx);
+            fcx.w = mw; fcx.g = fw->g; fcx.bs = bs; fcx.min_y = mw->min_y; fcx.height = mw->height; fcx.sea_level = mw->sea_level;
+            fcx.st_air = fw->g->st_air; fcx.st_cave_air = fw->g->st_cave_air; fcx.st_void_air = bs->st_void_air; fcx.st_water = fw->g->st_water; fcx.st_lava = fw->g->st_lava;
+            fcx.ccx = INT_MIN / 2; fcx.ccz = INT_MIN / 2; fcx.post = 1; fcw = fw->world;
+        }
+        fcx.ext_get = fw->get; fcx.ext_ud = fw->ud; wg.fc = &fcx;
+    }
+    neighbors_update_rec(fw, bs, &wg, x, y, z, 64);
+}
+
+
 /* Block.updateFromNeighbourShapes + setBlock(pos, new, 20) для не-жидкого блока (пометки построек) */
 void structure_shape_update(void *fwp, int x, int y, int z) {
     FluidWorld *fw = fwp;

@@ -37,6 +37,55 @@ def load(path):
     return rows
 
 
+STATUS_RANK = ['empty', 'structure_starts', 'structure_references', 'noise_biomes', 'biomes', 'noise', 'surface', 'carvers', 'terrain', 'features', 'initialize_light', 'light', 'spawn', 'full']
+
+
+def load_reads(path, dim):
+    """чтения чанков с диска (minecraft.ChunkRegionRead, включено в tools/gt/jfr/chunkgen.jfc): [(время_нс, cx, cz)] по возрастанию времени"""
+    try:
+        out = subprocess.check_output(['jfr', 'print', '--json', '--events', 'minecraft.ChunkRegionRead', path], text=True)
+        ev = json.loads(out)['recording']['events']
+    except Exception:       # noqa: BLE001 — запись без этих событий (старый jfc)
+        return []
+    rows = [(ns_of(e['values']['startTime']), e['values']['chunkPosX'], e['values']['chunkPosZ']) for e in ev
+            if e['values'].get('type', 'chunk') == 'chunk' and str(e['values'].get('dimension', '')).endswith(dim)]
+    return sorted(rows)
+
+
+def chunk_events(rows, reads, dim):
+    """события состояния чанков для расписания: [(время_нс, 'W'|'U', cx, cz)].
+    'W' — чанк прочитан с диска со статусом от CARVERS (26.1/26.2) / TERRAIN (26.3+) до SPAWN: карты *_WG не пишутся на диск (heightmapsAfter), игра строит их заново по блокам при первом запросе;
+    'U' — чанк FULL (прочитан как FULL или шаг full завершён): запросы *_WG отдаются финальными картами (ImposterProtoChunk.fixType)."""
+    names = {r['status'].split(':')[-1] for r in rows}
+    thr = STATUS_RANK.index('carvers' if 'carvers' in names else 'terrain')
+    done = {}
+    for r in rows:
+        if r['level'].endswith(dim):
+            done.setdefault((r['cx'], r['cz']), []).append((r['start'] + r['dur'], STATUS_RANK.index(r['status'].split(':')[-1]) if r['status'].split(':')[-1] in STATUS_RANK else 0))
+    for v in done.values(): v.sort()
+    ev = []
+    for t, cx, cz in reads:
+        rank = -1
+        for e, rk in done.get((cx, cz), []):
+            if e <= t: rank = max(rank, rk)
+        if rank == STATUS_RANK.index('full'): ev.append((t, 'U', cx, cz))
+        elif rank >= thr: ev.append((t, 'W', cx, cz))
+    for (cx, cz), v in done.items():
+        for e, rk in v:
+            if rk == STATUS_RANK.index('full'): ev.append((e, 'U', cx, cz))
+    return sorted(ev)
+
+
+def interleave(steps, events):
+    """[(тип, строка)] — шаги FEATURES в порядке времени начала; события состояния — перед первым шагом, начавшимся после них"""
+    out = []; k = 0
+    for r in steps:
+        while k < len(events) and events[k][0] <= r['start']:
+            out.append(('E', events[k])); k += 1
+        out.append(('F', r))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('jfr'); ap.add_argument('--step', default='features'); ap.add_argument('--dim', default='overworld', help='измерение (имя в событии level: overworld | the_nether | the_end)'); ap.add_argument('--out'); ap.add_argument('--txt', help='порядок шага --step как «cx cz» по строкам'); ap.add_argument('--sched', help='единый файл расписания .mcsched (порядок FEATURES с масками света + порядок пост-обработки) — для libmcgen/аддона'); ap.add_argument('--fluid-txt', help='порядок постобработки жидкостей: чанки по моменту готовности 3×3 (max конца шага full у 9 чанков)'); ap.add_argument('-v', action='store_true')
@@ -65,7 +114,10 @@ def main():
         # libmcgen (fc_sky_light) по ней знает, какие секции света «зарегистрированы» к этому моменту (свет читает MushroomBlock.canSurvive)
         init_end = {(r['cx'], r['cz']): r['start'] + r['dur'] for r in rows if r['status'].split(':')[-1] == 'initialize_light' and r['level'].endswith(a.dim)}
         lines = []
-        for r in st:
+        events = chunk_events(rows, load_reads(a.jfr, a.dim), a.dim)
+        for kind, r in interleave(st, events):
+            if kind == 'E':
+                lines.append(f"{r[1]} {r[2]} {r[3]}\n"); continue
             m = 0
             for dz in range(-2, 3):
                 for dx in range(-2, 3):
@@ -73,7 +125,7 @@ def main():
                     if e is not None and e <= r['start'] and (dx or dz): m |= 1 << ((dz + 2) * 5 + dx + 2)
             lines.append(f"{r['cx']} {r['cz']} {m:x}\n")
         open(a.txt, 'w').write(''.join(lines))
-        print('порядок (txt):', a.txt)
+        print('порядок (txt):', a.txt, f'(событий состояния чанков: {len(events)})')
     if a.fluid_txt:
         full = {}
         for r in rows:
@@ -95,7 +147,11 @@ def main():
             nb = [full.get((cx + i, cz + j)) for i in (-1, 0, 1) for j in (-1, 0, 1)]
             if all(v is not None for v in nb): ready[(cx, cz)] = max(nb)
         out = ['# MCSCHED 1', f'# dim {a.dim}', '# F cx cz mask — шаг FEATURES (mask: окно 5×5, чанки с уже выполненным INITIALIZE_LIGHT); P cx cz — пост-обработка (FULL у всех 8 соседей)']
-        for r in st:
+        events = chunk_events(rows, load_reads(a.jfr, a.dim), a.dim)
+        out[2] += '; W cx cz — чанк перезагружен с диска (карты *_WG потеряны); U cx cz — чанк стал FULL'
+        for kind, r in interleave(st, events):
+            if kind == 'E':
+                out.append(f"{r[1]} {r[2]} {r[3]}"); continue
             m = 0
             for dz in range(-2, 3):
                 for dx in range(-2, 3):

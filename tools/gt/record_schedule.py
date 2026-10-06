@@ -16,8 +16,9 @@
 import argparse, os, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-JFC = ('<?xml version="1.0" encoding="UTF-8"?>\n<configuration version="2.0" label="mcgen-chunkgen" description="minecraft.ChunkGeneration" provider="mcgen">\n'
-       '  <event name="minecraft.ChunkGeneration">\n    <setting name="enabled">true</setting>\n    <setting name="threshold">0 ms</setting>\n  </event>\n</configuration>\n')
+JFC = ('<?xml version="1.0" encoding="UTF-8"?>\n<configuration version="2.0" label="mcgen-chunkgen" description="minecraft.ChunkGeneration + ChunkRegionRead" provider="mcgen">\n'
+       '  <event name="minecraft.ChunkGeneration">\n    <setting name="enabled">true</setting>\n    <setting name="threshold">0 ms</setting>\n  </event>\n'
+       '  <event name="minecraft.ChunkRegionRead">\n    <setting name="enabled">true</setting>\n    <setting name="threshold">0 ms</setting>\n  </event>\n</configuration>\n')
 
 
 def cmd_flags(a):

@@ -235,6 +235,7 @@ static FeatStats g_stats; static double g_dec_secs;
 void features_get_stats(FeatStats *out) { *out = g_stats; }
 
 int features_sched_order(int ax0, int az0, int ax1, int az1, int **out_xz, int *n_out);        /* feature_sched.c */
+_Thread_local const char *fc_cur_feat;      /* отладка: id выполняемой фичи (для трассировки попыток) */
 static void decorate_chunk(FCtx *c, int cx, int cz) {
     FWorld *fw = c->fw; McWorld *w = c->w;
     c->ccx = cx; c->ccz = cz; c->n_chunks++; c->sbb_valid = 0; c->region_rnd_ready = 0;
@@ -279,6 +280,7 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
                 frnd_seed(&rnd, dec + (i64)gi + (i64)(10000 * step));       /* setFeatureSeed */
                 c->n_calls++;
                 if (!pf->feat || !pf->feat->t) { c->n_skipped++; continue; }
+                fc_cur_feat = pf->id;
                 int placed_any = placed_place(c, pf, ox, oy, oz, 1);
                 static int logc = -1; if (logc < 0) logc = getenv("MCGEN_FEATURES_LOGCHUNKS") != NULL;     /* отладка (W10): чанки, где фича что-то поставила → stderr */
                 if (logc && placed_any) fprintf(stderr, "FEATCHUNK %s %d %d\n", pf->id ? pf->id : "?", cx, cz);
@@ -286,6 +288,17 @@ static void decorate_chunk(FCtx *c, int cx, int cz) {
         }
     }
     fc_snapshot_sections(c, c->grid[(cz - c->gz0) * c->gnx + (cx - c->gx0)]);      /* непустые секции чанка — для видимости света соседям (INITIALIZE_LIGHT идёт сразу после FEATURES) */
+}
+
+/* событие чанка из расписания: 'W' — чанк перезагружен с диска (статус CARVERS…SPAWN): карты *_WG потеряны и будут построены заново по блокам при первом запросе;
+ * 'U' — чанк стал FULL: запросы *_WG игра отдаёт финальными картами (ImposterProtoChunk.fixType) */
+static void apply_chunk_event(FCtx *c, char type, int x, int z) {
+    int gx = x - c->gx0, gz = z - c->gz0;
+    if (gx < 0 || gx >= c->gnx || gz < 0 || gz >= c->gnz) return;
+    FChunk *ch = c->grid[gz * c->gnx + gx];
+    if (!ch) return;
+    if (type == 'U') ch->full = 1;
+    else if (!c->g->newf && !ch->full) ch->hm_has &= (u8)~((1 << HM_WORLD_SURFACE_WG) | (1 << HM_OCEAN_FLOOR_WG));    /* 26.3+: перезагрузка карты *_WG не теряет (проверено агентом) */
 }
 
 /* последовательные порядки: номер шага назначается в момент декорации (модель задержки света — «лаг в шагах») */
@@ -341,6 +354,7 @@ static void prime_worker(void *arg) {
         if (c->w->struct_on) structures_wg_snapshot(c->bs, ch, c->min_y, c->height);
         int H4 = (c->height / 4) * 16;
         for (int k = 0; k < H4; k++) { int b = ch->biomes[k]; ch->bio_mask[b >> 3] |= (u8)(1 << (b & 7)); }
+        if (c->g->version >= V26_4) fchunk_block_biome_mask(c, ch);     /* 26.4: палитры секций — поблочные биомы */
     }
 }
 
@@ -451,7 +465,9 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
             }
             else if (!strcmp(ord, "file") && w->sched && w->sched->nf > 0) {
                 const McSchedule *sc = w->sched;
+                int ev = 0;
                 for (int i = 0; i < sc->nf; i++) {
+                    while (ev < sc->ne && sc->eat[ev] <= i) { apply_chunk_event(&c, sc->et[ev], sc->ex[ev], sc->ez[ev]); ev++; }
                     int ox = sc->fx[i], oz = sc->fz[i];
                     if (ox < dj.cx0 || ox >= dj.cx0 + dj.nx || oz < dj.cz0 || oz >= dj.cz0 + dj.nz) continue;
                     c.init_override_set = 1; c.init_override = sc->fmask[i];
@@ -466,7 +482,9 @@ int features_apply_region(McWorld *w, McRegion *r, int threads, McProgressFn cb,
                 if (fp) {
                     char line[128];
                     while (fgets(line, sizeof line, fp)) {
-                        int ox, oz; unsigned msk = 0; int n = sscanf(line, "%d %d %x", &ox, &oz, &msk);
+                        int ox, oz; unsigned msk = 0;
+                        if ((line[0] == 'W' || line[0] == 'U') && sscanf(line + 1, "%d %d", &ox, &oz) == 2) { apply_chunk_event(&c, line[0], ox, oz); continue; }
+                        int n = sscanf(line, "%d %d %x", &ox, &oz, &msk);
                         if (n < 2) continue;
                         if (ox >= dj.cx0 && ox < dj.cx0 + dj.nx && oz >= dj.cz0 && oz < dj.cz0 + dj.nz) {
                             c.init_override_set = n >= 3; c.init_override = msk;      /* третье поле — маска видимости INITIALIZE_LIGHT 5×5 (из JFR) */

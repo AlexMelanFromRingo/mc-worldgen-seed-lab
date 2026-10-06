@@ -81,6 +81,7 @@ typedef struct FChunk {
     int seq;                     /* номер шага декорации (порядок выполнения FEATURES; INT_MAX — ещё не назначен): для модели видимости INITIALIZE_LIGHT (fc_sky_light) */
     u64 sec_ne;                  /* биты непустых секций (hasOnlyAir == false) на момент конца декорации чанка; sec_ne_ok — снято */
     int sec_ne_ok;
+    u8 full;                     /* расписание: чанк уже FULL (LevelChunk) — запросы *_WG игра отдаёт финальными картами (ImposterProtoChunk.fixType) */
 } FChunk;
 
 void structures_wg_snapshot(const BsTab *bs, FChunk *ch, int min_y, int height);   /* structure.c: снять карты WG чанка (вызывает feature.c при включённой стадии STRUCTURES) */
@@ -138,6 +139,7 @@ int fc_height(FCtx *c, int type, int x, int z);
 int fc_biome(const FCtx *c, int x, int y, int z);
 /* биом клетки (qx,qy,qz) чанков окна (y зажат), чанк вне окна — plains */
 int fc_biome_cell(const FCtx *c, int qx, int qy, int qz);
+void fchunk_block_biome_mask(const FCtx *c, FChunk *ch);      /* 26.4: набор биомов чанка по блокам (палитры секций) */
 /* Небесный свет клетки так, как его видит движок света игры во время FEATURES (LightLayer.SKY, «видимые» данные): 0 в «зарегистрированных» секциях, 15 в остальных (см. feature_region.c) */
 int fc_sky_light(const FCtx *c, int x, int y, int z);
 void fc_snapshot_sections(const FCtx *c, FChunk *ch);      /* sec_ne: биты непустых секций чанка (конец декорации) */

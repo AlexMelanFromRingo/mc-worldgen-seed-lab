@@ -29,6 +29,8 @@ typedef struct {
     int obsidian, cobblestone, stone;
     const u8 *washed;              /* тег washed_away_by_fluids (26.3+) */
     u8 *legacy_hold;               /* 26.1/26.2: canHoldAnyFluid по коду игры (тега ещё нет), по состояниям */
+    u8 *container;                 /* LiquidBlockContainer: свойство waterlogged, ламинария, морская трава (canHoldAnyFluid = да; пускают только источник воды) */
+    u8 *no_liquid;                 /* canPlaceLiquid всегда нет: ламинария, морская трава, двойная плита */
 } FTab;
 
 static FTab *ftab_get(const McGen *g) {
@@ -45,6 +47,13 @@ static FTab *ftab_get(const McGen *g) {
     t->cobblestone = gen_state_id(g, "minecraft:cobblestone");
     t->stone = gen_state_id(g, "minecraft:stone");
     t->washed = gen_block_tag(g, "minecraft:washed_away_by_fluids");
+    t->container = xcalloc((size_t)g->nstates, 1); t->no_liquid = xcalloc((size_t)g->nstates, 1);
+    for (int st = 0; st < g->nstates; st++) {
+        const char *n = g->state_names[st];
+        int plant = strstr(n, "minecraft:kelp") == n || strstr(n, "minecraft:seagrass") == n || strstr(n, "minecraft:tall_seagrass") == n;
+        t->container[st] = (u8)(plant || strstr(n, "waterlogged=") != NULL);
+        t->no_liquid[st] = (u8)(plant || (strstr(n, "_slab[") && strstr(n, "type=double")));
+    }
     if (!g->newf) {
         /* 26.1/26.2 FlowingFluid.canHoldAnyFluid: LiquidBlockContainer → да; blocksMotion → нет; иначе нет только у дверей,
          * табличек, лестницы, тростника, пузырькового столба, порталов, шлюза Края, structure_void */
@@ -121,7 +130,14 @@ static inline int is_solid(const FTab *t, int st) {
     if (!full_shape(t, st)) return 0;
     return t->bs->exported ? (t->bs->flags[st] & BSF_SOLID) != 0 : 1;
 }
+/* FlowingFluid.canHoldSpecificFluid: LiquidBlockContainer.canPlaceLiquid(…, newFluid) — SimpleWaterloggedBlock: type == Fluids.WATER (ИСТОЧНИК воды, не текущая вода и не лава);
+ * ламинария/морская трава/двойная плита — нет. nf — новое состояние жидкости клетки */
+static inline int can_hold_specific(const FTab *t, int st, FS nf) {
+    if (!t->container[st]) return 1;
+    return !t->no_liquid[st] && nf.type == FT_WATER && nf.source;
+}
 static inline int can_hold_any(const FTab *t, int st) {
+    if (t->container[st]) return 1;
     if (t->legacy_hold) return t->legacy_hold[st];
     return t->washed && t->washed[t->g->state_block[st]];
 }
@@ -160,6 +176,7 @@ static void set_and_update(Ctx *c, int x, int y, int z, int st) {
     if (old == st) return;
     c->w->set(c->w->ud, x, y, z, st);
     lava_check(c, x, y, z);
+    if (c->w->neighbors_update) c->w->neighbors_update(c->w, x, y, z);
     static const int UX[6] = { -1, 1, 0, 0, 0, 0 }, UY[6] = { 0, 0, -1, 1, 0, 0 }, UZ[6] = { 0, 0, 0, 0, -1, 1 };
     for (int i = 0; i < 6; i++) lava_check(c, x + UX[i], y + UY[i], z + UZ[i]);
 }
@@ -176,7 +193,7 @@ static int can_maybe_pass(Ctx *c, int src_st, int tgt_st, int dir) {
 static int is_water_hole(Ctx *c, int top_st, int bot_st) {
     if (!can_pass_wall(c, top_st, bot_st, 0)) return 0;
     FS bf = fluid_of(c->t, bot_st);
-    return same_fluid(bf.type, c->ft) ? 1 : can_hold_any(c->t, bot_st);
+    return same_fluid(bf.type, c->ft) ? 1 : (can_hold_any(c->t, bot_st) && !c->t->container[bot_st]);   /* canHoldFluid(…, getFlowing()): контейнеры принимают только источник воды */
 }
 static FS new_liquid(Ctx *c, int x, int y, int z, int st) {
     int highest = 0, sources = 0;
@@ -234,7 +251,7 @@ static int slope_distance(Ctx *c, Spread *s, int x, int y, int z, int pass, int 
         if (h == from_h) continue;
         int tx = x + HX[h], tz = z + HZ[h];
         int ts = sc_state(c, s, tx, y, tz);
-        if (can_maybe_pass(c, st, ts, HDIR[h])) {   /* canHoldSpecificFluid — только для LiquidBlockContainer (здесь их нет) */
+        if (can_maybe_pass(c, st, ts, HDIR[h]) && !c->t->container[ts]) {   /* canPassThrough: canHoldSpecificFluid(getFlowing()) — контейнеры (type == Fluids.WATER) не пускают */
             if (sc_hole(c, s, tx, y, tz)) return pass;
             if (pass < slope_dist(c)) {
                 int v = slope_distance(c, s, tx, y, tz, pass + 1, opposite_h(h), ts);
@@ -261,6 +278,16 @@ static void spread_to(Ctx *c, int x, int y, int z, int st, int dir_down, FS targ
             return;
         }
     }
+    if (c->t->container[st]) {                  /* LiquidBlockContainer.placeLiquid: SimpleWaterloggedBlock — waterlogged = true (только источник воды), без замены блока */
+        if (target.type == FT_WATER && target.source && !c->t->no_liquid[st]) {
+            const char *wl = NULL;
+            if (bs_get_prop(c->t->bs, st, "waterlogged", &wl) && wl && wl[0] == 'f') {
+                int ns = bs_with(c->t->bs, st, "waterlogged", "true");
+                if (ns >= 0) set_and_update(c, x, y, z, ns);
+            }
+        }
+        return;
+    }
     set_and_update(c, x, y, z, legacy_block(c->t, target));
 }
 static void spread_to_sides(Ctx *c, int x, int y, int z, FS f, int st) {
@@ -276,6 +303,7 @@ static void spread_to_sides(Ctx *c, int x, int y, int z, FS f, int st) {
         FS tf = fluid_of(c->t, ts);
         if (!can_maybe_pass(c, st, ts, HDIR[h])) continue;
         FS newf = new_liquid(c, tx, y, tz, ts);
+        if (!can_hold_specific(c->t, ts, newf)) continue;          /* canHoldSpecificFluid(testPos, newFluid.getType()) */
         if (!s) { memset(&sp, 0, sizeof sp); sp.ox = x; sp.oz = z; s = &sp; }
         int dist = sc_hole(c, s, tx, y, tz) ? 0 : slope_distance(c, s, tx, y, tz, 1, opposite_h(h), ts);
         if (dist < lowest) memset(has, 0, sizeof has);
@@ -303,7 +331,7 @@ static void spread(Ctx *c, int x, int y, int z, int st, FS f) {
     FS bf = fluid_of(c->t, bs);
     if (can_maybe_pass(c, st, bs, 0)) {
         FS nb = new_liquid(c, x, y - 1, z, bs);
-        if (can_be_replaced(c, bf, x, y - 1, z, nb.type, 1)) {
+        if (can_be_replaced(c, bf, x, y - 1, z, nb.type, 1) && can_hold_specific(c->t, bs, nb)) {
             spread_to(c, x, y - 1, z, bs, 1, nb);
             if (source_neighbors(c, x, y, z) >= 3) spread_to_sides(c, x, y, z, f, st);
             return;

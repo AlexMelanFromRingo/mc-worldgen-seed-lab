@@ -85,7 +85,9 @@ public class Dbg {
                     synchronized (Dbg.class) { w().println(sb); }
                 }
             }
-            LAST.set("T " + call(center, "x") + " " + call(center, "z") + " " + x + " " + y + " " + z + " | of=" + of + " ws=" + ws + wgs + " | " + call(level, "getBlockState", call(pos, "below")));
+            String fname = "?";
+            try { if (curGen == null) { curGen = level.getClass().getDeclaredField("currentlyGenerating"); curGen.setAccessible(true); } Object sup = curGen.get(level); if (sup != null) fname = String.valueOf(call(sup, "get")); } catch (Throwable t) { }
+            LAST.set("T " + call(center, "x") + " " + call(center, "z") + " " + x + " " + y + " " + z + " | of=" + of + " ws=" + ws + wgs + " | " + call(level, "getBlockState", call(pos, "below")) + " | F=" + fname.replace(' ', '_'));
         } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
     }
     static final Set<String> WGAT = new HashSet<>(Arrays.asList(System.getProperty("dbg.wgat", "").isEmpty() ? new String[0] : System.getProperty("dbg.wgat").split(";")));
