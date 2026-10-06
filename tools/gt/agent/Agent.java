@@ -1,4 +1,5 @@
 import java.lang.classfile.*;
+import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.constant.*;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
@@ -17,7 +18,23 @@ public class Agent {
                 final boolean msh = "net/minecraft/world/level/block/MushroomBlock".equals(name);
                 final boolean chk = "net/minecraft/world/level/chunk/LevelChunk".equals(name) || ((System.getProperty("dbg.protoset") != null || System.getProperty("dbg.rm") != null) && "net/minecraft/world/level/chunk/ProtoChunk".equals(name));
                 final boolean mrk = "net/minecraft/world/level/chunk/ProtoChunk".equals(name);
-                if (!wgr && !msh && !chk && !mrk && !"net/minecraft/world/level/levelgen/feature/treedecorators/PlaceOnGroundDecorator".equals(name)) return null;
+                final boolean tre = "net/minecraft/world/level/levelgen/feature/TreeFeature".equals(name) || "net/minecraft/world/level/levelgen/feature/OreFeature".equals(name);
+                final boolean hmp = "net/minecraft/world/level/levelgen/Heightmap".equals(name) && System.getProperty("dbg.prime") != null;
+                if (hmp) {
+                    try {
+                        ClassFile cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofResourceParsing(l).orElse(ClassHierarchyResolver.defaultResolver())));
+                        return cf.transformClass(cf.parse(bytes), ClassTransform.transformingMethodBodies(
+                            mm -> mm.methodName().equalsString("primeHeightmaps") && mm.methodTypeSymbol().parameterCount() == 2,
+                            new CodeTransform() {
+                                boolean done = false;
+                                @Override public void accept(CodeBuilder b, CodeElement e) {
+                                    if (!done) { done = true; b.aload(0).aload(1).invokestatic(ClassDesc.of("Dbg"), "prime", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_Object)); }
+                                    b.with(e);
+                                }
+                            }));
+                    } catch (Throwable t) { t.printStackTrace(); return null; }
+                }
+                if (!wgr && !msh && !chk && !mrk && !tre && !"net/minecraft/world/level/levelgen/feature/treedecorators/PlaceOnGroundDecorator".equals(name)) return null;
                 try {
                     ClassFile cf = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
                         ClassHierarchyResolver.ofResourceParsing(l).orElse(ClassHierarchyResolver.defaultResolver())));
@@ -55,6 +72,22 @@ public class Agent {
                         if (t == null) return null;
                         return cf.transformClass(cm, t);
                     }
+                    if (tre) return cf.transformClass(cm, ClassTransform.transformingMethodBodies(
+                        mm -> mm.methodName().equalsString("place") && mm.methodTypeSymbol().parameterCount() == 1,
+                        new CodeTransform() {
+                            boolean done = false;
+                            @Override public void accept(CodeBuilder b, CodeElement e) {
+                                if (!done) {
+                                    done = true;
+                                    b.aload(1).invokestatic(ClassDesc.of("Dbg"), "tree",
+                                        MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object));
+                                }
+                                if (e instanceof ReturnInstruction ri && ri.opcode() == Opcode.IRETURN) {
+                                    b.dup().invokestatic(ClassDesc.of("Dbg"), "treeRes", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int));
+                                }
+                                b.with(e);
+                            }
+                        }));
                     if (msh) return cf.transformClass(cm, ClassTransform.transformingMethodBodies(
                         mm -> mm.methodName().equalsString("canSurvive"),
                         new CodeTransform() {

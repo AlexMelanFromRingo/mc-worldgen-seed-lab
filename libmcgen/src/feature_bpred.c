@@ -1,5 +1,6 @@
 /* feature_bpred.c — BlockPredicate (levelgen/blockpredicates) и RuleTest (templatesystem) + BlockState.canSurvive для нужных классов. */
 #include "feature.h"
+#include "feature_veg.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -227,7 +228,7 @@ int ruletest_test(FCtx *c, const RuleTest *r, int st, int x, int y, int z) {
 
 /* ====================================================================== BlockState.canSurvive
  * Потомки VegetationBlock: основание — тег поддержки класса/блока (BlockBehaviour: mayPlaceOn). Нестандартные классы (грибы, морская трава и огурцы,
- * кувшинка, листовая подстилка, посевы со светом, пропагулы, дриплиф) пока «выживают» — их дописывает группа «растительность»: добавить ветку ниже. */
+ * кувшинка, листовая подстилка, посевы со светом, дриплиф, пропагулы) разобраны в feature_veg.c и ниже. */
 static const struct { const char *cls; const char *tag; } SURV_CLS[] = {
     { "NetherSproutsBlock", "minecraft:supports_nether_sprouts" }, { "NetherWartBlock", "minecraft:supports_nether_wart" },
     { "AzaleaBlock", "minecraft:supports_azalea" }, { "DryVegetationBlock", "minecraft:supports_dry_vegetation" },
@@ -263,6 +264,14 @@ int block_can_survive(FCtx *c, int st, int x, int y, int z) {
             return bblk == blk || !strcmp(bs->blk[bblk].name, "minecraft:big_dripleaf_stem") || t_big[bblk] != 0;
         { int above = fc_get(c, x, y + 1, z), ablk = c->g->state_block[above];                      /* BigDripleafStemBlock */
           return (bblk == blk || t_big[bblk] != 0) && (ablk == blk || !strcmp(bs->blk[ablk].name, "minecraft:big_dripleaf")); }
+    }
+    /* MangrovePropaguleBlock.canSurvive: висящий — над ним тег supports_hanging_mangrove_propagule; обычный — под ним supports_mangrove_propagule (supports_vegetation + глина).
+     * Без правила попытки «мангрового дерева» шли и по кронам (внизу листва): would_survive пропускал всё, сервер такие попытки отбрасывает */
+    if (!strcmp(bb->cls, "MangrovePropaguleBlock")) {
+        const u8 *t_ground = veg_tag(c, "minecraft:supports_mangrove_propagule"), *t_hang = veg_tag(c, "minecraft:supports_hanging_mangrove_propagule");
+        const char *h = NULL;
+        if (bs_get_prop(bs, st, "hanging", &h) && h && !strcmp(h, "true")) return t_hang[c->g->state_block[fc_get(c, x, y + 1, z)]] != 0;
+        return t_ground[c->g->state_block[fc_get(c, x, y - 1, z)]] != 0;
     }
     const char *tag = NULL;
     if (bs_is_a(bs, st, "DoublePlantBlock")) {

@@ -228,6 +228,12 @@ done:
 }
 
 static int tree_trace(void) { static int v = -1; if (v < 0) v = getenv("MCGEN_TREE_TRACE") != NULL; return v; }
+extern _Thread_local int fc_trace_writes;
+static int tree_trace_at(int x, int y, int z) {         /* MCGEN_TREE_TRACE_AT="x,y,z;x,y,z": печать всех записей деревьев с этим началом */
+    const char *e = getenv("MCGEN_TREE_TRACE_AT");
+    char key[48]; snprintf(key, sizeof key, "%d,%d,%d", x, y, z);
+    return e && strstr(e, key) != NULL;
+}
 
 /* ====================================================================== TreeFeature.place */
 static int tree_max_free_height(TreeRun *tr, int max_h, int tx, int ty, int tz) {
@@ -269,6 +275,8 @@ static int tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     TreeRun tr = { c, c->rnd, t, t->tags, &ts->roots, &ts->trunks, &ts->foliage, &ts->decor };
     jset_clear(&ts->roots); jset_clear(&ts->trunks); jset_clear(&ts->foliage); jset_clear(&ts->decor);
     int res = 0;
+    fc_trace_writes = tree_trace_at(ox, oy, oz);
+    if (fc_trace_writes) fprintf(stderr, "TS %d %d %d rnd=%llx\n", ox, oy, oz, (unsigned long long)c->rnd->x.lo);
     int ok = tree_do_place(&tr, ox, oy, oz);
     if (ok && (ts->trunks.size > 0 || ts->foliage.size > 0)) {
         if (t->ndeco) {
@@ -296,6 +304,7 @@ static int tree_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     }
     if (tree_trace()) fprintf(stderr, "TREE chunk(%d,%d) at (%d,%d,%d) ok=%d res=%d trunks=%d foliage=%d decor=%d why=%d treeified=%ld rnd=%llx\n", c->ccx, c->ccz, ox, oy, oz, ok, res, ts->trunks.size,
                               ts->foliage.size, ts->decor.size, g_why, ts->trunks.treeified + ts->foliage.treeified + ts->decor.treeified + ts->roots.treeified, (unsigned long long)c->rnd->x.lo);
+    fc_trace_writes = 0;
     ts_release(ts);
     return res;
 }

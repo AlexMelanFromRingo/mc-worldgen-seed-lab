@@ -34,6 +34,7 @@ public class Dbg {
     public static void set(Object region, Object pos, Object state, int flags) {
         try {
             Object block = call(state, "getBlock");
+            if (TRACE.get() != null) synchronized (Dbg.class) { w().println("TW " + call(pos, "getX") + " " + call(pos, "getY") + " " + call(pos, "getZ") + " " + state + " f=" + flags); }
             if (!WATCH.isEmpty()) {     // -Ddbg.watch="x,y,z;x,y,z": любая запись в эти клетки (старое → новое состояние, флаги, фича)
                 int wx = (Integer) call(pos, "getX"), wy = (Integer) call(pos, "getY"), wz = (Integer) call(pos, "getZ");
                 if (WATCH.contains(wx + "," + wy + "," + wz)) {
@@ -53,6 +54,66 @@ public class Dbg {
             synchronized (Dbg.class) { w().println("S " + cx + " " + cz + " " + x + " " + y + " " + z + " | " + state + " | flags=" + flags + " | " + feat); }
         } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
     }
+    /** TreeFeature.place: каждая попытка дерева — центр региона, начало, карты высот OCEAN_FLOOR / WORLD_SURFACE в клетке начала, блок под ней */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void tree(Object ctx) {
+        try {
+            Object level = call(ctx, "level"), pos = call(ctx, "origin");
+            int x = (Integer) call(pos, "getX"), y = (Integer) call(pos, "getY"), z = (Integer) call(pos, "getZ");
+            Class<?> ht = Class.forName("net.minecraft.world.level.levelgen.Heightmap$Types", true, level.getClass().getClassLoader());
+            int of = (Integer) call(level, "getHeight", Enum.valueOf((Class) ht, "OCEAN_FLOOR"), x, z);
+            int ws = (Integer) call(level, "getHeight", Enum.valueOf((Class) ht, "WORLD_SURFACE"), x, z);
+            Object center = call(level, "getCenter");
+            RND.set(call(ctx, "random"));
+            TRACE.set(TREEAT.contains(x + "," + y + "," + z) ? Boolean.TRUE : null);
+            if (TRACE.get() != null) synchronized (Dbg.class) { w().println("TS " + x + " " + y + " " + z + " rnd=" + rndLo(RND.get())); }
+            String wgs = "";
+            if (WGBOX && y >= 40 && y <= 110) {
+                Object wgt = Enum.valueOf((Class) ht, "OCEAN_FLOOR_WG");
+                long sum = 0; int mx = -9999;
+                for (int dx = -9; dx <= 9; dx++) for (int dz = -9; dz <= 9; dz++) { int h = (Integer) call(level, "getHeight", wgt, x + dx, z + dz); sum += h; if (h > mx) mx = h; }
+                wgs = " wg=" + sum + "/" + mx;
+                if (WGAT.contains(x + "," + y + "," + z)) {
+                    StringBuilder sb = new StringBuilder("WGBOX " + x + " " + y + " " + z + ":");
+                    for (int dz = -9; dz <= 9; dz++) for (int dx = -9; dx <= 9; dx++) sb.append(' ').append((Integer) call(level, "getHeight", wgt, x + dx, z + dz));
+                    synchronized (Dbg.class) { w().println(sb); }
+                }
+            }
+            LAST.set("T " + call(center, "x") + " " + call(center, "z") + " " + x + " " + y + " " + z + " | of=" + of + " ws=" + ws + wgs + " | " + call(level, "getBlockState", call(pos, "below")));
+        } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
+    }
+    static final Set<String> WGAT = new HashSet<>(Arrays.asList(System.getProperty("dbg.wgat", "").isEmpty() ? new String[0] : System.getProperty("dbg.wgat").split(";")));
+    static final boolean WGBOX = System.getProperty("dbg.wgbox") != null;
+    /** Heightmap.primeHeightmaps(chunk, types): кто и когда (пере)праймит карты высот чанка — для разбора WG-карт старых версий */
+    public static void prime(Object chunk, Object types) {
+        try {
+            Object pos = call(chunk, "getPos");
+            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 3; i < Math.min(st.length, 8); i++) sb.append(st[i].getClassName().replaceAll(".*\\.", "")).append('.').append(st[i].getMethodName()).append(' ');
+            synchronized (Dbg.class) { w().println("P " + call(pos, "x") + " " + call(pos, "z") + " " + types + " " + call(chunk, "getPersistedStatus") + " <- " + sb); }
+        } catch (Throwable t) { synchronized (Dbg.class) { w().println("ERR " + t); } }
+    }
+    static final ThreadLocal<String> LAST = new ThreadLocal<>();
+    static final ThreadLocal<Object> RND = new ThreadLocal<>();
+    static final ThreadLocal<Boolean> TRACE = new ThreadLocal<>();
+    static final Set<String> TREEAT = new HashSet<>(Arrays.asList(System.getProperty("dbg.treeat", "").isEmpty() ? new String[0] : System.getProperty("dbg.treeat").split(";")));
+    static String rndLo(Object rnd) {
+        try {
+            Object o = rnd;
+            for (int i = 0; i < 4; i++) {
+                Class<?> k = o.getClass(); Field f = null;
+                for (Class<?> c = k; c != null && f == null; c = c.getSuperclass()) {
+                    for (String n : new String[]{"randomSource", "randomNumberGenerator"}) { try { f = c.getDeclaredField(n); break; } catch (NoSuchFieldException e) { } }
+                }
+                if (f == null) break;
+                f.setAccessible(true); o = f.get(o);
+            }
+            Field lo = o.getClass().getDeclaredField("seedLo"); lo.setAccessible(true);
+            return Long.toHexString(lo.getLong(o));
+        } catch (Throwable t) { return "?" + t; }
+    }
+    public static void treeRes(int res) { synchronized (Dbg.class) { w().println(LAST.get() + " | R=" + res + " rnd=" + rndLo(RND.get())); } TRACE.set(null); }
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static void pog(Object ctx, Object pos) {
         try {

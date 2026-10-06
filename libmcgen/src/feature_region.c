@@ -88,8 +88,10 @@ void fc_mark_above(FCtx *c, int x, int y, int z) {
     }
 }
 
+_Thread_local int fc_trace_writes;      /* отладка: MCGEN_TREE_TRACE_AT — печать всех записей одного дерева */
 int fc_set(FCtx *c, int x, int y, int z, int st, int flags) {
     FChunk *ch = fc_chunk(c, x, z);
+    if (fc_trace_writes) fprintf(stderr, "TW %d %d %d %s f=%d%s\n", x, y, z, mcgen_block_state_name(c->g, st), flags, ch ? "" : " (вне окна)");
     if (!ch) return 0;                                  /* ensureCanWrite: далеко от центра */
     if (fc_outside(c, y)) return 1;                      /* ProtoChunk: вне высот — void_air, запись не выполняется */
     u16 *b = &ch->blocks[((size_t)(y - c->min_y) * 16 + (z & 15)) * 16 + (x & 15)];

@@ -194,7 +194,20 @@ static int ore_do_place_v264(FCtx *c, const OreCfg *o, double x0, double x1, dou
     return placed > 0;
 }
 
+static int ore_place_impl(FCtx *c, const void *cfg, int ox, int oy, int oz);
 static int ore_place(FCtx *c, const void *cfg, int ox, int oy, int oz) {
+    static int tr = -1; if (tr < 0) tr = getenv("MCGEN_ORE_TRACE") != NULL;       /* отладка: сверка попыток жилы с настоящим сервером (tools/gt/agent, хук OreFeature.place) */
+    int res = ore_place_impl(c, cfg, ox, oy, oz);
+    if (tr) {
+        char wg[64] = "";
+        if (oy >= 40 && oy <= 110) { long sum = 0; int mx = -9999; for (int dx = -9; dx <= 9; dx++) for (int dz = -9; dz <= 9; dz++) { int h = fc_height(c, HM_OCEAN_FLOOR_WG, ox + dx, oz + dz); sum += h; if (h > mx) mx = h; } snprintf(wg, sizeof wg, " wg=%ld/%d", sum, mx);
+            const char *at = getenv("MCGEN_ORE_WGAT"); char key[48]; snprintf(key, sizeof key, "%d,%d,%d", ox, oy, oz);
+            if (at && strstr(at, key)) { fprintf(stderr, "WGBOX %d %d %d:", ox, oy, oz); for (int dz = -9; dz <= 9; dz++) for (int dx = -9; dx <= 9; dx++) fprintf(stderr, " %d", fc_height(c, HM_OCEAN_FLOOR_WG, ox + dx, oz + dz)); fprintf(stderr, "\n"); } }
+        fprintf(stderr, "ORE chunk(%d,%d) at (%d,%d,%d) res=%d rnd=%llx%s\n", c->ccx, c->ccz, ox, oy, oz, res, (unsigned long long)c->rnd->x.lo, wg);
+    }
+    return res;
+}
+static int ore_place_impl(FCtx *c, const void *cfg, int ox, int oy, int oz) {
     const OreCfg *o = cfg; FRnd *r = c->rnd;
     const float PIF = 3.14159274f;
     float dir = frnd_float(r) * PIF;

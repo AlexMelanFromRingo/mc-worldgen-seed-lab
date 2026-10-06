@@ -190,6 +190,13 @@ static void *patch_parse(FParse *p, const Js *cfg) {
     s->attempts = js_int(js_get(cfg, "spread_attempts"), 1); s->growth_rounds = js_int(js_get(cfg, "growth_rounds"), 0); s->spread_rounds = js_int(js_get(cfg, "spread_rounds"), 0);
     mf_env_init(p, &s->e, "minecraft:sculk_vein");
     s->replace_wg = gen_block_tag(p->g, "minecraft:sculk_replaceable_world_gen"); s->inhibitors = gen_block_tag(p->g, "minecraft:sculk_growth_inhibitors");
+    if (!p->newf) {            /* 26.1/26.2: тега sculk_growth_inhibitors нет — SculkBlock.canPlaceGrowth считает sculk_sensor и sculk_shrieker прямо в коде */
+        u8 *t = fp_alloc(p, (size_t)(p->bs->nblocks ? p->bs->nblocks : 1));
+        int a = bs_block_index(p->bs, "minecraft:sculk_sensor"), b = bs_block_index(p->bs, "minecraft:sculk_shrieker");
+        if (a >= 0) t[a] = 1;
+        if (b >= 0) t[b] = 1;
+        s->inhibitors = t;
+    }
     s->sculk_state = bs_default(p->bs, s->e.sculk_blk); s->sensor = bs_default(p->bs, bs_block_index(p->bs, "minecraft:sculk_sensor"));
     s->shrieker = bs_default(p->bs, bs_block_index(p->bs, "minecraft:sculk_shrieker")); s->shrieker_can = bs_with(p->bs, s->shrieker, "can_summon", "true");
     s->vein_state = s->e.def;
