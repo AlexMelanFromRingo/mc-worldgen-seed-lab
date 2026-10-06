@@ -4,15 +4,18 @@ import os
 
 import bpy
 
+from ..assets import pbr as pbr_mod
 from ..assets import pngio
 
-__all__ = ['MAT_NAMES', 'TILED_NAMES', 'LOD_NAME', 'ensure_atlas_image', 'ensure_materials', 'ensure_tiled_materials', 'ensure_lod_material',
+__all__ = ['MAT_NAMES', 'TILED_NAMES', 'LOD_NAME', 'ensure_atlas_image', 'ensure_pbr_images', 'ensure_materials', 'ensure_tiled_materials', 'ensure_lod_material',
            'remove_materials']
 
 MAT_NAMES = ('MC_opaque', 'MC_cutout', 'MC_translucent', 'MC_water')
 TILED_NAMES = ('MC_opaque_tiled', 'MC_cutout_tiled', 'MC_translucent_tiled', 'MC_water_tiled')
 LOD_NAME = 'MC_lod'
 ATLAS_PREFIX = 'MC_atlas'
+PBR_PREFIX = 'MC_pbr'
+EMISSION_STRENGTH = 4.0           # множитель свечения карты orm.B (Principled «Emission Strength»)
 
 
 def ensure_atlas_image(table, cache_dir, pixel_style=True):
@@ -36,6 +39,35 @@ def ensure_atlas_image(table, cache_dir, pixel_style=True):
     return img
 
 
+def ensure_pbr_images(table, cache_dir):
+    """Карты PBR атласа (assets/pbr.py): normal (касательное пространство) и orm (R — шероховатость, G — металличность, B — свечение) как Non-Color изображения.
+    PNG кэшируются рядом с атласом (ключ — хэш ресурсов и версия правил). Возвращает (normal, orm) — bpy.types.Image."""
+    tag = '%s_v%d' % ((table.source_hash or 'x')[:12], pbr_mod.PBR_VERSION)
+    out = []
+    maps = None
+    for kind in ('n', 'o'):
+        name = '%s%s_%s' % (PBR_PREFIX, kind, tag)
+        img = bpy.data.images.get(name)
+        if img is not None and img.size[0] == table.atlas_image.shape[1] and img.size[1] == table.atlas_image.shape[0]:
+            out.append(img)
+            continue
+        os.makedirs(cache_dir or '.', exist_ok=True)
+        path = os.path.abspath(os.path.join(cache_dir or '.', name + '.png'))
+        if not os.path.isfile(path):
+            if maps is None:
+                maps = pbr_mod.build_pbr(table.atlas_image, table.atlas_rect, table.atlas_names, pad=int(table.atlas_info.get('pad', 2)))
+            pngio.write_png(path, maps[0] if kind == 'n' else maps[1], filter_mode='up')
+        if img is not None:
+            bpy.data.images.remove(img)
+        img = bpy.data.images.load(path, check_existing=False)
+        img.name = name
+        img.colorspace_settings.name = 'Non-Color'
+        img.alpha_mode = 'CHANNEL_PACKED'
+        img.use_fake_user = False
+        out.append(img)
+    return out[0], out[1]
+
+
 def _set(node, names, value):
     for n in names:
         s = node.inputs.get(n)
@@ -45,7 +77,48 @@ def _set(node, names, value):
     return False
 
 
-def _build(mat, image, kind, shading, pixel_style, tiled=False):
+def _pbr_inputs(nodes, links, bsdf, pbr, pixel_style, vec_out, color_out):
+    """Подключает карты PBR к Principled: нормаль (Normal Map по UV-слою `UVMap` — касательный базис следует развёртке грани, поэтому поворот и uvlock не ломают
+    рельеф), шероховатость и металличность (orm.R, orm.G), свечение (orm.B × цвет текстуры × EMISSION_STRENGTH). Выборка — тем же вектором, что и у альбедо."""
+    img_n, img_o = pbr
+    interp = 'Closest' if pixel_style else 'Linear'
+    tn = nodes.new('ShaderNodeTexImage')
+    tn.image = img_n
+    tn.interpolation = interp
+    tn.extension = 'EXTEND'
+    tn.location = (-700, -450)
+    to = nodes.new('ShaderNodeTexImage')
+    to.image = img_o
+    to.interpolation = interp
+    to.extension = 'EXTEND'
+    to.location = (-700, -750)
+    if vec_out is not None:
+        links.new(vec_out, tn.inputs['Vector'])
+        links.new(vec_out, to.inputs['Vector'])
+    nm = nodes.new('ShaderNodeNormalMap')
+    nm.space = 'TANGENT'
+    nm.uv_map = 'UVMap'
+    nm.location = (-450, -450)
+    links.new(tn.outputs['Color'], nm.inputs['Color'])
+    links.new(nm.outputs['Normal'], bsdf.inputs['Normal'])
+    sep = nodes.new('ShaderNodeSeparateColor')
+    sep.mode = 'RGB'
+    sep.location = (-450, -750)
+    links.new(to.outputs['Color'], sep.inputs['Color'])
+    links.new(sep.outputs['Red'], bsdf.inputs['Roughness'])
+    links.new(sep.outputs['Green'], bsdf.inputs['Metallic'])
+    _set(bsdf, ('Specular IOR Level', 'Specular'), 0.5)
+    if bsdf.inputs.get('Emission Color') is not None:
+        mul = nodes.new('ShaderNodeMath')
+        mul.operation = 'MULTIPLY'
+        mul.inputs[1].default_value = EMISSION_STRENGTH
+        mul.location = (-300, -750)
+        links.new(sep.outputs['Blue'], mul.inputs[0])
+        links.new(color_out, bsdf.inputs['Emission Color'])
+        links.new(mul.outputs[0], bsdf.inputs['Emission Strength'])
+
+
+def _build(mat, image, kind, shading, pixel_style, tiled=False, pbr=None):
     mat.use_nodes = True
     nt = mat.node_tree
     nt.nodes.clear()
@@ -110,6 +183,9 @@ def _build(mat, image, kind, shading, pixel_style, tiled=False):
         links.new(comps[0].outputs[0], comb.inputs['X'])
         links.new(comps[1].outputs[0], comb.inputs['Y'])
         links.new(comb.outputs[0], tex.inputs['Vector'])
+        vec_out = comb.outputs[0]
+    else:
+        vec_out = None
     links.new(tex.outputs['Color'], mix.inputs[6])
     links.new(vc.outputs['Color'], mix.inputs[7])
     color_out = mix.outputs[2]
@@ -146,8 +222,11 @@ def _build(mat, image, kind, shading, pixel_style, tiled=False):
     else:
         bsdf = nodes.new('ShaderNodeBsdfPrincipled')
         bsdf.location = (-200, 0)
-        _set(bsdf, ('Roughness',), 1.0)
-        _set(bsdf, ('Specular IOR Level', 'Specular'), 0.0)
+        if pbr is not None and kind != 'water':
+            _pbr_inputs(nodes, links, bsdf, pbr, pixel_style, vec_out, color_out)
+        else:
+            _set(bsdf, ('Roughness',), 1.0)
+            _set(bsdf, ('Specular IOR Level', 'Specular'), 0.0)
         links.new(color_out, bsdf.inputs['Base Color'])
         if alpha_out is not None:
             links.new(alpha_out, bsdf.inputs['Alpha'])
@@ -166,37 +245,39 @@ def _build(mat, image, kind, shading, pixel_style, tiled=False):
     mat.diffuse_color = (0.5, 0.5, 0.5, 1.0)
 
 
-def ensure_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT'):
+def ensure_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT', pbr=False):
     """Создаёт (или обновляет) четыре материала; возвращает список по индексам MAT_SOLID..MAT_WATER."""
     image = ensure_atlas_image(table, cache_dir, pixel_style)
+    pbr_imgs = ensure_pbr_images(table, cache_dir) if (pbr and shading == 'lit') else None
     mats = []
     wk = 'opaque' if water_style == 'OPAQUE' else 'water'
     for name, kind in zip(MAT_NAMES, ('opaque', 'cutout', 'translucent', wk)):
         mat = bpy.data.materials.get(name)
-        stamp = '%s|%s|%s|%s' % (image.name, shading, pixel_style, wk)
+        stamp = '%s|%s|%s|%s|%s' % (image.name, shading, pixel_style, wk, pbr_imgs[0].name if pbr_imgs else '-')
         if mat is None:
             mat = bpy.data.materials.new(name)
             mat['mc_stamp'] = ''
         if mat.get('mc_stamp') != stamp:
-            _build(mat, image, kind, shading, pixel_style)
+            _build(mat, image, kind, shading, pixel_style, pbr=pbr_imgs)
             mat['mc_stamp'] = stamp
         mats.append(mat)
     return mats
 
 
-def ensure_tiled_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT'):
+def ensure_tiled_materials(table, cache_dir, shading='lit', pixel_style=True, water_style='TRANSLUCENT', pbr=False):
     """Материалы для слитых граней (тайл повторяется в шейдере)."""
     image = ensure_atlas_image(table, cache_dir, pixel_style)
+    pbr_imgs = ensure_pbr_images(table, cache_dir) if (pbr and shading == 'lit') else None
     mats = []
     wk = 'opaque' if water_style == 'OPAQUE' else 'water'
     for name, kind in zip(TILED_NAMES, ('opaque', 'cutout', 'translucent', wk)):
         mat = bpy.data.materials.get(name)
-        stamp = '%s|%s|%s|%s|t' % (image.name, shading, pixel_style, wk)
+        stamp = '%s|%s|%s|%s|%s|t' % (image.name, shading, pixel_style, wk, pbr_imgs[0].name if pbr_imgs else '-')
         if mat is None:
             mat = bpy.data.materials.new(name)
             mat['mc_stamp'] = ''
         if mat.get('mc_stamp') != stamp:
-            _build(mat, image, kind, shading, pixel_style, tiled=True)
+            _build(mat, image, kind, shading, pixel_style, tiled=True, pbr=pbr_imgs)
             mat['mc_stamp'] = stamp
         mats.append(mat)
     return mats
@@ -237,5 +318,5 @@ def remove_materials():
         if m is not None:
             bpy.data.materials.remove(m)
     for img in list(bpy.data.images):
-        if img.name.startswith(ATLAS_PREFIX):
+        if img.name.startswith(ATLAS_PREFIX) or img.name.startswith(PBR_PREFIX):
             bpy.data.images.remove(img)

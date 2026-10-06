@@ -56,6 +56,7 @@ def parse():
     ap.add_argument('--lod-stride', type=int, default=2)
     ap.add_argument('--lod-center', default=None, help='cx,cz центра LOD (по умолчанию — центр региона)')
     ap.add_argument('--smooth', action='store_true', help='Linear вместо Closest')
+    ap.add_argument('--pbr', action='store_true', help='PBR-карты (нормаль, шероховатость, металличность, свечение) из атласа')
     ap.add_argument('--bake-shade', action='store_true')
     ap.add_argument('--sun-az', type=float, default=140.0)
     ap.add_argument('--sun-el', type=float, default=48.0)
@@ -125,7 +126,7 @@ def main():
     vs = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=a.cache, version=a.version,
                                 chunks_per_object=a.per_object, biome_blend=a.blend, cutout_leaves=not a.no_cutout,
                                 bake_shade=a.bake_shade, shading=a.shading, merge_flat=a.merge, lod=a.lod, lod_distance=a.lod_distance,
-                                lod_stride=a.lod_stride, pixel_style=not a.smooth)
+                                lod_stride=a.lod_stride, pixel_style=not a.smooth, pbr=a.pbr)
     clean_default_scene()
     sb = scene_mod.SceneBuilder(vs)
     if a.lod_center:

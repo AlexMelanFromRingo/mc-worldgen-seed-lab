@@ -21,6 +21,11 @@ s = bpy.context.scene.mcgen
 N = int(os.environ.get('N', '32'))
 s.size_x = s.size_z = N
 s.seed = '12345'
+if os.environ.get('GREEDY') is not None:
+    s.greedy_merge = os.environ['GREEDY'] != '0'          # для сравнения «до/после»: GREEDY=0 — без слияния граней
+s.pbr = os.environ.get('PBR') == '1'
+if os.environ.get('CPO'):
+    s.chunks_per_object = os.environ['CPO']                 # 1 | 2 | 4 | 8
 s.use_terrain = s.use_surface = s.use_caves = s.use_features = s.use_structures = True
 for o in list(bpy.data.objects):
     bpy.data.objects.remove(o)

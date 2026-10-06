@@ -13,6 +13,7 @@ _DEFAULTS = dict(
     cutout_leaves=True,       # «красивая» листва (cutout); False — сплошные кубы листвы, листва к листве скрыта
     bake_shade=False,         # запечь направленное затенение игры в цвета вершин
     pixel_style=True,         # Closest (пиксельный) вместо Linear
+    pbr=False,                # PBR-карты (нормаль, шероховатость, металличность, свечение) из атласа (assets/pbr.py); только при shading='lit'
     shading='lit',            # 'lit' (Principled, освещение сцены) | 'emission' (без освещения, как игра без теней)
     scale=1.0,                # единиц Blender на блок
     collection='MC World',    # имя коллекции сцены

@@ -197,6 +197,7 @@ def draw_view(layout, context):
     col.prop(s, 'tint_biomes')
     col.prop(s, 'water_style')
     col.prop(s, 'pixel_style', expand=True)
+    col.prop(s, 'pbr')
     col = layout.column()
     col.prop(s, 'chunks_per_object')
     col.prop(s, 'greedy_merge')

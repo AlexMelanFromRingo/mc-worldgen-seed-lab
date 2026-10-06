@@ -342,7 +342,7 @@ class McGenSettings(PropertyGroup):
     chunks_per_object: EnumProperty(name='Chunks per object', description='Chunks merged into one Blender object (more = faster viewport, slower edits)',
                                     items=[('1', '1 × 1', 'One object per chunk'), ('2', '2 × 2', '4 chunks per object'),
                                            ('4', '4 × 4', '16 chunks per object'), ('8', '8 × 8', '64 chunks per object')], default='1', update=_auto_update)
-    greedy_merge: BoolProperty(name='Greedy merge', description='Merge flat faces into larger quads (tiled texture): far fewer polygons for huge scenes', default=False, update=_auto_update)
+    greedy_merge: BoolProperty(name='Greedy merge', description='Merge flat faces into larger quads (tiled texture): about half the polygons and less memory, the picture is identical', default=True, update=_auto_update)
     lod_mode: EnumProperty(name='Distant LOD', description='Level of detail far from the display range',
                            items=[('OFF', 'Off', 'Full detail everywhere'), ('HEIGHTMAP', 'Height map', 'Distant chunks as simplified height-map columns')],
                            default='OFF', update=_auto_update)
@@ -350,6 +350,7 @@ class McGenSettings(PropertyGroup):
     pixel_style: EnumProperty(name='Texture style', description='Texture filtering of block textures', items=[('PIXEL', 'Pixel', 'Sharp pixels (closest filtering)'),
                                                                                                           ('SMOOTH', 'Smooth', 'Smooth (linear filtering)')],
                               default='PIXEL', update=_auto_update)
+    pbr: BoolProperty(name='PBR materials', description='Normal, roughness, metallic and emission maps derived from the block textures (vanilla has none): relief of stone and bricks, shiny metal, glass and ice, glowing blocks. Needs the lit shading', default=False, update=_auto_update)
     compute: EnumProperty(name='Compute', description='Where the generator computes: Auto, the CPU, or the NVIDIA GPU (optional CUDA library; the result is identical)',
                           items=_compute_items, update=_on_compute)
     auto_update: BoolProperty(name='Auto update', description='Re-run Update Layers shortly after a setting changes', default=False)
@@ -419,7 +420,7 @@ class McGenSettings(PropertyGroup):
 
 SETTINGS_PRESET_FIELDS = ['version', 'dimension', 'preset', 'seed_mode', 'seed', 'seed_climate', 'seed_terrain', 'seed_structures', 'seed_features',
                           'unit', 'origin_x', 'origin_z', 'size_x', 'size_z', 'width', 'depth', 'y_min', 'y_max', 'use_terrain', 'use_surface', 'use_caves', 'use_features',
-                          'use_structures', 'use_tweaks', 'tint_biomes', 'water_style', 'chunks_per_object', 'greedy_merge', 'lod_mode', 'lod_near', 'pixel_style',
+                          'use_structures', 'use_tweaks', 'tint_biomes', 'water_style', 'chunks_per_object', 'greedy_merge', 'lod_mode', 'lod_near', 'pixel_style', 'pbr',
                           'bm_step', 'bm_y', 'bm_palette']
 
 

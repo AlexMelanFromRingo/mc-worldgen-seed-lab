@@ -19,7 +19,7 @@ import tempfile
 import numpy as np
 
 __all__ = ['MeshOptions', 'MeshData', 'Mesher', 'load_library', 'build_core', 'MAT_SOLID', 'MAT_CUTOUT', 'MAT_TRANSLUCENT', 'MAT_WATER',
-           'N_MAT', 'DIR_NAMES', 'ABI_VERSION', 'reference_mesh_chunk']
+           'N_MAT', 'DIR_NAMES', 'ABI_VERSION', 'reference_mesh_chunk', 'weld_quads']
 
 ABI_VERSION = 3
 MAT_SOLID, MAT_CUTOUT, MAT_TRANSLUCENT, MAT_WATER, N_MAT = 0, 1, 2, 3, 4
@@ -192,6 +192,9 @@ def _bind(lib):
     lib.mcmesh_pick_weighted.restype = ctypes.c_int
     lib.mcmesh_swamp_noise.argtypes = [P, ctypes.c_double, ctypes.c_double]
     lib.mcmesh_swamp_noise.restype = ctypes.c_float
+    if hasattr(lib, 'mcmesh_weld'):          # необязательная функция (библиотеки старее v0.1.14 её не имеют — меш тогда строится без сварки)
+        lib.mcmesh_weld.argtypes = [P, ctypes.c_int32, P, P, P, P, P]
+        lib.mcmesh_weld.restype = ctypes.c_int
     return lib
 
 
@@ -230,6 +233,33 @@ def load_library(path=None, build=True):
             _lib = lib
         return lib
     raise RuntimeError('библиотека ядра меширования не найдена: %s' % (last,))
+
+
+def weld_quads(pos, lib=None):
+    """Сварка вершин и рёбер четырёхугольников (ядро: mcmesh_weld). pos — float32 (n, 4, 3). Возвращает (corner_vert int32[4n], vert_pos float32[3·nv],
+    edge_verts int32[2·ne], corner_edge int32[4n], nv, ne) или None, если библиотека без mcmesh_weld (или MCGEN_NO_WELD). Вызов освобождает GIL — безопасен
+    из потоков."""
+    if os.environ.get('MCGEN_NO_WELD'):
+        return None
+    try:
+        lib = lib or load_library(build=False)
+    except Exception:
+        return None
+    fn = getattr(lib, 'mcmesh_weld', None)
+    if fn is None:
+        return None
+    pos = np.ascontiguousarray(pos, dtype=np.float32).reshape(-1, 4, 3)
+    n = int(pos.shape[0])
+    cv = np.empty(n * 4, np.int32)
+    vp = np.empty(n * 12, np.float32)
+    ev = np.empty(n * 8, np.int32)
+    ce = np.empty(n * 4, np.int32)
+    cnt = np.zeros(2, np.int32)
+    rc = fn(pos.ctypes.data_as(P), n, cv.ctypes.data_as(P), vp.ctypes.data_as(P), ev.ctypes.data_as(P), ce.ctypes.data_as(P), cnt.ctypes.data_as(P))
+    if rc != 0:
+        return None
+    nv, ne = int(cnt[0]), int(cnt[1])
+    return cv, vp[:nv * 3], ev[:ne * 2], ce, nv, ne
 
 
 # ----------------------------------------------------------------------------------------------------------------------

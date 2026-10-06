@@ -14,6 +14,13 @@ void features_post_chunk(void *fw, McWorld *w, int cx, int cz);  /* feature_misc
 #include "mcgen_tweaks_table.h"
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(__linux__) || defined(__APPLE__)
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 
 struct McRegion {
     McRegionInfo info;
@@ -26,6 +33,30 @@ struct McRegion {
 };
 
 static int chunk_index(const McRegion *r, int cx, int cz);
+
+/* Освобождает физическую память страниц массива блоков, целиком заполненных нулями: воздух над поверхностью — это больше половины региона (весь мир −64…320, поверхность
+ * около 63–150), а стадии генерации записывают воздух явно и «прикладывают» страницы. Содержимое не меняется (читаются те же нули: Linux отдаёт нулевую страницу по
+ * требованию; где MADV_DONTNEED лишь подсказка — данные остаются нулями так или иначе); запись правкой снова выделяет страницу. Только если воздух = id 0.
+ * Linux/macOS; на Windows ничего не делается. MCGEN_NO_TRIM=1 отключает (для сверки). */
+static void region_trim_zero_pages(void *base, size_t bytes) {
+#if defined(__linux__) || defined(__APPLE__)
+    if (getenv("MCGEN_NO_TRIM")) return;
+    long psz = sysconf(_SC_PAGESIZE);
+    if (psz < 4096 || (psz & (psz - 1))) return;
+    uintptr_t a = ((uintptr_t)base + (uintptr_t)psz - 1) & ~((uintptr_t)psz - 1), e = ((uintptr_t)base + bytes) & ~((uintptr_t)psz - 1);
+    uintptr_t run = 0;
+    for (uintptr_t p = a; p + (uintptr_t)psz <= e; p += (uintptr_t)psz) {
+        const uint64_t *q = (const uint64_t *)p;
+        size_t k = 0, nw = (size_t)psz / 8;
+        while (k < nw && q[k] == 0) k++;
+        if (k == nw) { if (!run) run = p; }
+        else if (run) { madvise((void *)run, p - run, MADV_DONTNEED); run = 0; }
+    }
+    if (run) madvise((void *)run, (e - run) / (uintptr_t)psz * (uintptr_t)psz, MADV_DONTNEED);
+#else
+    (void)base; (void)bytes;
+#endif
+}
 
 /* ---------------- зум биомов (BiomeManager.getBiome) ---------------- */
 static inline i64 zoom_lcg(i64 r, i64 c) { u64 v = (u64)r; v *= v * 6364136223846793005ULL + 1442695040888963407ULL; return (i64)(v + (u64)c); }
@@ -484,6 +515,10 @@ static int generate_impl(McWorld *w, int cx0, int cz0, int nx, int nz, uint32_t 
         heightmaps_all(w, r, threads);
     }
     r->bents = world_bent_json(w, cx0 * 16, cz0 * 16, (cx0 + nx) * 16, (cz0 + nz) * 16);
+    if (w->g->st_air == 0) region_trim_zero_pages(r->blocks, n * H * 256 * sizeof(uint16_t));      /* воздух над поверхностью не держит физическую память */
+#if defined(__GLIBC__)
+    if (!getenv("MCGEN_NO_TRIM")) malloc_trim(0);                                                  /* рабочие буферы стадий уже освобождены — вернуть кучу системе */
+#endif
     if (cb) cb(ud, 1.0, "done");
     *out = r;
     return MCGEN_OK;

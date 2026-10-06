@@ -19,7 +19,7 @@ import numpy as np
 
 from ..assets import state_table
 from ..mesh import lod as lod_mod
-from ..mesh.mesher import MeshOptions, Mesher
+from ..mesh.mesher import MeshOptions, Mesher, weld_quads
 from . import materials as materials_mod
 from .settings import ViewSettings
 
@@ -55,7 +55,7 @@ class _Group:
     def __init__(self, key):
         self.key = key
         self.chunks = []        # упорядоченный список ключей чанков (индекс = номер в атрибуте mc_face)
-        self.cache = {}         # (cx, cz) -> (MeshData, MeshData|None) — только если группа из нескольких чанков
+        self.cache = None       # (раньше — меши чанков группы; не хранится: на огромных сценах это сотни МБ, а при правке чанки группы пересобираются потоками)
         self.parts = {}
         self.lod = False
 
@@ -78,6 +78,11 @@ class _Group:
     @property
     def n_quads(self):
         return sum(p.n_quads for p in self.parts.values())
+
+    @property
+    def n_verts(self):
+        """Число вершин мешей группы (после сварки — заметно меньше 4 на грань)."""
+        return sum(len(p.mesh.vertices) for p in self.parts.values() if p.mesh is not None)
 
 
 def _info_get(info, name, default=None):
@@ -193,8 +198,8 @@ class SceneBuilder:
                     rm[i] = j if j >= 0 else 0
                 self._remap = rm
         cd = vs.cache_dir or '.'
-        self.materials = materials_mod.ensure_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style)
-        self.materials_tiled = materials_mod.ensure_tiled_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style) if vs.merge_flat else None
+        self.materials = materials_mod.ensure_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style, bool(vs.pbr))
+        self.materials_tiled = materials_mod.ensure_tiled_materials(t, cd, vs.shading, vs.pixel_style, vs.water_style, bool(vs.pbr)) if vs.merge_flat else None
         self.material_lod = materials_mod.ensure_lod_material(vs.shading) if vs.lod else None
 
     def _get_collection(self):
@@ -370,6 +375,14 @@ class SceneBuilder:
             return md.split_merged()
         return md, None
 
+    def _mesh_many(self, cks):
+        """Меши нескольких чанков (список (MeshData, MeshData|None)) потоками; ядро освобождает GIL."""
+        nth = min(self.vs.threads_resolved(), len(cks))
+        if nth <= 1:
+            return [self._mesh_one(ck) for ck in cks]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=nth) as ex:
+            return list(ex.map(self._mesh_one, cks))
+
     # ------------------------------------------------------------------------------------------------------------------
     #                                                  Blender-меши
     # ------------------------------------------------------------------------------------------------------------------
@@ -424,40 +437,77 @@ class SceneBuilder:
                      ev=np.ascontiguousarray(np.stack([q, np.roll(q, -1, axis=1)], axis=2).reshape(-1)))
         return d['ar'][:4 * n], d['ls'][:n], d['ev'][:8 * n]
 
+    _ONES = {'a': np.ones(8192, dtype=np.bool_)}
+
     @classmethod
-    def _fill_mesh(cls, mesh, pos, uv, col, mat, code, rect=None):
-        """Заполняет меш n четырёхугольников (4 своих вершины на грань). Быстрый путь — через атрибуты (position, .corner_vert, .edge_verts,
-        .corner_edge, UVMap, material_index): на порядок быстрее RNA-доступа и mesh.update(calc_edges=True). Цвет граней — атрибут `Col`
-        (BYTE_COLOR, область FACE: цвет у грани один, 4× меньше данных)."""
+    def _ones(cls, n):
+        if cls._ONES['a'].shape[0] < n:
+            cls._ONES['a'] = np.ones(max(n, cls._ONES['a'].shape[0] * 2), dtype=np.bool_)
+        return cls._ONES['a'][:n]
+
+    @classmethod
+    def _fill_mesh(cls, mesh, pos, uv, col, mat, code, rect=None, lib=None):
+        """Заполняет меш n четырёхугольников. Быстрый путь — через атрибуты (position, .corner_vert, .edge_verts, .corner_edge, UVMap, material_index): на порядок
+        быстрее RNA-доступа и mesh.update(calc_edges=True). Общие вершины и рёбра сварены ядром (mcmesh_weld: вершин ≈ на 70 % и рёбер ≈ на 50 % меньше, меш
+        ≈ на 30 % легче по памяти); из-за общих вершин грани помечаются плоскими (`sharp_face`), иначе Blender усреднил бы нормали соседних граней. Нет
+        mcmesh_weld (старая библиотека) — 4 своих вершины на грань. Цвет граней — атрибут `Col` (BYTE_COLOR, область FACE: цвет у грани один, 4× меньше данных)."""
         n = int(mat.shape[0])
         mesh.clear_geometry()
         if n == 0:
             return
         ar, ls, ev = cls._index_arrays(n)
-        mesh.vertices.add(n * 4)
-        mesh.loops.add(n * 4)
-        mesh.polygons.add(n)
-        mesh.edges.add(n * 4)
         a = mesh.attributes
-        try:
-            a['position'].data.foreach_set('vector', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
-            a['.corner_vert'].data.foreach_set('value', ar)
-            a['.edge_verts'].data.foreach_set('value', ev)
-            a['.corner_edge'].data.foreach_set('value', ar)
-            mesh.polygons.foreach_set('loop_start', ls)
-            mesh.update()
-            fast = True
-        except (KeyError, RuntimeError, TypeError):
-            fast = False
-        if not fast:
-            mesh.clear_geometry()
-            mesh.vertices.add(n * 4)
-            mesh.vertices.foreach_set('co', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+        fast = False
+        welded = weld_quads(pos, lib)
+        if welded is not None:
+            cv, vp, evw, ce, nv, ne = welded
+            mesh.vertices.add(nv)
             mesh.loops.add(n * 4)
-            mesh.loops.foreach_set('vertex_index', ar)
             mesh.polygons.add(n)
-            mesh.polygons.foreach_set('loop_start', ls)
-            mesh.update(calc_edges=True)
+            mesh.edges.add(ne)
+            try:
+                a['position'].data.foreach_set('vector', vp)
+                a['.corner_vert'].data.foreach_set('value', cv)
+                a['.edge_verts'].data.foreach_set('value', evw)
+                a['.corner_edge'].data.foreach_set('value', ce)
+                mesh.polygons.foreach_set('loop_start', ls)
+                mesh.update()
+                try:                                       # атрибут sharp_face (Blender 4.1+) — в разы быстрее mesh.shade_flat()
+                    sf = a.get('sharp_face') or a.new('sharp_face', 'BOOLEAN', 'FACE')
+                    sf.data.foreach_set('value', cls._ones(n))
+                except (KeyError, RuntimeError, TypeError):
+                    try:
+                        mesh.shade_flat()
+                    except AttributeError:
+                        mesh.polygons.foreach_set('use_smooth', np.zeros(n, dtype=np.bool_))
+                fast = True
+            except (KeyError, RuntimeError, TypeError):
+                mesh.clear_geometry()
+                a = mesh.attributes
+        if not fast:
+            mesh.vertices.add(n * 4)
+            mesh.loops.add(n * 4)
+            mesh.polygons.add(n)
+            mesh.edges.add(n * 4)
+            try:
+                a['position'].data.foreach_set('vector', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+                a['.corner_vert'].data.foreach_set('value', ar)
+                a['.edge_verts'].data.foreach_set('value', ev)
+                a['.corner_edge'].data.foreach_set('value', ar)
+                mesh.polygons.foreach_set('loop_start', ls)
+                mesh.update()
+                fast = True
+            except (KeyError, RuntimeError, TypeError):
+                fast = False
+            if not fast:
+                mesh.clear_geometry()
+                mesh.vertices.add(n * 4)
+                mesh.vertices.foreach_set('co', np.ascontiguousarray(pos, dtype=np.float32).reshape(-1))
+                mesh.loops.add(n * 4)
+                mesh.loops.foreach_set('vertex_index', ar)
+                mesh.polygons.add(n)
+                mesh.polygons.foreach_set('loop_start', ls)
+                mesh.update(calc_edges=True)
         if uv is not None:
             if fast:
                 ua = a.new('UVMap', 'FLOAT2', 'CORNER')
@@ -493,6 +543,9 @@ class SceneBuilder:
         g.parts[kind] = p
         return p
 
+    def _mesh_lib(self):
+        return getattr(self.mesher, 'lib', None)
+
     def _group_loc(self, gk):
         N = self._n()
         s = float(self.vs.scale)
@@ -503,8 +556,6 @@ class SceneBuilder:
         g.chunks = [ck for ck, _ in chunk_meshes]
         loc = self._group_loc(gk)
         self._fill_group_parts(g, [(ck, m[0]) for ck, m in chunk_meshes], [(ck, m[1]) for ck, m in chunk_meshes], loc, col)
-        if self._n() > 1:
-            g.cache = {ck: m for ck, m in chunk_meshes}
         self.groups[gk] = g
         for ck in g.chunks:
             self.chunk_group[ck] = gk
@@ -517,7 +568,7 @@ class SceneBuilder:
         if p is None:
             mesh = bpy.data.meshes.new(name)
             p = self._link_part(g, 'main', name, mesh, self.materials, loc, col)
-        self._fill_mesh(p.mesh, pos, uv, c, mat, code)
+        self._fill_mesh(p.mesh, pos, uv, c, mat, code, lib=self._mesh_lib())
         p.face_code, p.n_quads = code, int(mat.shape[0])
         if self.vs.merge_flat:
             pos, uv, c, mat, rect, code = self._concat(gk, merged_mds)
@@ -530,7 +581,7 @@ class SceneBuilder:
                 if pm is None:
                     mesh = bpy.data.meshes.new(name + '_m')
                     pm = self._link_part(g, 'merged', name + '_m', mesh, self.materials_tiled, loc, col)
-                self._fill_mesh(pm.mesh, pos, uv, c, mat, code, rect)
+                self._fill_mesh(pm.mesh, pos, uv, c, mat, code, rect, lib=self._mesh_lib())
                 pm.face_code, pm.n_quads = code, n
 
     def _remove_part(self, g, kind):
@@ -564,7 +615,7 @@ class SceneBuilder:
         mesh = bpy.data.meshes.new(name)
         p = self._link_part(g, 'lod', name, mesh, [self.material_lod or materials_mod.ensure_lod_material(vs.shading)], self._group_loc(gk), col)
         n = pos.shape[0]
-        self._fill_mesh(mesh, pos, None, c, np.zeros(n, dtype=np.uint8), None)
+        self._fill_mesh(mesh, pos, None, c, np.zeros(n, dtype=np.uint8), None, lib=self._mesh_lib())
         p.n_quads = n
         self.groups[gk] = g
         for ck in g.chunks:
@@ -624,11 +675,11 @@ class SceneBuilder:
                 self._fill_group_parts(g, [(ck, m[0])], [(ck, m[1])], loc, col)
             else:
                 for ck in cks:
-                    g.cache[ck] = self._mesh_one(ck)
                     if ck not in g.chunks:
                         g.chunks.append(ck)
                         self.chunk_group[ck] = gk
-                self._fill_group_parts(g, [(ck, g.cache[ck][0]) for ck in g.chunks], [(ck, g.cache[ck][1]) for ck in g.chunks], loc, col)
+                ms = self._mesh_many(g.chunks)                  # меши остальных чанков группы не хранятся — пересобираем потоками
+                self._fill_group_parts(g, [(ck, m[0]) for ck, m in zip(g.chunks, ms)], [(ck, m[1]) for ck, m in zip(g.chunks, ms)], loc, col)
         self.stats['last_update'] = {'chunks': len(keys), 'seconds': time.time() - t0}
         yield 1.0
 

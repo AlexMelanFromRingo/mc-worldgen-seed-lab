@@ -31,7 +31,7 @@ def make_view_settings(mod, ctx, threads=0):
     want = {
         'assets_dir': ctx.assets_dir, 'pack_dir': ctx.pack_dir, 'cache_dir': paths.cache_dir(), 'version': ctx.params.version,
         'chunks_per_object': int(v.get('chunks_per_object', 1)), 'pixel_style': v.get('pixel_style', 'PIXEL') == 'PIXEL',
-        'collection': ctx.collection_name, 'merge_flat': bool(v.get('greedy_merge', False)),
+        'collection': ctx.collection_name, 'merge_flat': bool(v.get('greedy_merge', True)), 'pbr': bool(v.get('pbr', False)),
         'lod': v.get('lod_mode', 'OFF') != 'OFF', 'lod_distance': int(v.get('lod_near', 16)), 'threads': int(threads or ctx.params.threads or 0),
         # поля, которых у W4 пока нет (будут проигнорированы), оставлены для будущих версий ViewSettings
         'tint_biomes': bool(v.get('tint_biomes', True)), 'water_style': v.get('water_style', 'TRANSLUCENT'),
@@ -214,7 +214,8 @@ class W4Sink(SceneSink):
         build = st.get('build', {}) if isinstance(st, dict) else {}
         total = len(groups) or st.get('objects', 0)
         rebuilt = len(self._batches or []) if self._mode == 'update_chunks' else total       # одна пачка = одна группа (объект)
-        self._stats = {'objects': total, 'faces': quads or build.get('quads', 0) or st.get('faces', 0), 'vertices': (quads or build.get('quads', 0)) * 4,
+        verts = sum(getattr(g, 'n_verts', 0) for g in groups.values())             # реальные вершины мешей (сварены); нет — по 4 на грань
+        self._stats = {'objects': total, 'faces': quads or build.get('quads', 0) or st.get('faces', 0), 'vertices': verts or (quads or build.get('quads', 0)) * 4,
                        'rebuilt': rebuilt}
 
     @property

@@ -9,7 +9,7 @@ STAGE_ORDER = ('biomes', 'terrain', 'surface', 'carvers', 'features', 'structure
 STAGE_BIT = {'biomes': 1, 'terrain': 2, 'surface': 4, 'carvers': 8, 'features': 16, 'structures': 32}
 STAGE_LABEL = {'biomes': 'Biomes', 'terrain': 'Terrain', 'surface': 'Surface', 'carvers': 'Caves', 'features': 'Features', 'structures': 'Structures'}
 SEED_STAGE = ('biomes', 'terrain', 'structures', 'features')      # сид домена climate/terrain/structures/features -> нижняя стадия, на которую влияет
-VIEW_KEYS = ('tint_biomes', 'water_style', 'chunks_per_object', 'greedy_merge', 'lod_mode', 'lod_near', 'pixel_style', 'y_min', 'y_max', 'crop')
+VIEW_KEYS = ('tint_biomes', 'water_style', 'chunks_per_object', 'greedy_merge', 'lod_mode', 'lod_near', 'pixel_style', 'pbr', 'y_min', 'y_max', 'crop')
 
 _tweaks_doc = None
 

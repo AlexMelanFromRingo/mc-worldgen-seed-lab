@@ -146,6 +146,11 @@ MCMESH_API int mcmesh_abi_version(void);
 /* 0 — успех; <0 — ошибка (-1 аргументы, -2 память, -3 неверный ABI таблиц). out инициализируется вызовом. Освобождение — mcmesh_output_free. */
 MCMESH_API int mcmesh_chunk(const McMeshTables *t, const McMeshInput *in, const McMeshOptions *opt, McMeshOutput *out);
 MCMESH_API void mcmesh_output_free(McMeshOutput *out);
+/* Сварка вершин и рёбер n четырёхугольников (pos — n·4·3 float, как McMeshOutput.pos): совпадающие по битам позиции получают один индекс вершины, одинаковые
+ * рёбра — один индекс ребра. Буферы выделяет вызывающий (ёмкость для худшего случая, без сварки): corner_vert[n·4], vert_pos[n·4·3], edge_verts[n·4·2],
+ * corner_edge[n·4]; counts[0] = число вершин, counts[1] = число рёбер. Грань, у которой после сварки совпали бы две вершины (вырожденная), не сваривается
+ * (её дубли — отдельные вершины). Порядок: вершины и рёбра нумеруются по первому появлению. 0 — успех, -1 аргументы, -2 память. Потокобезопасно. */
+MCMESH_API int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_pos, int32_t *edge_verts, int32_t *corner_edge, int32_t *counts);
 
 /* Для тестов: выбор варианта (Mth.getSeed → LegacyRandomSource) — вернуть индекс варианта в группе `total` весов по позиции. */
 MCMESH_API int64_t mcmesh_mth_get_seed(int32_t x, int32_t y, int32_t z);

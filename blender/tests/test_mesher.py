@@ -185,5 +185,73 @@ class TestMesher(unittest.TestCase):
         self.assertLess(dt, 2.0)
 
 
+class TestWeld(unittest.TestCase):
+    """mcmesh_weld: сварка вершин и рёбер четырёхугольников (общие углы — одна вершина, одинаковые рёбра — одно ребро)."""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.lib = mesher.load_library(build=False)
+        except Exception as e:  # noqa: BLE001
+            raise unittest.SkipTest('нет библиотеки ядра: %s' % e)
+        if not hasattr(cls.lib, 'mcmesh_weld'):
+            raise unittest.SkipTest('библиотека без mcmesh_weld')
+
+    @staticmethod
+    def _grid_quads(rng, n):
+        """n случайных граней сетки 1/16 (углы часто совпадают), порядок углов как у ядра."""
+        q = np.zeros((n, 4, 3), np.float32)
+        for i in range(n):
+            x, y, z = (int(v) for v in rng.integers(0, 6, 3))
+            ax = int(rng.integers(0, 3))
+            u, v = [a for a in range(3) if a != ax]
+            for k, (du, dv) in enumerate(((0, 0), (0, 1), (1, 1), (1, 0))):
+                p = [x, y, z]
+                p[u] += du
+                p[v] += dv
+                q[i, k] = np.array(p, np.float32) / np.float32(16.0) * np.float32(16.0)
+        return q
+
+    def _check(self, quads):
+        n = quads.shape[0]
+        w = mesher.weld_quads(quads, self.lib)
+        self.assertIsNotNone(w)
+        cv, vp, ev, ce, nv, ne = w
+        self.assertEqual((cv.shape[0], ce.shape[0], vp.shape[0], ev.shape[0]), (4 * n, 4 * n, 3 * nv, 2 * ne))
+        pos = vp.reshape(-1, 3)[cv].reshape(n, 4, 3)
+        self.assertTrue(np.array_equal(pos + np.float32(0.0), quads + np.float32(0.0)), 'позиции углов не совпали с исходными')   # +0.0: -0.0 == 0.0
+        evv = ev.reshape(-1, 2)
+        cvq = cv.reshape(n, 4)
+        for k in range(4):
+            a, b = cvq[:, k], cvq[:, (k + 1) & 3]
+            e = evv[ce.reshape(n, 4)[:, k]]
+            self.assertTrue(((e[:, 0] == a) & (e[:, 1] == b) | (e[:, 0] == b) & (e[:, 1] == a)).all(), 'corner_edge указывает не на своё ребро')
+        self.assertTrue((evv[:, 0] != evv[:, 1]).all(), 'ребро из одной вершины')
+        self.assertEqual(len({tuple(sorted(r)) for r in evv.tolist()}), ne, 'повторяющиеся рёбра')
+        return nv, ne, cvq
+
+    def test_shared_grid(self):
+        rng = np.random.default_rng(1)
+        q = self._grid_quads(rng, 3000)
+        nv, ne, _ = self._check(q)
+        uniq = {tuple(p) for p in q.reshape(-1, 3).tolist()}
+        self.assertEqual(nv, len(uniq))                    # без вырожденных граней число вершин = число различных позиций
+        self.assertLess(nv, 4 * 3000 // 2)
+
+    def test_negative_zero_and_degenerate(self):
+        q = np.array([[[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]],
+                      [[-0.0, 0, 0], [-0.0, 1, 0], [1, 1, -0.0], [1, 0, 0]],            # те же углы с -0.0
+                      [[2, 0, 0], [2, 0, 0], [3, 1, 0], [3, 0, 0]],                      # вырожденная: совпали углы 0 и 1
+                      [[5, 5, 5], [5, 5, 5], [5, 5, 5], [5, 5, 5]]], np.float32)         # все четыре угла в одной точке
+        nv, ne, cvq = self._check(q)
+        self.assertTrue((cvq[0] == cvq[1]).all())          # -0.0 сварен с +0.0
+        for r in cvq[2:]:
+            self.assertEqual(len(set(r.tolist())), 4, 'у вырожденной грани должны быть 4 разные вершины')
+
+    def test_empty(self):
+        w = mesher.weld_quads(np.zeros((0, 4, 3), np.float32), self.lib)
+        self.assertEqual((w[4], w[5]), (0, 0))
+
+
 if __name__ == '__main__':
     unittest.main()

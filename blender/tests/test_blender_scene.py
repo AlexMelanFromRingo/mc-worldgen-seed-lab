@@ -67,6 +67,52 @@ def main():
     check('материалы: 4 слота', len(g.mesh.materials) == 4)
     check('UV/цвет/атрибут грани', len(g.mesh.uv_layers) == 1 and 'Col' in g.mesh.attributes and 'mc_face' in g.mesh.attributes)
 
+    # --- сварка вершин: позиции углов те же, нормали плоские (sharp_face), вершин заметно меньше 4 на грань
+    if getattr(sb.mesher.lib, 'mcmesh_weld', None) is not None:
+        ok_pos = ok_nrm = ok_cnt = True
+        for _ck, gw in sb.groups.items():
+            me = gw.mesh
+            md = mesh_quads(sb, gw.chunks[0])
+            nq = len(me.polygons)
+            if nq == 0:
+                continue
+            cvi = np.empty(nq * 4, np.int32)
+            me.loops.foreach_get('vertex_index', cvi)
+            co = np.empty(len(me.vertices) * 3, np.float32)
+            me.vertices.foreach_get('co', co)
+            ok_pos &= np.array_equal(co.reshape(-1, 3)[cvi].reshape(nq, 4, 3) + np.float32(0.0), md.pos + np.float32(0.0))
+            cn = np.empty(nq * 12, np.float32)
+            me.corner_normals.foreach_get('vector', cn)
+            pn = np.empty(nq * 3, np.float32)
+            me.polygon_normals.foreach_get('vector', pn)
+            ok_nrm &= np.allclose(cn.reshape(nq, 4, 3), pn.reshape(nq, 1, 3), atol=1e-5)
+            ok_cnt &= len(me.vertices) < 3 * nq
+        check('сварка: позиции углов = позициям ядра', ok_pos)
+        check('сварка: нормали углов = нормалям граней (плоское затенение)', ok_nrm)
+        check('сварка: вершин < 3 на грань', ok_cnt)
+        # Mesh.validate() здесь не годится: двусторонние грани (вода, листва) — два четырёхугольника на одних вершинах, validate() принимает их за дубликаты и удаляет
+
+    # --- PBR: материалы с картами нормалей/шероховатости/металличности/свечения (assets/pbr.py); выключено — прежний граф без них
+    def _types(mat):
+        return sorted({nd.bl_idname for nd in mat.node_tree.nodes})
+    check('PBR выкл.: в материале нет Normal Map', 'ShaderNodeNormalMap' not in _types(bpy.data.materials['MC_opaque']))
+    vs_p = scene_mod.ViewSettings(assets_dir=_boot.ASSETS_DIR, pack_dir=_boot.PACK_DIR, cache_dir=os.path.join(_boot.SCRATCH, 'cache'), merge_flat=True, pbr=True)
+    sbp = scene_mod.SceneBuilder(vs_p)
+    sbp.prepare(blocks, bio, {'min_y': -64, 'height': 384, 'cx0': cx0, 'cz0': cz0, 'nx': n, 'nz': n}, None, common.biome_names())
+    for nm in ('MC_opaque', 'MC_cutout', 'MC_translucent', 'MC_opaque_tiled', 'MC_cutout_tiled'):
+        mp = bpy.data.materials.get(nm)
+        ty = _types(mp) if mp else []
+        check('PBR вкл.: %s — Normal Map и три карты' % nm, 'ShaderNodeNormalMap' in ty and sum(1 for nd in mp.node_tree.nodes if nd.bl_idname == 'ShaderNodeTexImage') == 3, ty)
+    names_img = {i.name: i.colorspace_settings.name for i in bpy.data.images if i.name.startswith('MC_pbr')}
+    check('PBR вкл.: карты — Non-Color (нормаль и orm)', len(names_img) == 2 and all(v == 'Non-Color' for v in names_img.values()), names_img)
+    mw = bpy.data.materials['MC_water']
+    check('PBR вкл.: вода без карт (свой материал)', 'ShaderNodeNormalMap' not in _types(mw))
+    sbp.clear()
+    for nm in ('MC_opaque', 'MC_cutout', 'MC_translucent', 'MC_water', 'MC_opaque_tiled', 'MC_cutout_tiled', 'MC_translucent_tiled', 'MC_water_tiled'):
+        if bpy.data.materials.get(nm):
+            bpy.data.materials.remove(bpy.data.materials[nm])
+    scene_mod.materials_mod.ensure_materials(sb.table, os.path.join(_boot.SCRATCH, 'cache'), 'lit', True, 'TRANSLUCENT', False)            # вернуть обычные для остальных проверок
+
     # --- picking: луч сверху на центр чанка
     ed = sb.get_edit_session()
     edit_ops.attach(sb)

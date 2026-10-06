@@ -999,3 +999,71 @@ void mcmesh_output_free(McMeshOutput *o)
     free(o->pos); free(o->uv); free(o->col); free(o->mat); free(o->block); free(o->dir); free(o->merged); free(o->rect);
     memset(o, 0, sizeof(*o));
 }
+
+/* ---- сварка вершин и рёбер (для Blender: общие вершины экономят ≈30 % памяти меша) ---- */
+static inline uint32_t weld_bits(float f) { uint32_t u; if (f == 0.0f) f = 0.0f; memcpy(&u, &f, 4); return u; }   /* -0.0 → +0.0 */
+static inline uint32_t weld_hash3(uint32_t x, uint32_t y, uint32_t z)
+{
+    uint32_t h = x * 0x9E3779B1u; h ^= h >> 15;
+    h = (h + y) * 0x85EBCA77u; h ^= h >> 13;
+    h = (h + z) * 0xC2B2AE3Du; h ^= h >> 16;
+    return h;
+}
+int mcmesh_weld(const float *pos, int32_t n, int32_t *corner_vert, float *vert_pos, int32_t *edge_verts, int32_t *corner_edge, int32_t *counts)
+{
+    if (!pos || n < 0 || !corner_vert || !vert_pos || !edge_verts || !corner_edge || !counts) return -1;
+    counts[0] = counts[1] = 0;
+    if (n == 0) return 0;
+    size_t nc = (size_t)n * 4, cap = 16;
+    while (cap < nc * 2) cap <<= 1;                                       /* таблицы с заполнением ≤ 1/2 */
+    int32_t *vt = malloc(cap * sizeof(int32_t)), *et = malloc(cap * sizeof(int32_t));
+    if (!vt || !et) { free(vt); free(et); return -2; }
+    memset(vt, 0xFF, cap * sizeof(int32_t)); memset(et, 0xFF, cap * sizeof(int32_t));
+    size_t mask = cap - 1;
+    int32_t nv = 0, ne = 0;
+    for (int32_t q = 0; q < n; q++) {
+        int32_t id[4];
+        for (int k = 0; k < 4; k++) {
+            const float *p = pos + ((size_t)q * 4 + k) * 3;
+            uint32_t bx = weld_bits(p[0]), by = weld_bits(p[1]), bz = weld_bits(p[2]);
+            size_t h = weld_hash3(bx, by, bz) & mask;
+            for (;;) {
+                int32_t v = vt[h];
+                if (v < 0) {                                              /* новая вершина */
+                    float *o = vert_pos + (size_t)nv * 3; o[0] = p[0]; o[1] = p[1]; o[2] = p[2];
+                    vt[h] = v = nv++;
+                    id[k] = v; break;
+                }
+                const float *o = vert_pos + (size_t)v * 3;
+                if (weld_bits(o[0]) == bx && weld_bits(o[1]) == by && weld_bits(o[2]) == bz) { id[k] = v; break; }
+                h = (h + 1) & mask;
+            }
+        }
+        for (int k = 1; k < 4; k++)                                       /* вырожденная грань: дубль получает собственную вершину (в таблицу не входит) */
+            for (int j = 0; j < k; j++)
+                if (id[k] == id[j]) {
+                    const float *p = pos + ((size_t)q * 4 + k) * 3; float *o = vert_pos + (size_t)nv * 3; o[0] = p[0]; o[1] = p[1]; o[2] = p[2];
+                    id[k] = nv++; break;
+                }
+        for (int k = 0; k < 4; k++) {
+            int32_t a = id[k], b = id[(k + 1) & 3];
+            corner_vert[(size_t)q * 4 + k] = a;
+            uint32_t lo = (uint32_t)(a < b ? a : b), hi = (uint32_t)(a < b ? b : a);
+            size_t h = weld_hash3(lo, hi, 0x7F4A7C15u) & mask;
+            for (;;) {
+                int32_t e = et[h];
+                if (e < 0) {
+                    edge_verts[(size_t)ne * 2] = a; edge_verts[(size_t)ne * 2 + 1] = b;
+                    et[h] = e = ne++;
+                    corner_edge[(size_t)q * 4 + k] = e; break;
+                }
+                int32_t ea = edge_verts[(size_t)e * 2], eb = edge_verts[(size_t)e * 2 + 1];
+                if ((ea == a && eb == b) || (ea == b && eb == a)) { corner_edge[(size_t)q * 4 + k] = e; break; }
+                h = (h + 1) & mask;
+            }
+        }
+    }
+    free(vt); free(et);
+    counts[0] = nv; counts[1] = ne;
+    return 0;
+}

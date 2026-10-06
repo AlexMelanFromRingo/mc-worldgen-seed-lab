@@ -53,7 +53,7 @@ def collect_params(scene, prefs=None):
     cx0, cz0, nx, nz = s.area_chunks()
     gpu_mod.configure_for_area(nx * nz)    # Auto: рельеф на видеокарте — только для областей, где она быстрее процессора
     view = {'tint_biomes': s.tint_biomes, 'water_style': s.water_style, 'chunks_per_object': int(s.chunks_per_object), 'greedy_merge': s.greedy_merge,
-            'lod_mode': s.lod_mode, 'lod_near': s.lod_near, 'pixel_style': s.pixel_style, 'y_min': s.y_min, 'y_max': s.y_max, 'crop': s.crop_box()}
+            'lod_mode': s.lod_mode, 'lod_near': s.lod_near, 'pixel_style': s.pixel_style, 'pbr': s.pbr, 'y_min': s.y_min, 'y_max': s.y_max, 'crop': s.crop_box()}
     return P.GenParams(
         version=s.version, dimension=s.dimension, preset=s.preset, seeds=tuple(sd),
         tweaks=s.tweaks_changed() if s.use_tweaks else (), cx0=cx0, cz0=cz0, nx=nx, nz=nz,

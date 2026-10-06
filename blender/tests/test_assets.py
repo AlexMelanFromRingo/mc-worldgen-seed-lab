@@ -440,7 +440,8 @@ class TestAtlas(unittest.TestCase):
         self.assertTrue(t.atlas_info['animated'][j])
         k = t.atlas_names.index('minecraft:block/water_flow')
         self.assertEqual(tuple(t.atlas_info['sprite_size'][k]), (32, 32))
-        self.assertEqual(t.atlas_info['tile'], 64)
+        self.assertEqual(t.atlas_info['tile'], max(max(w, h) for w, h in t.atlas_info['sprite_size']))        # самый большой спрайт (сущности — до 256 пикс.: дракон)
+        self.assertGreaterEqual(t.atlas_info['tile'], 64)
 
     def test_transparency(self):
         a = atlas.build_atlas(os.path.join(ROOT, 'textures'), ['minecraft:block/stone', 'minecraft:block/oak_leaves', 'minecraft:block/glass', 'minecraft:block/ice'])
