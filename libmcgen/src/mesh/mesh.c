@@ -975,6 +975,24 @@ int mcmesh_chunk(const McMeshTables *t, const McMeshInput *in, const McMeshOptio
                     uint32_t f = fl[s];
                     if (!(f & want)) continue;
                     out->n_blocks_visited++;
+                    /* быстрый путь: полный непрозрачный куб, у которого все шесть соседей — тоже полные непрозрачные кубы, граней не даёт
+                     * (should_render_face: у соседа маска напротив — FULL → грань скрыта). Это ≈ 80 % посещаемых блоков (камень, глубина, земля). Блоки у границы
+                     * чанка и диапазона высот идут обычным путём (соседи за границей читаются через get_state). */
+                    if ((f & MCM_F_OPAQUE) && y > c->ylo && y < c->yhi) {
+                        if (x > 0 && x < 15 && z > 0 && z < 15) {              /* соседи внутри чанка: прямые чтения */
+                            unsigned n0 = row[x - 1], n1 = row[x + 1], n2 = row[x - 16], n3 = row[x + 16], n4 = row[x - 256], n5 = row[x + 256];
+                            if (n0 < (unsigned)ns && n1 < (unsigned)ns && n2 < (unsigned)ns && n3 < (unsigned)ns && n4 < (unsigned)ns && n5 < (unsigned)ns &&
+                                (fl[n0] & fl[n1] & fl[n2] & fl[n3] & fl[n4] & fl[n5] & MCM_F_OPAQUE))
+                                continue;
+                        } else {                                               /* у границы чанка: соседи через get_state (нет соседнего чанка = воздух) */
+                            int hidden = 1;
+                            for (int d = 0; d < 6 && hidden; d++) {
+                                int sn = get_state(c, x + DIR_DX[d], y + DIR_DY[d], z + DIR_DZ[d]);
+                                if (sn < 0 || sn >= ns || !(fl[sn] & MCM_F_OPAQUE)) hidden = 0;
+                            }
+                            if (hidden) continue;
+                        }
+                    }
                     uint32_t bi = (uint32_t)(((y << 4) + z) * 16 + x);
                     if (f & want & (MCM_F_WATER | MCM_F_LAVA)) fluid_block(c, x, y, z, (int)s, f, bi);
                     if (f & want & MCM_F_GEOM) model_block(c, x, y, z, (int)s, f, bi);

@@ -38,10 +38,10 @@
 
 | Платформа | Файл |
 |---|---|
-| Windows x64 | `mcgen-0.1.15-windows-x64.zip` |
-| Linux x64 | `mcgen-0.1.15-linux-x64.zip` |
-| macOS (Apple Silicon) | `mcgen-0.1.15-macos-arm64.zip` |
-| macOS (Intel) | `mcgen-0.1.15-macos-x64.zip` |
+| Windows x64 | `mcgen-0.1.16-windows-x64.zip` |
+| Linux x64 | `mcgen-0.1.16-linux-x64.zip` |
+| macOS (Apple Silicon) | `mcgen-0.1.16-macos-arm64.zip` |
+| macOS (Intel) | `mcgen-0.1.16-macos-x64.zip` |
 
 Файлы собирает `python3 tools/build_extension.py` (каталог `blender/dist/`; библиотеки под все четыре платформы строятся кросс-компилятором zig: `python3 libmcgen/build.py`). В zip лежат только наш код и библиотека `libmcgen` — **ни одного файла Mojang** в нём нет.
 
@@ -50,7 +50,7 @@
 3. Blender покажет запрашиваемые разрешения — **Files** (читать ваши jar игры и держать кэш распакованных данных) и **Network** (необязательно: скачивание jar у Mojang). Подтвердите.
 4. Расширение «MC Worldgen» включается сразу; проверить можно в **Preferences ▸ Add-ons**.
 
-Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.15-linux-x64.zip`.
+Из командной строки (например, для сборочной машины): `blender --command extension install-file -r user_default -e mcgen-0.1.16-linux-x64.zip`.
 
 Где искать интерфейс: **Properties editor ▸ вкладка Scene ▸ панель «MC World»** и та же панель в **боковой панели 3D-вида (клавиша `N`) ▸ вкладка «MC World»**. Вкладки в редакторе свойств Python добавлять не позволяет, поэтому «вкладка» — верхняя панель Scene с подпанелями, как у Render. Язык интерфейса — английский; при выборе русского языка Blender (**Preferences ▸ Interface ▸ Language**) аддон переводится целиком (включая подписи и описания всех ползунков).
 
